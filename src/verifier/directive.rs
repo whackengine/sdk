@@ -182,9 +182,9 @@ impl DirectiveSubverifier {
         let is_external = if var_parent.is::<Type>() && var_parent.is_external() {
             true
         } else {
-            // [Skywhack::External]
+            // [SkyWhack::External]
             defn.attributes.iter().find(|a| {
-                if let Attribute::Metadata(m) = a { m.name.0 == "Skywhack::External" } else { false }
+                if let Attribute::Metadata(m) = a { m.name.0 == "SkyWhack::External" } else { false }
             }).is_some()
         };
 
@@ -465,9 +465,9 @@ impl DirectiveSubverifier {
                 let is_external = if fn_parent.is::<Type>() && fn_parent.is_external() {
                     true
                 } else {
-                    // [Skywhack::External]
+                    // [SkyWhack::External]
                     defn.attributes.iter().find(|a| {
-                        if let Attribute::Metadata(m) = a { m.name.0 == "Skywhack::External" } else { false }
+                        if let Attribute::Metadata(m) = a { m.name.0 == "SkyWhack::External" } else { false }
                     }).is_some()
                 };
 
@@ -1169,9 +1169,9 @@ impl DirectiveSubverifier {
                 let is_external = if fn_parent.is::<Type>() && fn_parent.is_external() {
                     true
                 } else {
-                    // [Skywhack::External]
+                    // [SkyWhack::External]
                     defn.attributes.iter().find(|a| {
-                        if let Attribute::Metadata(m) = a { m.name.0 == "Skywhack::External" } else { false }
+                        if let Attribute::Metadata(m) = a { m.name.0 == "SkyWhack::External" } else { false }
                     }).is_some()
                 };
 
@@ -1561,9 +1561,9 @@ impl DirectiveSubverifier {
                 let is_external = if fn_parent.is::<Type>() && fn_parent.is_external() {
                     true
                 } else {
-                    // [Skywhack::External]
+                    // [SkyWhack::External]
                     defn.attributes.iter().find(|a| {
-                        if let Attribute::Metadata(m) = a { m.name.0 == "Skywhack::External" } else { false }
+                        if let Attribute::Metadata(m) = a { m.name.0 == "SkyWhack::External" } else { false }
                     }).is_some()
                 };
 

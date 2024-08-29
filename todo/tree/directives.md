@@ -60,7 +60,7 @@ Note that statements and static binding initializers within a class or enum bloc
 * [ ] Assign attributes correctly (`static`, `dynamic`, `abstract`, and `final`)
 * [ ] Mark unused
 
-- Remember: `[Skywhack::External]` (transitive)
+- Remember: `[SkyWhack::External]` (transitive)
 
 ## Enum definitions
 
@@ -75,7 +75,7 @@ Note that statements and static binding initializers within a class or enum bloc
 * [ ] Mark unused
 * [ ] For the interface block, verify only top-level function definitions
 
-- Remember: `[Skywhack::External]`
+- Remember: `[SkyWhack::External]`
 
 ## Function definitions
 

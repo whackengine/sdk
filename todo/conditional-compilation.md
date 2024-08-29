@@ -4,7 +4,7 @@
 
 The user should be able to define `NS::X` constants assigned to an expression both in project configuration and command line, where the command line overrides the project configuration's constants.
 
-Like in Skywhack, these constants are assigned to character data and, when used anywhere, they are lazily evaluated as expressions in one verifier pass.
+Like in SkyWhack, these constants are assigned to character data and, when used anywhere, they are lazily evaluated as expressions in one verifier pass.
 
 ## Semantic host
 

@@ -1,4 +1,4 @@
-# Skywhack
+# SkyWhack
 
 ## Bindable
 

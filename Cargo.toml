@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Matheus Dias de Souza <hydroperfox@gmail.com>"]
 repository = "https://github.com/skywhack/mxmlc"
 keywords = ["actionscript", "as3", "compiler", "mxml", "css3"]
-description = "MXML compiler for Skywhack"
+description = "MXML compiler for SkyWhack"
 license = "Apache-2.0"
 
 [dependencies]

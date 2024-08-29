@@ -2,7 +2,7 @@
 
 ## Sections and assets
 
-Additional assets and Markdown sections may be described in the Skywhack package's `asdoc.json` file, used when rendering the ASDoc documentation for a Skywhack package.
+Additional assets and Markdown sections may be described in the SkyWhack package's `asdoc.json` file, used when rendering the ASDoc documentation for a SkyWhack package.
 
 ```json
 {
