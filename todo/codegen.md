@@ -2,7 +2,7 @@
 
 ## External definitions
 
-Definitions accompanied by `[SkyWhack::External]` meta-data are only verified, and not compiled.
+Definitions accompanied by `[SW::External]` meta-data are only verified, and not compiled.
 
 ## Vector Data Type
 
