@@ -1,5 +1,5 @@
-mod flex_diagnostic;
-pub use flex_diagnostic::*;
+mod sw_diagnostic;
+pub use sw_diagnostic::*;
 
-mod flex_diagnostic_kind;
-pub use flex_diagnostic_kind::*;
+mod sw_diagnostic_kind;
+pub use sw_diagnostic_kind::*;

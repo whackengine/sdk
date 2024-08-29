@@ -1,6 +1,6 @@
 #[repr(i32)]
 #[derive(Eq, PartialEq, Clone, Copy)]
-pub enum FlexDiagnosticKind {
+pub enum SwDiagnosticKind {
     EntityIsNotAType = 2048,
     ImplicitCoercionToUnrelatedType = 2049,
     EntityIsReadOnly = 2050,
@@ -81,7 +81,7 @@ pub enum FlexDiagnosticKind {
     SetterMustReturnVoid = 2125,
 }
 
-impl FlexDiagnosticKind {
+impl SwDiagnosticKind {
     pub fn id(&self) -> i32 {
         *self as i32
     }

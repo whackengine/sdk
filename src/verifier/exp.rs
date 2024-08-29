@@ -67,25 +67,25 @@ impl ExpSubverifier {
         if r.is_err() {
             match r.unwrap_err() {
                 PropertyLookupError::AmbiguousReference(name) => {
-                    verifier.add_verify_error(&id.location, FlexDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
+                    verifier.add_verify_error(&id.location, SwDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
                     return Ok(None);
                 },
                 PropertyLookupError::Defer => {
                     return Err(DeferError(None));
                 },
                 PropertyLookupError::VoidBase => {
-                    verifier.add_verify_error(&id.location, FlexDiagnosticKind::AccessOfVoid, diagarg![]);
+                    verifier.add_verify_error(&id.location, SwDiagnosticKind::AccessOfVoid, diagarg![]);
                     return Ok(None);
                 },
                 PropertyLookupError::NullableObject { .. } => {
-                    verifier.add_verify_error(&id.location, FlexDiagnosticKind::AccessOfNullable, diagarg![]);
+                    verifier.add_verify_error(&id.location, SwDiagnosticKind::AccessOfNullable, diagarg![]);
                     return Ok(None);
                 },
             }
         }
         let r = r.unwrap();
         if r.is_none() {
-            verifier.add_verify_error(&id.location, FlexDiagnosticKind::UndefinedProperty, diagarg![key.local_name().unwrap()]);
+            verifier.add_verify_error(&id.location, SwDiagnosticKind::UndefinedProperty, diagarg![key.local_name().unwrap()]);
             return Ok(None);
         }
         let r = r.unwrap();
@@ -118,7 +118,7 @@ impl ExpSubverifier {
     pub fn eval_config_constant(verifier: &mut Subverifier, location: &Location, name: String, mut cdata: String) -> Option<Entity> {
         if let Some(v) = verifier.host.config_constants_result().get(&name) {
             if v.is::<InvalidationEntity>() {
-                verifier.add_verify_error(location, FlexDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
+                verifier.add_verify_error(location, SwDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
                 return None;
             }
             return Some(v);
@@ -132,7 +132,7 @@ impl ExpSubverifier {
         if ["true", "false"].contains(&cdata.as_str()) {
             let boolean_type = verifier.host.boolean_type();
             if boolean_type.is::<UnresolvedEntity>() {
-                verifier.add_verify_error(location, FlexDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
+                verifier.add_verify_error(location, SwDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
                 return None;
             }
             let v = verifier.host.factory().create_boolean_constant(cdata == "true", &boolean_type);
@@ -143,7 +143,7 @@ impl ExpSubverifier {
         if cdata == "Infinity" {
             let number_type = verifier.host.number_type();
             if number_type.is::<UnresolvedEntity>() {
-                verifier.add_verify_error(location, FlexDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
+                verifier.add_verify_error(location, SwDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
                 return None;
             }
             let v = verifier.host.factory().create_number_constant(Number::Number(f64::INFINITY), &number_type);
@@ -154,7 +154,7 @@ impl ExpSubverifier {
         if cdata == "NaN" {
             let number_type = verifier.host.number_type();
             if number_type.is::<UnresolvedEntity>() {
-                verifier.add_verify_error(location, FlexDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
+                verifier.add_verify_error(location, SwDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
                 return None;
             }
             let v = verifier.host.factory().create_number_constant(Number::Number(f64::NAN), &number_type);
@@ -170,7 +170,7 @@ impl ExpSubverifier {
         // which must be a compile-time constant.
         let exp = ParserFacade(&cu, ParserOptions::default()).parse_expression();
         if cu.invalidated() {
-            verifier.add_verify_error(location, FlexDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
+            verifier.add_verify_error(location, SwDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
             return None;
         }
         let kscope = verifier.scope();
@@ -178,17 +178,17 @@ impl ExpSubverifier {
         let cval = verifier.verify_expression(&exp, &default());
         verifier.set_scope(&kscope);
         let Ok(cval) = cval else {
-            verifier.add_verify_error(location, FlexDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
+            verifier.add_verify_error(location, SwDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
             return None;
         };
         if let Some(cval) = cval.as_ref() {
             if !cval.is::<Constant>() {
-                verifier.add_verify_error(location, FlexDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
+                verifier.add_verify_error(location, SwDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
                 return None;
             }
             verifier.host.config_constants_result().set(name.clone(), cval.clone());
         } else {
-            verifier.add_verify_error(location, FlexDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
+            verifier.add_verify_error(location, SwDiagnosticKind::CouldNotExpandInlineConstant, diagarg![]);
             return None;
         }
         cval
@@ -199,7 +199,7 @@ impl ExpSubverifier {
             if t.includes_null(&verifier.host)? {
                 return Ok(Some(verifier.host.factory().create_null_constant(t)));
             } else {
-                verifier.add_verify_error(&literal.location, FlexDiagnosticKind::NullNotExpectedHere, diagarg![]);
+                verifier.add_verify_error(&literal.location, SwDiagnosticKind::NullNotExpectedHere, diagarg![]);
                 return Ok(None);
             }
         }
@@ -222,7 +222,7 @@ impl ExpSubverifier {
             if verifier.host.numeric_types()?.contains(&t_esc) {
                 let n = Self::parse_number_as_data_type(&verifier.host, literal, &t_esc, context);
                 if n.is_err() {
-                    verifier.add_verify_error(&literal.location, FlexDiagnosticKind::CouldNotParseNumber, diagarg![t_esc]);
+                    verifier.add_verify_error(&literal.location, SwDiagnosticKind::CouldNotParseNumber, diagarg![t_esc]);
                     return Ok(None);
                 }
                 return Ok(Some(verifier.host.factory().create_number_constant(n.unwrap(), t)));
@@ -231,7 +231,7 @@ impl ExpSubverifier {
         let t = if literal.suffix == NumberSuffix::F { verifier.host.float_type() } else { verifier.host.number_type() }.defer()?;
         let n = Self::parse_number_as_data_type(&verifier.host, literal, &t, context);
         if n.is_err() {
-            verifier.add_verify_error(&literal.location, FlexDiagnosticKind::CouldNotParseNumber, diagarg![t]);
+            verifier.add_verify_error(&literal.location, SwDiagnosticKind::CouldNotParseNumber, diagarg![t]);
             return Ok(None);
         }
         return Ok(Some(verifier.host.factory().create_number_constant(n.unwrap(), &t)));
@@ -259,7 +259,7 @@ impl ExpSubverifier {
                     let k = verifier.host.factory().create_static_reference_value(&t_esc, &slot)?;
                     return Ok(ConversionMethods(&verifier.host).implicit(&k, &t, false)?);
                 } else {
-                    verifier.add_verify_error(&literal.location, FlexDiagnosticKind::NoMatchingEnumMember, diagarg![literal.value.clone(), t_esc]);
+                    verifier.add_verify_error(&literal.location, SwDiagnosticKind::NoMatchingEnumMember, diagarg![literal.value.clone(), t_esc]);
                     return Ok(None);
                 }
             }
@@ -272,7 +272,7 @@ impl ExpSubverifier {
         if activation.is_some() && activation.as_ref().unwrap().this().is_some() {
             Ok(activation.clone().unwrap().this())
         } else {
-            verifier.add_verify_error(&literal.location, FlexDiagnosticKind::UnexpectedThis, diagarg![]);
+            verifier.add_verify_error(&literal.location, SwDiagnosticKind::UnexpectedThis, diagarg![]);
             Ok(None)
         }
     }
@@ -360,7 +360,7 @@ impl ExpSubverifier {
 
         if let Some(t) = base.as_type() {
             if !(t.is_class_type_possibly_after_sub() && !t.is_static() && !t.is_abstract()) {
-                verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::UnexpectedNewBase, diagarg![]);
+                verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::UnexpectedNewBase, diagarg![]);
 
                 if let Some(arguments) = &exp.arguments {
                     for arg in arguments.iter() {
@@ -382,16 +382,16 @@ impl ExpSubverifier {
                         return Err(DeferError(None));
                     },
                     Err(VerifierArgumentsError::Expected(n)) => {
-                        verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::IncorrectNumArguments, diagarg![n.to_string()]);
+                        verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::IncorrectNumArguments, diagarg![n.to_string()]);
                     },
                     Err(VerifierArgumentsError::ExpectedNoMoreThan(n)) => {
-                        verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::IncorrectNumArgumentsNoMoreThan, diagarg![n.to_string()]);
+                        verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::IncorrectNumArgumentsNoMoreThan, diagarg![n.to_string()]);
                     },
                 }
             } else {
                 if let Some(arguments) = &exp.arguments {
                     if !arguments.is_empty() {
-                        verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::IncorrectNumArgumentsNoMoreThan, diagarg!["0".to_string()]);
+                        verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::IncorrectNumArgumentsNoMoreThan, diagarg!["0".to_string()]);
                     }
                     for arg in arguments.iter() {
                         verifier.verify_expression(arg, &default())?;
@@ -406,7 +406,7 @@ impl ExpSubverifier {
         let base_st_esc = base_st.escape_of_non_nullable();
 
         if ![verifier.host.any_type(), verifier.host.class_type().defer()?].contains(&base_st_esc) {
-            verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::UnexpectedNewBase, diagarg![]);
+            verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::UnexpectedNewBase, diagarg![]);
         }
 
         if let Some(arguments) = &exp.arguments {
@@ -447,25 +447,25 @@ impl ExpSubverifier {
         if r.is_err() {
             match r.unwrap_err() {
                 PropertyLookupError::AmbiguousReference(name) => {
-                    verifier.add_verify_error(&id.location, FlexDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
+                    verifier.add_verify_error(&id.location, SwDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
                     return Ok(None);
                 },
                 PropertyLookupError::Defer => {
                     return Err(DeferError(None));
                 },
                 PropertyLookupError::VoidBase => {
-                    verifier.add_verify_error(&id.location, FlexDiagnosticKind::AccessOfVoid, diagarg![]);
+                    verifier.add_verify_error(&id.location, SwDiagnosticKind::AccessOfVoid, diagarg![]);
                     return Ok(None);
                 },
                 PropertyLookupError::NullableObject { .. } => {
-                    verifier.add_verify_error(&id.location, FlexDiagnosticKind::AccessOfNullable, diagarg![]);
+                    verifier.add_verify_error(&id.location, SwDiagnosticKind::AccessOfNullable, diagarg![]);
                     return Ok(None);
                 },
             }
         }
         let r = r.unwrap();
         if r.is_none() {
-            verifier.add_verify_error(&id.location, FlexDiagnosticKind::UndefinedPropertyWithStaticType, diagarg![key.local_name().unwrap(), base.static_type(&verifier.host)]);
+            verifier.add_verify_error(&id.location, SwDiagnosticKind::UndefinedPropertyWithStaticType, diagarg![key.local_name().unwrap(), base.static_type(&verifier.host)]);
             return Ok(None);
         }
         let r = r.unwrap();
@@ -491,14 +491,14 @@ impl ExpSubverifier {
                     match PropertyLookup(&verifier.host).lookup_in_object(&p, &open_ns_set, None, &PropertyLookupKey::LocalName(dot_seq.last().unwrap().clone()), false) {
                         Ok(Some(r1)) => {
                             if r.is_some() && !r.as_ref().unwrap().fixture_reference_value_equals(&r1) {
-                                verifier.add_verify_error(&member_exp.identifier.location, FlexDiagnosticKind::AmbiguousReference, diagarg![dot_seq.last().unwrap().clone()]);
+                                verifier.add_verify_error(&member_exp.identifier.location, SwDiagnosticKind::AmbiguousReference, diagarg![dot_seq.last().unwrap().clone()]);
                                 return Ok(None);
                             }
                             r = Some(r1);
                         },
                         Ok(None) => {},
                         Err(PropertyLookupError::AmbiguousReference(name)) => {
-                            verifier.add_verify_error(&member_exp.identifier.location, FlexDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
+                            verifier.add_verify_error(&member_exp.identifier.location, SwDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
                             return Ok(Some(verifier.host.invalidation_entity()));
                         },
                         Err(PropertyLookupError::Defer) => {
@@ -513,7 +513,7 @@ impl ExpSubverifier {
             for import in scope1.import_list().iter() {
                 if let Some(r1) = Self::import_shadowing_package_name(verifier, &open_ns_set, &dot_seq, &import, &member_exp.identifier.location)? {
                     if r.is_some() && !r.as_ref().unwrap().fixture_reference_value_equals(&r1) {
-                        verifier.add_verify_error(&member_exp.identifier.location, FlexDiagnosticKind::AmbiguousReference, diagarg![dot_seq.last().unwrap().clone()]);
+                        verifier.add_verify_error(&member_exp.identifier.location, SwDiagnosticKind::AmbiguousReference, diagarg![dot_seq.last().unwrap().clone()]);
                         return Ok(None);
                     }
                     r = Some(r1);
@@ -541,7 +541,7 @@ impl ExpSubverifier {
                     return Ok(None);
                 },
                 Err(PropertyLookupError::AmbiguousReference(name)) => {
-                    verifier.add_verify_error(&location, FlexDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
+                    verifier.add_verify_error(&location, SwDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
                     return Ok(Some(verifier.host.invalidation_entity()));
                 },
                 Err(PropertyLookupError::Defer) => {
@@ -564,7 +564,7 @@ impl ExpSubverifier {
                     return Ok(None);
                 },
                 Err(PropertyLookupError::AmbiguousReference(name)) => {
-                    verifier.add_verify_error(&location, FlexDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
+                    verifier.add_verify_error(&location, SwDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
                     return Ok(Some(verifier.host.invalidation_entity()));
                 },
                 Err(PropertyLookupError::Defer) => {
@@ -626,11 +626,11 @@ impl ExpSubverifier {
                     return Err(DeferError(None));
                 },
                 PropertyLookupError::VoidBase => {
-                    verifier.add_verify_error(&member_exp.key.location(), FlexDiagnosticKind::AccessOfVoid, diagarg![]);
+                    verifier.add_verify_error(&member_exp.key.location(), SwDiagnosticKind::AccessOfVoid, diagarg![]);
                     return Ok(None);
                 },
                 PropertyLookupError::NullableObject { .. } => {
-                    verifier.add_verify_error(&member_exp.key.location(), FlexDiagnosticKind::AccessOfNullable, diagarg![]);
+                    verifier.add_verify_error(&member_exp.key.location(), SwDiagnosticKind::AccessOfNullable, diagarg![]);
                     return Ok(None);
                 },
             }
@@ -663,7 +663,7 @@ impl ExpSubverifier {
             verifier.host.object_type().defer()?,
             verifier.host.xml_type().defer()?,
             verifier.host.xml_list_type().defer()?].contains(&base_st_esc) {
-            verifier.add_verify_error(&desc_exp.identifier.location, FlexDiagnosticKind::InapplicableDescendants, diagarg![base_st]);
+            verifier.add_verify_error(&desc_exp.identifier.location, SwDiagnosticKind::InapplicableDescendants, diagarg![base_st]);
             return Ok(None);
         }
 
@@ -696,7 +696,7 @@ impl ExpSubverifier {
             verifier.host.object_type().defer()?,
             verifier.host.xml_type().defer()?,
             verifier.host.xml_list_type().defer()?].contains(&base_st_esc) {
-            verifier.add_verify_error(&filter_exp.test.location(), FlexDiagnosticKind::InapplicableFilter, diagarg![base_st]);
+            verifier.add_verify_error(&filter_exp.test.location(), SwDiagnosticKind::InapplicableFilter, diagarg![base_st]);
             return Ok(None);
         }
 
@@ -714,7 +714,7 @@ impl ExpSubverifier {
                     verifier.verify_expression(obj, &default())?;
                 }
             }
-            verifier.add_verify_error(&super_exp.location, FlexDiagnosticKind::ASuperExpCanBeUsedOnlyIn, diagarg![]);
+            verifier.add_verify_error(&super_exp.location, SwDiagnosticKind::ASuperExpCanBeUsedOnlyIn, diagarg![]);
             return Ok(None);
         };
 
@@ -724,7 +724,7 @@ impl ExpSubverifier {
                     verifier.verify_expression(obj, &default())?;
                 }
             }
-            verifier.add_verify_error(&super_exp.location, FlexDiagnosticKind::ASuperExpCanBeUsedOnlyIn, diagarg![]);
+            verifier.add_verify_error(&super_exp.location, SwDiagnosticKind::ASuperExpCanBeUsedOnlyIn, diagarg![]);
             return Ok(None);
         };
 
@@ -737,7 +737,7 @@ impl ExpSubverifier {
                     verifier.verify_expression(obj, &default())?;
                 }
             }
-            verifier.add_verify_error(&super_exp.location, FlexDiagnosticKind::ASuperExpCanBeUsedOnlyIn, diagarg![]);
+            verifier.add_verify_error(&super_exp.location, SwDiagnosticKind::ASuperExpCanBeUsedOnlyIn, diagarg![]);
             return Ok(None);
         }
 
@@ -748,7 +748,7 @@ impl ExpSubverifier {
                     verifier.verify_expression(obj, &default())?;
                 }
             }
-            verifier.add_verify_error(&super_exp.location, FlexDiagnosticKind::ASuperExpCanOnlyBeUsedInSubclasses, diagarg![]);
+            verifier.add_verify_error(&super_exp.location, SwDiagnosticKind::ASuperExpCanOnlyBeUsedInSubclasses, diagarg![]);
             return Ok(None);
         };
 
@@ -786,7 +786,7 @@ impl ExpSubverifier {
                 for arg in &exp.arguments {
                     verifier.verify_expression(arg, &default())?;
                 }
-                verifier.add_warning(&exp.base.location(), FlexDiagnosticKind::CallOnArrayType, diagarg![]);
+                verifier.add_warning(&exp.base.location(), SwDiagnosticKind::CallOnArrayType, diagarg![]);
                 return Ok(Some(verifier.host.factory().create_value(&array_type)));
             // Date(x)
             } else if base_type == date_type {
@@ -794,7 +794,7 @@ impl ExpSubverifier {
                 for arg in &exp.arguments {
                     verifier.verify_expression(arg, &default())?;
                 }
-                verifier.add_warning(&exp.base.location(), FlexDiagnosticKind::CallOnDateType, diagarg![]);
+                verifier.add_warning(&exp.base.location(), SwDiagnosticKind::CallOnDateType, diagarg![]);
                 return Ok(Some(verifier.host.factory().create_value(&string_type)));
             // Type cast
             } else {
@@ -811,9 +811,9 @@ impl ExpSubverifier {
                     first = false;
                 }
                 if exp.arguments.len() < 1 {
-                    verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::IncorrectNumArguments, diagarg!["1".to_string()]);
+                    verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::IncorrectNumArguments, diagarg!["1".to_string()]);
                 } else if exp.arguments.len() > 1 {
-                    verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::IncorrectNumArgumentsNoMoreThan, diagarg!["1".to_string()]);
+                    verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::IncorrectNumArgumentsNoMoreThan, diagarg!["1".to_string()]);
                 }
                 return Ok(Some(verifier.host.factory().create_value(&base_type)));
             }
@@ -827,10 +827,10 @@ impl ExpSubverifier {
                     return Err(DeferError(None));
                 },
                 Err(VerifierArgumentsError::Expected(n)) => {
-                    verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::IncorrectNumArguments, diagarg![n.to_string()]);
+                    verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::IncorrectNumArguments, diagarg![n.to_string()]);
                 },
                 Err(VerifierArgumentsError::ExpectedNoMoreThan(n)) => {
-                    verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::IncorrectNumArgumentsNoMoreThan, diagarg![n.to_string()]);
+                    verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::IncorrectNumArgumentsNoMoreThan, diagarg![n.to_string()]);
                 },
             }
             return Ok(Some(verifier.host.factory().create_value(&sig.result_type())));
@@ -856,10 +856,10 @@ impl ExpSubverifier {
                     return Err(DeferError(None));
                 },
                 Err(VerifierArgumentsError::Expected(n)) => {
-                    verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::IncorrectNumArguments, diagarg![n.to_string()]);
+                    verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::IncorrectNumArguments, diagarg![n.to_string()]);
                 },
                 Err(VerifierArgumentsError::ExpectedNoMoreThan(n)) => {
-                    verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::IncorrectNumArgumentsNoMoreThan, diagarg![n.to_string()]);
+                    verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::IncorrectNumArgumentsNoMoreThan, diagarg![n.to_string()]);
                 },
             }
             return Ok(Some(verifier.host.factory().create_value(&sig.result_type())));
@@ -870,7 +870,7 @@ impl ExpSubverifier {
         }
 
         if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.function_type().defer()?].contains(&base_st_esc) {
-            verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::CallOnNonFunction, diagarg![]);
+            verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::CallOnNonFunction, diagarg![]);
             return Ok(None);
         }
 
@@ -893,7 +893,7 @@ impl ExpSubverifier {
             for arg in &exp.arguments {
                 verifier.verify_type_expression(arg)?;
             }
-            verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::EntityIsNotAType, diagarg![]);
+            verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::EntityIsNotAType, diagarg![]);
             return Ok(None);
         };
 
@@ -902,7 +902,7 @@ impl ExpSubverifier {
             for arg in &exp.arguments {
                 verifier.verify_type_expression(arg)?;
             }
-            verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::NonParameterizedType, diagarg![]);
+            verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::NonParameterizedType, diagarg![]);
             return Ok(None);
         }
 
@@ -921,10 +921,10 @@ impl ExpSubverifier {
         let type_params = base.type_params().unwrap();
 
         if resolvee_args.length() < type_params.length() {
-            verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::IncorrectNumArguments, diagarg![type_params.length().to_string()]);
+            verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::IncorrectNumArguments, diagarg![type_params.length().to_string()]);
             return Ok(None);
         } else if resolvee_args.length() > type_params.length() {
-            verifier.add_verify_error(&exp.base.location(), FlexDiagnosticKind::IncorrectNumArgumentsNoMoreThan, diagarg![type_params.length().to_string()]);
+            verifier.add_verify_error(&exp.base.location(), SwDiagnosticKind::IncorrectNumArgumentsNoMoreThan, diagarg![type_params.length().to_string()]);
             return Ok(None);
         }
 
@@ -943,7 +943,7 @@ impl ExpSubverifier {
 
             let val_st = val.static_type(&verifier.host);
             let Some(result_type) = val_st.escape_of_non_nullable().promise_result_type(&verifier.host)? else {
-                verifier.add_verify_error(&exp.location, FlexDiagnosticKind::AwaitOperandMustBeAPromise, diagarg![]);
+                verifier.add_verify_error(&exp.location, SwDiagnosticKind::AwaitOperandMustBeAPromise, diagarg![]);
                 return Ok(None);
             };
 
@@ -974,9 +974,9 @@ impl ExpSubverifier {
             Operator::PostIncrement |
             Operator::PostDecrement => {
                 if !verifier.host.numeric_types()?.contains(&val_st) {
-                    verifier.add_verify_error(&exp.expression.location(), FlexDiagnosticKind::OperandMustBeNumber, diagarg![]);
+                    verifier.add_verify_error(&exp.expression.location(), SwDiagnosticKind::OperandMustBeNumber, diagarg![]);
                 } else if val.write_only(&verifier.host) {
-                    verifier.add_verify_error(&exp.expression.location(), FlexDiagnosticKind::EntityIsWriteOnly, diagarg![]);
+                    verifier.add_verify_error(&exp.expression.location(), SwDiagnosticKind::EntityIsWriteOnly, diagarg![]);
                 }
                 Ok(Some(verifier.host.factory().create_value(&val_st)))
             },
@@ -985,7 +985,7 @@ impl ExpSubverifier {
                     let non_null_t = verifier.host.factory().create_non_nullable_type(&val_st);
                     Ok(Some(verifier.host.factory().create_value(&non_null_t)))
                 } else {
-                    verifier.add_warning(&exp.expression.location(), FlexDiagnosticKind::ReferenceIsAlreadyNonNullable, diagarg![]);
+                    verifier.add_warning(&exp.expression.location(), SwDiagnosticKind::ReferenceIsAlreadyNonNullable, diagarg![]);
                     Ok(Some(verifier.host.factory().create_value(&val_st)))
                 }
             },
@@ -999,13 +999,13 @@ impl ExpSubverifier {
                 Ok(Some(verifier.host.factory().create_value(&verifier.host.string_type().defer()?)))
             },
             Operator::Yield => {
-                verifier.add_verify_error(&exp.location, FlexDiagnosticKind::YieldIsNotSupported, diagarg![]);
+                verifier.add_verify_error(&exp.location, SwDiagnosticKind::YieldIsNotSupported, diagarg![]);
                 Ok(None)
             },
             Operator::Positive => {
                 let val_st_esc = val_st.escape_of_non_nullable();
                 if !([verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&val_st_esc) || verifier.host.numeric_types()?.contains(&val_st)) {
-                    verifier.add_verify_error(&exp.expression.location(), FlexDiagnosticKind::OperandMustBeNumber, diagarg![]);
+                    verifier.add_verify_error(&exp.expression.location(), SwDiagnosticKind::OperandMustBeNumber, diagarg![]);
                     return Ok(None);
                 }
                 if val.is::<NumberConstant>() {
@@ -1016,7 +1016,7 @@ impl ExpSubverifier {
             Operator::Negative => {
                 let val_st_esc = val_st.escape_of_non_nullable();
                 if !([verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&val_st_esc) || verifier.host.numeric_types()?.contains(&val_st)) {
-                    verifier.add_verify_error(&exp.expression.location(), FlexDiagnosticKind::OperandMustBeNumber, diagarg![]);
+                    verifier.add_verify_error(&exp.expression.location(), SwDiagnosticKind::OperandMustBeNumber, diagarg![]);
                     return Ok(None);
                 }
                 if val.is::<NumberConstant>() {
@@ -1031,7 +1031,7 @@ impl ExpSubverifier {
             Operator::BitwiseNot => {
                 let val_st_esc = val_st.escape_of_non_nullable();
                 if !([verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&val_st_esc) || verifier.host.numeric_types()?.contains(&val_st)) {
-                    verifier.add_verify_error(&exp.expression.location(), FlexDiagnosticKind::OperandMustBeNumber, diagarg![]);
+                    verifier.add_verify_error(&exp.expression.location(), SwDiagnosticKind::OperandMustBeNumber, diagarg![]);
                     return Ok(None);
                 }
                 if val.is::<NumberConstant>() {
@@ -1084,7 +1084,7 @@ impl ExpSubverifier {
         let Some(expval) = verifier.verify_expression(&exp.expression, &default())? else {
             // Report warning
             if !base_st_esc_is_opt {
-                verifier.add_warning(&exp.base.location(), FlexDiagnosticKind::ReferenceIsAlreadyNonNullable, diagarg![]);
+                verifier.add_warning(&exp.base.location(), SwDiagnosticKind::ReferenceIsAlreadyNonNullable, diagarg![]);
             }
 
             return Ok(None);
@@ -1099,7 +1099,7 @@ impl ExpSubverifier {
 
         // Report warning
         if !base_st_esc_is_opt {
-            verifier.add_warning(&exp.base.location(), FlexDiagnosticKind::ReferenceIsAlreadyNonNullable, diagarg![]);
+            verifier.add_warning(&exp.base.location(), SwDiagnosticKind::ReferenceIsAlreadyNonNullable, diagarg![]);
         }
 
         Ok(Some(verifier.host.factory().create_value(&nullable_result_type)))
@@ -1143,7 +1143,7 @@ impl ExpSubverifier {
                 if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
-                    verifier.add_verify_error(&exp.location, FlexDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
+                    verifier.add_verify_error(&exp.location, SwDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
                     return Ok(None);
                 }
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1158,7 +1158,7 @@ impl ExpSubverifier {
                 if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
-                    verifier.add_verify_error(&exp.location, FlexDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
+                    verifier.add_verify_error(&exp.location, SwDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
                     return Ok(None);
                 }
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1173,7 +1173,7 @@ impl ExpSubverifier {
                 if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
-                    verifier.add_verify_error(&exp.location, FlexDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
+                    verifier.add_verify_error(&exp.location, SwDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
                     return Ok(None);
                 }
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1188,7 +1188,7 @@ impl ExpSubverifier {
                 if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
-                    verifier.add_verify_error(&exp.location, FlexDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
+                    verifier.add_verify_error(&exp.location, SwDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
                     return Ok(None);
                 }
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1203,7 +1203,7 @@ impl ExpSubverifier {
                 if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
-                    verifier.add_verify_error(&exp.location, FlexDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
+                    verifier.add_verify_error(&exp.location, SwDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
                     return Ok(None);
                 }
                 Ok(Some(verifier.host.factory().create_value(&left_st)))
@@ -1215,7 +1215,7 @@ impl ExpSubverifier {
                 if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
-                    verifier.add_verify_error(&exp.location, FlexDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
+                    verifier.add_verify_error(&exp.location, SwDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
                     return Ok(None);
                 }
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1230,7 +1230,7 @@ impl ExpSubverifier {
                 if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
-                    verifier.add_verify_error(&exp.location, FlexDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
+                    verifier.add_verify_error(&exp.location, SwDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
                     return Ok(None);
                 }
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1245,7 +1245,7 @@ impl ExpSubverifier {
                 if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
-                    verifier.add_verify_error(&exp.location, FlexDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
+                    verifier.add_verify_error(&exp.location, SwDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
                     return Ok(None);
                 }
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1260,7 +1260,7 @@ impl ExpSubverifier {
                 if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
-                    verifier.add_verify_error(&exp.location, FlexDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
+                    verifier.add_verify_error(&exp.location, SwDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
                     return Ok(None);
                 }
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1275,7 +1275,7 @@ impl ExpSubverifier {
                 if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
-                    verifier.add_verify_error(&exp.location, FlexDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
+                    verifier.add_verify_error(&exp.location, SwDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
                     return Ok(None);
                 }
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1290,7 +1290,7 @@ impl ExpSubverifier {
                 if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
-                    verifier.add_verify_error(&exp.location, FlexDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
+                    verifier.add_verify_error(&exp.location, SwDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
                     return Ok(None);
                 }
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1308,14 +1308,14 @@ impl ExpSubverifier {
 
                 // Generate warning for unrelated types
                 if left.is_comparison_between_unrelated_types(&right, &verifier.host)? {
-                    verifier.add_warning(&exp.location, FlexDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
+                    verifier.add_warning(&exp.location, SwDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
                 }
 
                 // Generate warning for NaN comparison
                 if left.is::<NumberConstant>() && left.number_value().is_nan() {
-                    verifier.add_warning(&exp.location, FlexDiagnosticKind::NanComparison, diagarg![]);
+                    verifier.add_warning(&exp.location, SwDiagnosticKind::NanComparison, diagarg![]);
                 } else if right.is::<NumberConstant>() && right.number_value().is_nan() {
-                    verifier.add_warning(&exp.location, FlexDiagnosticKind::NanComparison, diagarg![]);
+                    verifier.add_warning(&exp.location, SwDiagnosticKind::NanComparison, diagarg![]);
                 }
 
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1339,14 +1339,14 @@ impl ExpSubverifier {
 
                 // Generate warning for unrelated types
                 if left.is_comparison_between_unrelated_types(&right, &verifier.host)? {
-                    verifier.add_warning(&exp.location, FlexDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
+                    verifier.add_warning(&exp.location, SwDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
                 }
 
                 // Generate warning for NaN comparison
                 if left.is::<NumberConstant>() && left.number_value().is_nan() {
-                    verifier.add_warning(&exp.location, FlexDiagnosticKind::NanComparison, diagarg![]);
+                    verifier.add_warning(&exp.location, SwDiagnosticKind::NanComparison, diagarg![]);
                 } else if right.is::<NumberConstant>() && right.number_value().is_nan() {
-                    verifier.add_warning(&exp.location, FlexDiagnosticKind::NanComparison, diagarg![]);
+                    verifier.add_warning(&exp.location, SwDiagnosticKind::NanComparison, diagarg![]);
                 }
 
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1373,7 +1373,7 @@ impl ExpSubverifier {
 
                 // Generate warning for unrelated types
                 if left.is_comparison_between_unrelated_types(&right, &verifier.host)? {
-                    verifier.add_warning(&exp.location, FlexDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
+                    verifier.add_warning(&exp.location, SwDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
                 }
 
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1394,7 +1394,7 @@ impl ExpSubverifier {
 
                 // Generate warning for unrelated types
                 if left.is_comparison_between_unrelated_types(&right, &verifier.host)? {
-                    verifier.add_warning(&exp.location, FlexDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
+                    verifier.add_warning(&exp.location, SwDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
                 }
 
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1415,7 +1415,7 @@ impl ExpSubverifier {
 
                 // Generate warning for unrelated types
                 if left.is_comparison_between_unrelated_types(&right, &verifier.host)? {
-                    verifier.add_warning(&exp.location, FlexDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
+                    verifier.add_warning(&exp.location, SwDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
                 }
 
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1436,7 +1436,7 @@ impl ExpSubverifier {
 
                 // Generate warning for unrelated types
                 if left.is_comparison_between_unrelated_types(&right, &verifier.host)? {
-                    verifier.add_warning(&exp.location, FlexDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
+                    verifier.add_warning(&exp.location, SwDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
                 }
 
                 if left.is::<NumberConstant>() && right.is::<NumberConstant>() {
@@ -1568,7 +1568,7 @@ impl ExpSubverifier {
             return Ok(Some(verifier.host.factory().create_value(&alt_st)));
         }
         
-        verifier.add_verify_error(&exp.location, FlexDiagnosticKind::UnrelatedTernaryOperands, diagarg![conseq_st, alt_st]);
+        verifier.add_verify_error(&exp.location, SwDiagnosticKind::UnrelatedTernaryOperands, diagarg![conseq_st, alt_st]);
 
         Ok(None)
     }
@@ -1589,7 +1589,7 @@ impl ExpSubverifier {
             ReservedNamespaceExpression::Internal(_) => SystemNamespaceKind::Internal,
         };
         let Some(ns) = verifier.scope().search_system_ns_in_scope_chain(nskind) else {
-            verifier.add_verify_error(&exp.location(), FlexDiagnosticKind::SystemNamespaceNotFound, diagarg![]);
+            verifier.add_verify_error(&exp.location(), SwDiagnosticKind::SystemNamespaceNotFound, diagarg![]);
             return Ok(None);
         };
         Ok(Some(ns.wrap_property_reference(&verifier.host)?))
@@ -1658,7 +1658,7 @@ impl ExpSubverifier {
                 param_st = verifier.host.array_type_of_any()?;
             }
             if param_node.kind == ParameterKind::Rest && param_st.array_element_type(&verifier.host)?.is_none() {
-                verifier.add_verify_error(&param_node.type_expression.as_ref().unwrap().location(), FlexDiagnosticKind::RestParameterMustBeArray, diagarg![]);
+                verifier.add_verify_error(&param_node.type_expression.as_ref().unwrap().location(), SwDiagnosticKind::RestParameterMustBeArray, diagarg![]);
             }
             params.push(Rc::new(SemanticFunctionTypeParameter {
                 kind: param_node.kind,
@@ -1729,7 +1729,7 @@ impl ExpSubverifier {
                         if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
                         && !verifier.host.numeric_types()?.contains(&left_st_esc)
                         {
-                            verifier.add_verify_error(&exp.location, FlexDiagnosticKind::UnrelatedMathOperation, diagarg![left_st.clone()]);
+                            verifier.add_verify_error(&exp.location, SwDiagnosticKind::UnrelatedMathOperation, diagarg![left_st.clone()]);
                         }
                     },
 
@@ -1862,7 +1862,7 @@ impl ExpSubverifier {
                             init = verifier.imp_coerce_exp(param_node.default_value.as_ref().unwrap(), &param_type)?.unwrap_or(host.invalidation_entity());
                             verifier.cached_var_init.insert(NodeAsKey(pattern.clone()), init.clone());
                             if !init.is::<InvalidationEntity>() && !init.static_type(&host).is::<Constant>() {
-                                verifier.add_verify_error(&param_node.default_value.as_ref().unwrap().location(), FlexDiagnosticKind::EntityIsNotAConstant, diagarg![]);
+                                verifier.add_verify_error(&param_node.default_value.as_ref().unwrap().location(), SwDiagnosticKind::EntityIsNotAConstant, diagarg![]);
                             }
                         }
 
@@ -1895,7 +1895,7 @@ impl ExpSubverifier {
                         if let Some(type_annot) = param_node.destructuring.type_annotation.as_ref() {
                             param_type = verifier.verify_type_expression(type_annot)?.unwrap_or(host.array_type().defer()?.apply_type(&host, &host.array_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()]));
                             if param_type.array_element_type(&host)?.is_none() {
-                                verifier.add_verify_error(&type_annot.location(), FlexDiagnosticKind::RestParameterMustBeArray, diagarg![]);
+                                verifier.add_verify_error(&type_annot.location(), SwDiagnosticKind::RestParameterMustBeArray, diagarg![]);
                                 param_type = host.array_type().defer()?.apply_type(&host, &host.array_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()]);
                             }
                         } else {
@@ -1944,7 +1944,7 @@ impl ExpSubverifier {
         }
         /*
         else if !compiler_options.infer_types && partials.result_type().is_none() {
-            verifier.add_warning(name_span, FlexDiagnosticKind::ReturnValueHasNoTypeDeclaration, diagarg![]);
+            verifier.add_warning(name_span, SwDiagnosticKind::ReturnValueHasNoTypeDeclaration, diagarg![]);
             partials.set_result_type(Some(if common.contains_await { host.promise_type_of_any()? } else { host.any_type() }));
         }
         */

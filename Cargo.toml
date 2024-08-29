@@ -1,11 +1,11 @@
 [package]
-name = "hydroperflex-mxmlc"
+name = "skywhack-mxmlc"
 version = "1.0.0"
 edition = "2021"
 authors = ["Matheus Dias de Souza <hydroperfox@gmail.com>"]
-repository = "https://github.com/hydroperflex/mxmlc"
+repository = "https://github.com/skywhack/mxmlc"
 keywords = ["actionscript", "as3", "compiler", "mxml", "css3"]
-description = "MXML compiler for Flex"
+description = "MXML compiler for Skywhack"
 license = "Apache-2.0"
 
 [dependencies]
