@@ -1,6 +1,6 @@
 #[repr(i32)]
 #[derive(Eq, PartialEq, Clone, Copy)]
-pub enum SwDiagnosticKind {
+pub enum WhackDiagnosticKind {
     EntityIsNotAType = 2048,
     ImplicitCoercionToUnrelatedType = 2049,
     EntityIsReadOnly = 2050,
@@ -81,7 +81,7 @@ pub enum SwDiagnosticKind {
     SetterMustReturnVoid = 2125,
 }
 
-impl SwDiagnosticKind {
+impl WhackDiagnosticKind {
     pub fn id(&self) -> i32 {
         *self as i32
     }

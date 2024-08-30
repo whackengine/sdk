@@ -197,7 +197,7 @@ impl DirectiveSubverifier {
                     // If the parent is a fixture or if the variable is external,
                     // do not allow destructuring, in which case the pattern shall be invalidated.
                     if is_destructuring && (var_scope.is::<FixtureScope>() || is_external) {
-                        verifier.add_verify_error(&binding.destructuring.location, SwDiagnosticKind::CannotUseDestructuringHere, diagarg![]);
+                        verifier.add_verify_error(&binding.destructuring.location, WhackDiagnosticKind::CannotUseDestructuringHere, diagarg![]);
                         verifier.host.node_mapping().set(&binding.destructuring.destructuring, Some(verifier.host.invalidation_entity()));
                         continue;
                     }
@@ -328,7 +328,7 @@ impl DirectiveSubverifier {
                     // If the variable is external, *init* must be a compile-time constant.
                     if is_external {
                         if !init.is::<Constant>() && binding.initializer.is_some() {
-                            verifier.add_verify_error(&binding.initializer.as_ref().unwrap().location(), SwDiagnosticKind::EntityIsNotAConstant, diagarg![]);
+                            verifier.add_verify_error(&binding.initializer.as_ref().unwrap().location(), WhackDiagnosticKind::EntityIsNotAConstant, diagarg![]);
                         }
                     }
 
@@ -341,13 +341,13 @@ impl DirectiveSubverifier {
                     // If there is no type annotation and initialiser is unspecified,
                     // then report a warning
                     if binding.destructuring.type_annotation.is_none() && binding.initializer.is_none() {
-                        verifier.add_warning(&binding.destructuring.location, SwDiagnosticKind::VariableHasNoTypeAnnotation, diagarg![]);
+                        verifier.add_warning(&binding.destructuring.location, WhackDiagnosticKind::VariableHasNoTypeAnnotation, diagarg![]);
                     }
 
                     // If variable is marked constant, is not `[Embed]` and does not contain an initializer,
                     // then report an error
                     if is_const && !(i == 0 && Attribute::find_metadata(&defn.attributes).iter().any(|mdata| mdata.name.0 == "Embed")) {
-                        verifier.add_verify_error(&binding.destructuring.location, SwDiagnosticKind::ConstantMustContainInitializer, diagarg![]);
+                        verifier.add_verify_error(&binding.destructuring.location, WhackDiagnosticKind::ConstantMustContainInitializer, diagarg![]);
                     }
                 }
 
@@ -386,11 +386,11 @@ impl DirectiveSubverifier {
                 Attribute::Expression(exp) => {
                     let nsconst = verifier.verify_expression(exp, &Default::default())?;
                     if nsconst.as_ref().map(|k| !k.is::<NamespaceConstant>()).unwrap_or(false) {
-                        verifier.add_verify_error(&exp.location(), SwDiagnosticKind::NotANamespaceConstant, diagarg![]);
+                        verifier.add_verify_error(&exp.location(), WhackDiagnosticKind::NotANamespaceConstant, diagarg![]);
                         return Ok(Err(()));
                     }
                     if !(var_parent.is::<ClassType>() || var_parent.is::<EnumType>()) {
-                        verifier.add_verify_error(&exp.location(), SwDiagnosticKind::AccessControlNamespaceNotAllowedHere, diagarg![]);
+                        verifier.add_verify_error(&exp.location(), WhackDiagnosticKind::AccessControlNamespaceNotAllowedHere, diagarg![]);
                         return Ok(Err(()));
                     }
                     if nsconst.is_none() {
@@ -406,7 +406,7 @@ impl DirectiveSubverifier {
                 Attribute::Private(loc) => {
                     // protected or static-protected
                     if !var_parent.is::<ClassType>() {
-                        verifier.add_verify_error(loc, SwDiagnosticKind::AccessControlNamespaceNotAllowedHere, diagarg![]);
+                        verifier.add_verify_error(loc, WhackDiagnosticKind::AccessControlNamespaceNotAllowedHere, diagarg![]);
                         return Ok(Err(()));
                     }
                     ns = var_parent.private_ns();
@@ -415,7 +415,7 @@ impl DirectiveSubverifier {
                 Attribute::Protected(loc) => {
                     // protected or static-protected
                     if !var_parent.is::<ClassType>() {
-                        verifier.add_verify_error(loc, SwDiagnosticKind::AccessControlNamespaceNotAllowedHere, diagarg![]);
+                        verifier.add_verify_error(loc, WhackDiagnosticKind::AccessControlNamespaceNotAllowedHere, diagarg![]);
                         return Ok(Err(()));
                     }
                     ns = if is_static { var_parent.static_protected_ns() } else { var_parent.protected_ns() };
@@ -494,7 +494,7 @@ impl DirectiveSubverifier {
 
                 // If external, function must be native or abstract.
                 if is_external && !(slot.is_native() || slot.is_abstract()) {
-                    verifier.add_verify_error(&loc, SwDiagnosticKind::ExternalFunctionMustBeNativeOrAbstract, diagarg![]);
+                    verifier.add_verify_error(&loc, WhackDiagnosticKind::ExternalFunctionMustBeNativeOrAbstract, diagarg![]);
                 }
 
                 // Define method property
@@ -632,7 +632,7 @@ impl DirectiveSubverifier {
                                     init = verifier.imp_coerce_exp(param_node.default_value.as_ref().unwrap(), &param_type)?.unwrap_or(host.invalidation_entity());
                                     verifier.cached_var_init.insert(NodeAsKey(pattern.clone()), init.clone());
                                     if !init.is::<InvalidationEntity>() && !init.static_type(&host).is::<Constant>() {
-                                        verifier.add_verify_error(&param_node.default_value.as_ref().unwrap().location(), SwDiagnosticKind::EntityIsNotAConstant, diagarg![]);
+                                        verifier.add_verify_error(&param_node.default_value.as_ref().unwrap().location(), WhackDiagnosticKind::EntityIsNotAConstant, diagarg![]);
                                     }
                                 }
         
@@ -665,7 +665,7 @@ impl DirectiveSubverifier {
                                 if let Some(type_annot) = param_node.destructuring.type_annotation.as_ref() {
                                     param_type = verifier.verify_type_expression(type_annot)?.unwrap_or(host.array_type().defer()?.apply_type(&host, &host.array_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()]));
                                     if param_type.array_element_type(&host)?.is_none() {
-                                        verifier.add_verify_error(&type_annot.location(), SwDiagnosticKind::RestParameterMustBeArray, diagarg![]);
+                                        verifier.add_verify_error(&type_annot.location(), WhackDiagnosticKind::RestParameterMustBeArray, diagarg![]);
                                         param_type = host.array_type().defer()?.apply_type(&host, &host.array_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()]);
                                     }
                                 } else {
@@ -713,7 +713,7 @@ impl DirectiveSubverifier {
                         partials.set_result_type(Some(result_type));
                     }
                 } else if partials.result_type().is_none() {
-                    verifier.add_warning(&loc, SwDiagnosticKind::ReturnValueHasNoTypeDeclaration, diagarg![]);
+                    verifier.add_warning(&loc, WhackDiagnosticKind::ReturnValueHasNoTypeDeclaration, diagarg![]);
                     partials.set_result_type(Some(if common.contains_await { host.promise_type_of_any()? } else { host.any_type() }));
                 }
 
@@ -723,7 +723,7 @@ impl DirectiveSubverifier {
                     let mut result_type = partials.result_type().unwrap(); 
 
                     if common.contains_await && !result_type.promise_result_type(&host)?.is_some() {
-                        verifier.add_verify_error(&loc, SwDiagnosticKind::ReturnTypeDeclarationMustBePromise, diagarg![]);
+                        verifier.add_verify_error(&loc, WhackDiagnosticKind::ReturnTypeDeclarationMustBePromise, diagarg![]);
                         result_type = host.promise_type().defer()?.apply_type(&host, &host.promise_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()])
                     }
 
@@ -769,13 +769,13 @@ impl DirectiveSubverifier {
                             return Err(DeferError(None));
                         },
                         Err(MethodOverrideError::IncompatibleOverride { expected_signature, actual_signature }) => {
-                            verifier.add_verify_error(&loc, SwDiagnosticKind::IncompatibleOverride, diagarg![expected_signature.clone(), actual_signature.clone()]);
+                            verifier.add_verify_error(&loc, WhackDiagnosticKind::IncompatibleOverride, diagarg![expected_signature.clone(), actual_signature.clone()]);
                         },
                         Err(MethodOverrideError::MustOverrideAMethod) => {
-                            verifier.add_verify_error(&loc, SwDiagnosticKind::MustOverrideAMethod, diagarg![]);
+                            verifier.add_verify_error(&loc, WhackDiagnosticKind::MustOverrideAMethod, diagarg![]);
                         },
                         Err(MethodOverrideError::OverridingFinalMethod) => {
-                            verifier.add_verify_error(&loc, SwDiagnosticKind::OverridingFinalMethod, diagarg![]);
+                            verifier.add_verify_error(&loc, WhackDiagnosticKind::OverridingFinalMethod, diagarg![]);
                         },
                     }
                 }
@@ -847,12 +847,12 @@ impl DirectiveSubverifier {
 
                 // If external, function must be native.
                 if is_external && !slot.is_native() {
-                    verifier.add_verify_error(&loc, SwDiagnosticKind::ExternalFunctionMustBeNativeOrAbstract, diagarg![]);
+                    verifier.add_verify_error(&loc, WhackDiagnosticKind::ExternalFunctionMustBeNativeOrAbstract, diagarg![]);
                 }
 
                 // Define constructor
                 if fn_parent.constructor_method(&verifier.host).is_some() {
-                    verifier.add_verify_error(&loc, SwDiagnosticKind::RedefiningConstructor, diagarg![]);
+                    verifier.add_verify_error(&loc, WhackDiagnosticKind::RedefiningConstructor, diagarg![]);
                     slot = verifier.host.invalidation_entity();
                 } else {
                     fn_parent.set_constructor_method(Some(slot.clone()));
@@ -981,7 +981,7 @@ impl DirectiveSubverifier {
                                     init = verifier.imp_coerce_exp(param_node.default_value.as_ref().unwrap(), &param_type)?.unwrap_or(host.invalidation_entity());
                                     verifier.cached_var_init.insert(NodeAsKey(pattern.clone()), init.clone());
                                     if !init.is::<InvalidationEntity>() && !init.static_type(&host).is::<Constant>() {
-                                        verifier.add_verify_error(&param_node.default_value.as_ref().unwrap().location(), SwDiagnosticKind::EntityIsNotAConstant, diagarg![]);
+                                        verifier.add_verify_error(&param_node.default_value.as_ref().unwrap().location(), WhackDiagnosticKind::EntityIsNotAConstant, diagarg![]);
                                     }
                                 }
         
@@ -1014,7 +1014,7 @@ impl DirectiveSubverifier {
                                 if let Some(type_annot) = param_node.destructuring.type_annotation.as_ref() {
                                     param_type = verifier.verify_type_expression(type_annot)?.unwrap_or(host.array_type().defer()?.apply_type(&host, &host.array_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()]));
                                     if param_type.array_element_type(&host)?.is_none() {
-                                        verifier.add_verify_error(&type_annot.location(), SwDiagnosticKind::RestParameterMustBeArray, diagarg![]);
+                                        verifier.add_verify_error(&type_annot.location(), WhackDiagnosticKind::RestParameterMustBeArray, diagarg![]);
                                         param_type = host.array_type().defer()?.apply_type(&host, &host.array_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()]);
                                     }
                                 } else {
@@ -1107,7 +1107,7 @@ impl DirectiveSubverifier {
                                 None => true,
                             };
                             if !super_found {
-                                verifier.add_verify_error(&loc, SwDiagnosticKind::ConstructorMustContainSuperStatement, diagarg![]);
+                                verifier.add_verify_error(&loc, WhackDiagnosticKind::ConstructorMustContainSuperStatement, diagarg![]);
                             }
                         }
                     }
@@ -1191,7 +1191,7 @@ impl DirectiveSubverifier {
 
                 // If external, function must be native or abstract.
                 if is_external && !(slot.is_native() || slot.is_abstract()) {
-                    verifier.add_verify_error(&loc, SwDiagnosticKind::ExternalFunctionMustBeNativeOrAbstract, diagarg![]);
+                    verifier.add_verify_error(&loc, WhackDiagnosticKind::ExternalFunctionMustBeNativeOrAbstract, diagarg![]);
                 }
 
                 // Define function
@@ -1350,7 +1350,7 @@ impl DirectiveSubverifier {
                                     init = verifier.imp_coerce_exp(param_node.default_value.as_ref().unwrap(), &param_type)?.unwrap_or(host.invalidation_entity());
                                     verifier.cached_var_init.insert(NodeAsKey(pattern.clone()), init.clone());
                                     if !init.is::<InvalidationEntity>() && !init.static_type(&host).is::<Constant>() {
-                                        verifier.add_verify_error(&param_node.default_value.as_ref().unwrap().location(), SwDiagnosticKind::EntityIsNotAConstant, diagarg![]);
+                                        verifier.add_verify_error(&param_node.default_value.as_ref().unwrap().location(), WhackDiagnosticKind::EntityIsNotAConstant, diagarg![]);
                                     }
                                 }
         
@@ -1383,7 +1383,7 @@ impl DirectiveSubverifier {
                                 if let Some(type_annot) = param_node.destructuring.type_annotation.as_ref() {
                                     param_type = verifier.verify_type_expression(type_annot)?.unwrap_or(host.array_type().defer()?.apply_type(&host, &host.array_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()]));
                                     if param_type.array_element_type(&host)?.is_none() {
-                                        verifier.add_verify_error(&type_annot.location(), SwDiagnosticKind::RestParameterMustBeArray, diagarg![]);
+                                        verifier.add_verify_error(&type_annot.location(), WhackDiagnosticKind::RestParameterMustBeArray, diagarg![]);
                                         param_type = host.array_type().defer()?.apply_type(&host, &host.array_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()]);
                                     }
                                 } else {
@@ -1422,7 +1422,7 @@ impl DirectiveSubverifier {
                     }
 
                     if params.len() != 0 {
-                        verifier.add_verify_error(&loc, SwDiagnosticKind::GetterMustTakeNoParameters, diagarg![]);
+                        verifier.add_verify_error(&loc, WhackDiagnosticKind::GetterMustTakeNoParameters, diagarg![]);
                         params.clear();
                     }
         
@@ -1436,7 +1436,7 @@ impl DirectiveSubverifier {
                         partials.set_result_type(Some(result_type));
                     }
                 } else if partials.result_type().is_none() {
-                    verifier.add_warning(&loc, SwDiagnosticKind::ReturnValueHasNoTypeDeclaration, diagarg![]);
+                    verifier.add_warning(&loc, WhackDiagnosticKind::ReturnValueHasNoTypeDeclaration, diagarg![]);
                     partials.set_result_type(Some(host.any_type()));
                 }
 
@@ -1483,7 +1483,7 @@ impl DirectiveSubverifier {
                 
                 // Ensure the getter returns the correct data type
                 if slot.signature(&verifier.host).result_type() != virtual_var.static_type(&verifier.host) {
-                    verifier.add_verify_error(&loc, SwDiagnosticKind::GetterMustReturnDataType, diagarg![virtual_var.static_type(&verifier.host)]);
+                    verifier.add_verify_error(&loc, WhackDiagnosticKind::GetterMustReturnDataType, diagarg![virtual_var.static_type(&verifier.host)]);
                 }
 
                 // Override if marked "override"
@@ -1494,13 +1494,13 @@ impl DirectiveSubverifier {
                             return Err(DeferError(None));
                         },
                         Err(MethodOverrideError::IncompatibleOverride { expected_signature, actual_signature }) => {
-                            verifier.add_verify_error(&loc, SwDiagnosticKind::IncompatibleOverride, diagarg![expected_signature.clone(), actual_signature.clone()]);
+                            verifier.add_verify_error(&loc, WhackDiagnosticKind::IncompatibleOverride, diagarg![expected_signature.clone(), actual_signature.clone()]);
                         },
                         Err(MethodOverrideError::MustOverrideAMethod) => {
-                            verifier.add_verify_error(&loc, SwDiagnosticKind::MustOverrideAMethod, diagarg![]);
+                            verifier.add_verify_error(&loc, WhackDiagnosticKind::MustOverrideAMethod, diagarg![]);
                         },
                         Err(MethodOverrideError::OverridingFinalMethod) => {
-                            verifier.add_verify_error(&loc, SwDiagnosticKind::OverridingFinalMethod, diagarg![]);
+                            verifier.add_verify_error(&loc, WhackDiagnosticKind::OverridingFinalMethod, diagarg![]);
                         },
                     }
                 }
@@ -1583,7 +1583,7 @@ impl DirectiveSubverifier {
 
                 // If external, function must be native or abstract.
                 if is_external && !(slot.is_native() || slot.is_abstract()) {
-                    verifier.add_verify_error(&loc, SwDiagnosticKind::ExternalFunctionMustBeNativeOrAbstract, diagarg![]);
+                    verifier.add_verify_error(&loc, WhackDiagnosticKind::ExternalFunctionMustBeNativeOrAbstract, diagarg![]);
                 }
 
                 // Define function
@@ -1742,7 +1742,7 @@ impl DirectiveSubverifier {
                                     init = verifier.imp_coerce_exp(param_node.default_value.as_ref().unwrap(), &param_type)?.unwrap_or(host.invalidation_entity());
                                     verifier.cached_var_init.insert(NodeAsKey(pattern.clone()), init.clone());
                                     if !init.is::<InvalidationEntity>() && !init.static_type(&host).is::<Constant>() {
-                                        verifier.add_verify_error(&param_node.default_value.as_ref().unwrap().location(), SwDiagnosticKind::EntityIsNotAConstant, diagarg![]);
+                                        verifier.add_verify_error(&param_node.default_value.as_ref().unwrap().location(), WhackDiagnosticKind::EntityIsNotAConstant, diagarg![]);
                                     }
                                 }
         
@@ -1775,7 +1775,7 @@ impl DirectiveSubverifier {
                                 if let Some(type_annot) = param_node.destructuring.type_annotation.as_ref() {
                                     param_type = verifier.verify_type_expression(type_annot)?.unwrap_or(host.array_type().defer()?.apply_type(&host, &host.array_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()]));
                                     if param_type.array_element_type(&host)?.is_none() {
-                                        verifier.add_verify_error(&type_annot.location(), SwDiagnosticKind::RestParameterMustBeArray, diagarg![]);
+                                        verifier.add_verify_error(&type_annot.location(), WhackDiagnosticKind::RestParameterMustBeArray, diagarg![]);
                                         param_type = host.array_type().defer()?.apply_type(&host, &host.array_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()]);
                                     }
                                 } else {
@@ -1814,7 +1814,7 @@ impl DirectiveSubverifier {
                     }
 
                     if params.len() != 1 {
-                        verifier.add_verify_error(&loc, SwDiagnosticKind::SetterMustTakeOneParameter, diagarg![]);
+                        verifier.add_verify_error(&loc, WhackDiagnosticKind::SetterMustTakeOneParameter, diagarg![]);
                         params.clear();
                         params.push(Rc::new(SemanticFunctionTypeParameter {
                             kind: ParameterKind::Required,
@@ -1830,12 +1830,12 @@ impl DirectiveSubverifier {
                     if partials.result_type().is_none() {
                         let result_type = verifier.verify_type_expression(result_annot)?.unwrap_or(host.invalidation_entity());
                         if result_type != verifier.host.void_type() {
-                            verifier.add_verify_error(&loc, SwDiagnosticKind::SetterMustReturnVoid, diagarg![]);
+                            verifier.add_verify_error(&loc, WhackDiagnosticKind::SetterMustReturnVoid, diagarg![]);
                         }
                         partials.set_result_type(Some(host.void_type()));
                     }
                 } else if partials.result_type().is_none() {
-                    verifier.add_warning(&loc, SwDiagnosticKind::ReturnValueHasNoTypeDeclaration, diagarg![]);
+                    verifier.add_warning(&loc, WhackDiagnosticKind::ReturnValueHasNoTypeDeclaration, diagarg![]);
                     partials.set_result_type(Some(host.void_type()));
                 }
 
@@ -1882,7 +1882,7 @@ impl DirectiveSubverifier {
                 
                 // Ensure the setter takes the correct data type
                 if slot.signature(&verifier.host).params().get(0).unwrap().static_type != virtual_var.static_type(&verifier.host) {
-                    verifier.add_verify_error(&loc, SwDiagnosticKind::SetterMustTakeDataType, diagarg![virtual_var.static_type(&verifier.host)]);
+                    verifier.add_verify_error(&loc, WhackDiagnosticKind::SetterMustTakeDataType, diagarg![virtual_var.static_type(&verifier.host)]);
                 }
 
                 // Override if marked "override"
@@ -1893,13 +1893,13 @@ impl DirectiveSubverifier {
                             return Err(DeferError(None));
                         },
                         Err(MethodOverrideError::IncompatibleOverride { expected_signature, actual_signature }) => {
-                            verifier.add_verify_error(&loc, SwDiagnosticKind::IncompatibleOverride, diagarg![expected_signature.clone(), actual_signature.clone()]);
+                            verifier.add_verify_error(&loc, WhackDiagnosticKind::IncompatibleOverride, diagarg![expected_signature.clone(), actual_signature.clone()]);
                         },
                         Err(MethodOverrideError::MustOverrideAMethod) => {
-                            verifier.add_verify_error(&loc, SwDiagnosticKind::MustOverrideAMethod, diagarg![]);
+                            verifier.add_verify_error(&loc, WhackDiagnosticKind::MustOverrideAMethod, diagarg![]);
                         },
                         Err(MethodOverrideError::OverridingFinalMethod) => {
-                            verifier.add_verify_error(&loc, SwDiagnosticKind::OverridingFinalMethod, diagarg![]);
+                            verifier.add_verify_error(&loc, WhackDiagnosticKind::OverridingFinalMethod, diagarg![]);
                         },
                     }
                 }
@@ -1964,7 +1964,7 @@ impl DirectiveSubverifier {
                         },
                         Ok(None) => {},
                         Err(AmbiguousReferenceError(name)) => {
-                            verifier.add_verify_error(&name_loc, SwDiagnosticKind::AmbiguousReference, diagarg![name]);
+                            verifier.add_verify_error(&name_loc, WhackDiagnosticKind::AmbiguousReference, diagarg![name]);
                             resolvee = host.invalidation_entity();
                         },
                     }
@@ -2009,7 +2009,7 @@ impl DirectiveSubverifier {
                     // circular.
                     if out_pckg.is_package_self_referential(&pckg) {
                         let err_loc = pckgcat.package_name[0].1.combine_with(pckgcat.package_name.last().unwrap().1.clone());
-                        verifier.add_verify_error(&err_loc, SwDiagnosticKind::ConcatenatingSelfReferentialPackage, diagarg![]);
+                        verifier.add_verify_error(&err_loc, WhackDiagnosticKind::ConcatenatingSelfReferentialPackage, diagarg![]);
                         return host.invalidation_entity();
                     }
                     let recursive_pckgs = pckg.list_packages_recursively();
@@ -2044,12 +2044,12 @@ impl DirectiveSubverifier {
                                 alias_or_pckg.set_alias_of(&resolvee);
                             },
                             Ok(None) => {
-                                verifier.add_verify_error(&pckgcat.package_name[0].1.combine_with(name.1.clone()), SwDiagnosticKind::ImportOfUndefined, diagarg![
+                                verifier.add_verify_error(&pckgcat.package_name[0].1.combine_with(name.1.clone()), WhackDiagnosticKind::ImportOfUndefined, diagarg![
                                     format!("{}.{}", pckgcat.package_name.iter().map(|name| name.0.clone()).collect::<Vec<_>>().join("."), name.0)]);
                                 alias_or_pckg.set_alias_of(&host.invalidation_entity());
                             },
                             Err(AmbiguousReferenceError(name)) => {
-                                verifier.add_verify_error(&name_loc, SwDiagnosticKind::AmbiguousReference, diagarg![name]);
+                                verifier.add_verify_error(&name_loc, WhackDiagnosticKind::AmbiguousReference, diagarg![name]);
                                 alias_or_pckg.set_alias_of(&host.invalidation_entity());
                             },
                         }
@@ -2058,7 +2058,7 @@ impl DirectiveSubverifier {
                         // Check for empty package (including concatenations) to report a warning.
                         if alias_or_pckg.is_empty_package(&host) {
                             verifier.add_verify_error(&pckgcat.package_name[0].1.combine_with(pckgcat.package_name.last().unwrap().1.clone()),
-                                SwDiagnosticKind::EmptyPackage,
+                                WhackDiagnosticKind::EmptyPackage,
                                 diagarg![pckgcat.package_name.iter().map(|name| name.0.clone()).collect::<Vec<_>>().join(".")]);
                         }
                     },
@@ -2066,7 +2066,7 @@ impl DirectiveSubverifier {
                         // Check for empty package recursively (including concatenations) to report a warning.
                         if alias_or_pckg.is_empty_package_recursive(&host) {
                             verifier.add_verify_error(&pckgcat.package_name[0].1.combine_with(pckgcat.package_name.last().unwrap().1.clone()),
-                                SwDiagnosticKind::EmptyPackage,
+                                WhackDiagnosticKind::EmptyPackage,
                                 diagarg![pckgcat.package_name.iter().map(|name| name.0.clone()).collect::<Vec<_>>().join(".")]);
                         }
                     },
@@ -2091,12 +2091,12 @@ impl DirectiveSubverifier {
             if let Some(cdata) = verifier.host.config_constants().get(&concatenated_name) {
                 let cval = ExpSubverifier::eval_config_constant(verifier, &loc, concatenated_name, cdata).unwrap_or(host.invalidation_entity());
                 if !(cval.is::<BooleanConstant>() || cval.is::<InvalidationEntity>()) {
-                    verifier.add_verify_error(&loc, SwDiagnosticKind::NotABooleanConstant, diagarg![]);
+                    verifier.add_verify_error(&loc, WhackDiagnosticKind::NotABooleanConstant, diagarg![]);
                     return host.invalidation_entity();
                 }
                 cval
             } else {
-                verifier.add_verify_error(&loc, SwDiagnosticKind::CannotResolveConfigConstant, diagarg![concatenated_name.clone()]);
+                verifier.add_verify_error(&loc, WhackDiagnosticKind::CannotResolveConfigConstant, diagarg![concatenated_name.clone()]);
                 host.invalidation_entity()
             }
         });
@@ -2125,7 +2125,7 @@ impl DirectiveSubverifier {
             return Ok(());
         };
         if !cval.is::<NamespaceConstant>() {
-            verifier.add_verify_error(&exp.location(), SwDiagnosticKind::NotANamespaceConstant, diagarg![]);
+            verifier.add_verify_error(&exp.location(), WhackDiagnosticKind::NotANamespaceConstant, diagarg![]);
             return Ok(());
         }
         let ns = cval.referenced_ns();
@@ -2187,13 +2187,13 @@ impl DirectiveSubverifier {
                                 imp.set_property(&prop);
                             },
                             Ok(None) => {
-                                verifier.add_verify_error(&impdrtv.package_name[0].1.combine_with(name.1.clone()), SwDiagnosticKind::ImportOfUndefined, diagarg![
+                                verifier.add_verify_error(&impdrtv.package_name[0].1.combine_with(name.1.clone()), WhackDiagnosticKind::ImportOfUndefined, diagarg![
                                     format!("{}.{}", impdrtv.package_name.iter().map(|name| name.0.clone()).collect::<Vec<_>>().join("."), name.0)]);
 
                                 imp.set_property(&host.invalidation_entity());
                             },
                             Err(AmbiguousReferenceError(name)) => {
-                                verifier.add_verify_error(&name_loc, SwDiagnosticKind::AmbiguousReference, diagarg![name]);
+                                verifier.add_verify_error(&name_loc, WhackDiagnosticKind::AmbiguousReference, diagarg![name]);
 
                                 imp.set_property(&host.invalidation_entity());
                             },
@@ -2203,7 +2203,7 @@ impl DirectiveSubverifier {
                         // Check for empty package (including concatenations) to report a warning.
                         if imp.package().is_empty_package(&host) {
                             verifier.add_verify_error(&impdrtv.package_name[0].1.combine_with(impdrtv.package_name.last().unwrap().1.clone()),
-                                SwDiagnosticKind::EmptyPackage,
+                                WhackDiagnosticKind::EmptyPackage,
                                 diagarg![impdrtv.package_name.iter().map(|name| name.0.clone()).collect::<Vec<_>>().join(".")]);
                         }
                     },
@@ -2212,7 +2212,7 @@ impl DirectiveSubverifier {
                         // a warning.
                         if imp.package().is_empty_package_recursive(&host) {
                             verifier.add_verify_error(&impdrtv.package_name[0].1.combine_with(impdrtv.package_name.last().unwrap().1.clone()),
-                                SwDiagnosticKind::EmptyPackage,
+                                WhackDiagnosticKind::EmptyPackage,
                                 diagarg![impdrtv.package_name.iter().map(|name| name.0.clone()).collect::<Vec<_>>().join(".")]);
                         }
                     },
@@ -2296,13 +2296,13 @@ impl DirectiveSubverifier {
                                 alias.set_alias_of(&prop);
                             },
                             Ok(None) => {
-                                verifier.add_verify_error(&impdrtv.package_name[0].1.combine_with(name.1.clone()), SwDiagnosticKind::ImportOfUndefined, diagarg![
+                                verifier.add_verify_error(&impdrtv.package_name[0].1.combine_with(name.1.clone()), WhackDiagnosticKind::ImportOfUndefined, diagarg![
                                     format!("{}.{}", impdrtv.package_name.iter().map(|name| name.0.clone()).collect::<Vec<_>>().join("."), name.0)]);
 
                                 alias.set_alias_of(&host.invalidation_entity());
                             },
                             Err(AmbiguousReferenceError(name)) => {
-                                verifier.add_verify_error(&name_loc, SwDiagnosticKind::AmbiguousReference, diagarg![name]);
+                                verifier.add_verify_error(&name_loc, WhackDiagnosticKind::AmbiguousReference, diagarg![name]);
 
                                 alias.set_alias_of(&host.invalidation_entity());
                             },
@@ -2312,7 +2312,7 @@ impl DirectiveSubverifier {
                         // Check for empty package (including concatenations) to report a warning.
                         if alias.alias_of().package().is_empty_package(&host) {
                             verifier.add_verify_error(&impdrtv.package_name[0].1.combine_with(impdrtv.package_name.last().unwrap().1.clone()),
-                                SwDiagnosticKind::EmptyPackage,
+                                WhackDiagnosticKind::EmptyPackage,
                                 diagarg![impdrtv.package_name.iter().map(|name| name.0.clone()).collect::<Vec<_>>().join(".")]);
                         }
                     },
@@ -2321,7 +2321,7 @@ impl DirectiveSubverifier {
                         // a warning.
                         if alias.alias_of().package().is_empty_package_recursive(&host) {
                             verifier.add_verify_error(&impdrtv.package_name[0].1.combine_with(impdrtv.package_name.last().unwrap().1.clone()),
-                                SwDiagnosticKind::EmptyPackage,
+                                WhackDiagnosticKind::EmptyPackage,
                                 diagarg![impdrtv.package_name.iter().map(|name| name.0.clone()).collect::<Vec<_>>().join(".")]);
                         }
                     },
@@ -2341,7 +2341,7 @@ impl DirectiveSubverifier {
             },
             Directive::IfStatement(ifstmt) => {
                 let Ok(cval) = verifier.verify_expression(&ifstmt.test, &default()) else {
-                    verifier.add_verify_error(&ifstmt.test.location(), SwDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+                    verifier.add_verify_error(&ifstmt.test.location(), WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
                     return Ok(());
                 };
                 let Some(cval) = cval else {
@@ -2349,7 +2349,7 @@ impl DirectiveSubverifier {
                 };
                 if !cval.is::<BooleanConstant>() {
                     verifier.host.node_mapping().set(&ifstmt.test, None);
-                    verifier.add_verify_error(&ifstmt.test.location(), SwDiagnosticKind::NotABooleanConstant, diagarg![]);
+                    verifier.add_verify_error(&ifstmt.test.location(), WhackDiagnosticKind::NotABooleanConstant, diagarg![]);
                     return Ok(());
                 }
                 let bv = cval.boolean_value();

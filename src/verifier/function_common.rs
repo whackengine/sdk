@@ -72,7 +72,7 @@ impl FunctionCommonSubverifier {
             let mut result_type = partials.result_type().unwrap(); 
 
             if common.contains_await && !result_type.promise_result_type(&host)?.is_some() {
-                verifier.add_verify_error(&name_span, SwDiagnosticKind::ReturnTypeDeclarationMustBePromise, diagarg![]);
+                verifier.add_verify_error(&name_span, WhackDiagnosticKind::ReturnTypeDeclarationMustBePromise, diagarg![]);
                 result_type = host.promise_type().defer()?.apply_type(&host, &host.promise_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()])
             }
 
@@ -126,14 +126,14 @@ impl FunctionCommonSubverifier {
             let promise_type = host.promise_type().defer()?;
 
             // let mut result_type = Self::deduce_result_type(verifier, None);
-            verifier.add_warning(&name_span, SwDiagnosticKind::ReturnTypeInferenceIsNotImplemented, diagarg![]);
+            verifier.add_warning(&name_span, WhackDiagnosticKind::ReturnTypeInferenceIsNotImplemented, diagarg![]);
             let mut result_type = if common.contains_await { host.promise_type_of_any()? } else { host.any_type() };
 
             if common.contains_await {
                 if result_type.is::<InvalidationEntity>() {
                     result_type = promise_type.apply_type(&host, &promise_type.type_params().unwrap(), &shared_array![host.invalidation_entity()]);
                 } else if result_type.promise_result_type(&host)?.is_none() {
-                    verifier.add_verify_error(&name_span, SwDiagnosticKind::ReturnTypeDeclarationMustBePromise, diagarg![]);
+                    verifier.add_verify_error(&name_span, WhackDiagnosticKind::ReturnTypeDeclarationMustBePromise, diagarg![]);
                     result_type = promise_type.apply_type(&host, &promise_type.type_params().unwrap(), &shared_array![host.invalidation_entity()]);
                 }
             }

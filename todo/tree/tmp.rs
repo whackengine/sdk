@@ -47,7 +47,7 @@
 
                 // If external, function must be native or abstract.
                 if is_external && !(slot.is_native() || slot.is_abstract()) {
-                    verifier.add_verify_error(&loc, SwDiagnosticKind::ExternalFunctionMustBeNativeOrAbstract, diagarg![]);
+                    verifier.add_verify_error(&loc, WhackDiagnosticKind::ExternalFunctionMustBeNativeOrAbstract, diagarg![]);
                 }
 
                 // Define method property
@@ -185,7 +185,7 @@
                                     init = verifier.imp_coerce_exp(param_node.default_value.as_ref().unwrap(), &param_type)?.unwrap_or(host.invalidation_entity());
                                     verifier.cached_var_init.insert(NodeAsKey(pattern.clone()), init.clone());
                                     if !init.is::<InvalidationEntity>() && !init.static_type(&host).is::<Constant>() {
-                                        verifier.add_verify_error(&param_node.default_value.as_ref().unwrap().location(), SwDiagnosticKind::EntityIsNotAConstant, diagarg![]);
+                                        verifier.add_verify_error(&param_node.default_value.as_ref().unwrap().location(), WhackDiagnosticKind::EntityIsNotAConstant, diagarg![]);
                                     }
                                 }
         
@@ -218,7 +218,7 @@
                                 if let Some(type_annot) = param_node.destructuring.type_annotation.as_ref() {
                                     param_type = verifier.verify_type_expression(type_annot)?.unwrap_or(host.array_type().defer()?.apply_type(&host, &host.array_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()]));
                                     if param_type.array_element_type(&host)?.is_none() {
-                                        verifier.add_verify_error(&type_annot.location(), SwDiagnosticKind::RestParameterMustBeArray, diagarg![]);
+                                        verifier.add_verify_error(&type_annot.location(), WhackDiagnosticKind::RestParameterMustBeArray, diagarg![]);
                                         param_type = host.array_type().defer()?.apply_type(&host, &host.array_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()]);
                                     }
                                 } else {
@@ -266,7 +266,7 @@
                         partials.set_result_type(Some(result_type));
                     }
                 } else if partials.result_type().is_none() {
-                    verifier.add_warning(&loc, SwDiagnosticKind::ReturnValueHasNoTypeDeclaration, diagarg![]);
+                    verifier.add_warning(&loc, WhackDiagnosticKind::ReturnValueHasNoTypeDeclaration, diagarg![]);
                     partials.set_result_type(Some(if common.contains_await { host.promise_type_of_any()? } else { host.any_type() }));
                 }
 
@@ -276,7 +276,7 @@
                     let mut result_type = partials.result_type().unwrap(); 
 
                     if common.contains_await && !result_type.promise_result_type(&host)?.is_some() {
-                        verifier.add_verify_error(&loc, SwDiagnosticKind::ReturnTypeDeclarationMustBePromise, diagarg![]);
+                        verifier.add_verify_error(&loc, WhackDiagnosticKind::ReturnTypeDeclarationMustBePromise, diagarg![]);
                         result_type = host.promise_type().defer()?.apply_type(&host, &host.promise_type().defer()?.type_params().unwrap(), &shared_array![host.invalidation_entity()])
                     }
 
@@ -322,13 +322,13 @@
                             return Err(DeferError(None));
                         },
                         Err(MethodOverrideError::IncompatibleOverride { expected_signature, actual_signature }) => {
-                            verifier.add_verify_error(&loc, SwDiagnosticKind::IncompatibleOverride, diagarg![expected_signature.clone(), actual_signature.clone()]);
+                            verifier.add_verify_error(&loc, WhackDiagnosticKind::IncompatibleOverride, diagarg![expected_signature.clone(), actual_signature.clone()]);
                         },
                         Err(MethodOverrideError::MustOverrideAMethod) => {
-                            verifier.add_verify_error(&loc, SwDiagnosticKind::MustOverrideAMethod, diagarg![]);
+                            verifier.add_verify_error(&loc, WhackDiagnosticKind::MustOverrideAMethod, diagarg![]);
                         },
                         Err(MethodOverrideError::OverridingFinalMethod) => {
-                            verifier.add_verify_error(&loc, SwDiagnosticKind::OverridingFinalMethod, diagarg![]);
+                            verifier.add_verify_error(&loc, WhackDiagnosticKind::OverridingFinalMethod, diagarg![]);
                         },
                     }
                 }

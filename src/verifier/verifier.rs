@@ -113,7 +113,7 @@ impl Verifier {
         }
         for (common, _) in self.verifier.deferred_function_exp.clone().borrow().iter() {
             let loc = (*common).location.clone();
-            self.verifier.add_verify_error(&loc, SwDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+            self.verifier.add_verify_error(&loc, WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
         }
 
         for (old, new) in self.verifier.definition_conflicts.clone().iter() {
@@ -147,7 +147,7 @@ impl Verifier {
             }
             for (common, _) in self.verifier.deferred_function_exp.clone().borrow().iter() {
                 let loc = (*common).location.clone();
-                self.verifier.add_verify_error(&loc, SwDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+                self.verifier.add_verify_error(&loc, WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
             }
             for (old, new) in self.verifier.definition_conflicts.clone().iter() {
                 self.verifier.finish_definition_conflict(&old, &new);
@@ -156,7 +156,7 @@ impl Verifier {
             return v;
         }
 
-        self.verifier.add_verify_error(&exp.location(), SwDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+        self.verifier.add_verify_error(&exp.location(), WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
         self.verifier.reset_state();
         None
     }
@@ -271,30 +271,30 @@ impl Subverifier {
         self.phase_of_block.insert(NodeAsKey(block.clone()), phase);
     }
 
-    pub fn add_syntax_error(&mut self, location: &Location, kind: SwDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) {
+    pub fn add_syntax_error(&mut self, location: &Location, kind: WhackDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) {
         let cu = location.compilation_unit();
         if cu.prevent_equal_offset_error(location) {
             return;
         }
-        cu.add_diagnostic(SwDiagnostic::new_syntax_error(location, kind, arguments));
+        cu.add_diagnostic(WhackDiagnostic::new_syntax_error(location, kind, arguments));
         self.invalidated = true;
     }
 
-    pub fn add_verify_error(&mut self, location: &Location, kind: SwDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) {
+    pub fn add_verify_error(&mut self, location: &Location, kind: WhackDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) {
         let cu = location.compilation_unit();
         if cu.prevent_equal_offset_error(location) {
             return;
         }
-        cu.add_diagnostic(SwDiagnostic::new_verify_error(location, kind, arguments));
+        cu.add_diagnostic(WhackDiagnostic::new_verify_error(location, kind, arguments));
         self.invalidated = true;
     }
 
-    pub fn add_warning(&mut self, location: &Location, kind: SwDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) {
+    pub fn add_warning(&mut self, location: &Location, kind: WhackDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) {
         let cu = location.compilation_unit();
         if cu.prevent_equal_offset_warning(location) {
             return;
         }
-        cu.add_diagnostic(SwDiagnostic::new_warning(location, kind, arguments));
+        cu.add_diagnostic(WhackDiagnostic::new_warning(location, kind, arguments));
     }
 
     pub fn set_scope(&mut self, scope: &Entity) {
@@ -467,17 +467,17 @@ impl Subverifier {
         match context.mode {
             VerifyMode::Read => {
                 if result.write_only(&self.host) {
-                    self.add_verify_error(&exp.location(), SwDiagnosticKind::EntityIsWriteOnly, diagarg![]);
+                    self.add_verify_error(&exp.location(), WhackDiagnosticKind::EntityIsWriteOnly, diagarg![]);
                 }
             },
             VerifyMode::Write => {
                 if result.read_only(&self.host) {
-                    self.add_verify_error(&exp.location(), SwDiagnosticKind::EntityIsReadOnly, diagarg![]);
+                    self.add_verify_error(&exp.location(), WhackDiagnosticKind::EntityIsReadOnly, diagarg![]);
                 }
             },
             VerifyMode::Delete => {
                 if !result.deletable(&self.host) {
-                    self.add_verify_error(&exp.location(), SwDiagnosticKind::EntityMustNotBeDeleted, diagarg![]);
+                    self.add_verify_error(&exp.location(), WhackDiagnosticKind::EntityMustNotBeDeleted, diagarg![]);
                 }
             },
         }
@@ -501,7 +501,7 @@ impl Subverifier {
         let v = v.unwrap();
         let v = v.expect_type();
         if v.is_err() {
-            self.add_verify_error(&exp.location(), SwDiagnosticKind::EntityIsNotAType, diagarg![]);
+            self.add_verify_error(&exp.location(), WhackDiagnosticKind::EntityIsNotAType, diagarg![]);
             self.host.node_invalidation_mapping().set(exp, Some(()));
             return Ok(None);
         }
@@ -531,7 +531,7 @@ impl Subverifier {
         let got_type = v.static_type(&self.host);
         let v = ConversionMethods(&self.host).implicit(&v, target_type, false)?;
         if v.is_none() {
-            self.add_verify_error(&exp.location(), SwDiagnosticKind::ImplicitCoercionToUnrelatedType, diagarg![got_type, target_type.clone()]);
+            self.add_verify_error(&exp.location(), WhackDiagnosticKind::ImplicitCoercionToUnrelatedType, diagarg![got_type, target_type.clone()]);
             self.host.node_invalidation_mapping().set(exp, Some(()));
             return Ok(None);
         }
@@ -597,12 +597,12 @@ impl Subverifier {
         let host = self.host.clone();
         if new.is::<VariableSlot>() && !parent.is::<FixtureScope>() {
             if prev.is::<VariableSlot>() && ConversionMethods(&host).implicit(&host.factory().create_value(&new.static_type(&host)), &prev.static_type(&host), false).unwrap().is_some() {
-                self.add_warning(&new.location().unwrap(), SwDiagnosticKind::DuplicateVariableDefinition, diagarg![name.local_name()]);
+                self.add_warning(&new.location().unwrap(), WhackDiagnosticKind::DuplicateVariableDefinition, diagarg![name.local_name()]);
                 return;
             }
         } else if prev.is::<VariableSlot>() && !parent.is::<FixtureScope>() {
             if new.is::<MethodSlot>() && ConversionMethods(&host).implicit(&host.factory().create_value(&host.function_type()), &prev.static_type(&host), false).unwrap().is_some() {
-                self.add_warning(&new.location().unwrap(), SwDiagnosticKind::DuplicateVariableDefinition, diagarg![name.local_name()]);
+                self.add_warning(&new.location().unwrap(), WhackDiagnosticKind::DuplicateVariableDefinition, diagarg![name.local_name()]);
                 return;
             }
         }
@@ -617,13 +617,13 @@ impl Subverifier {
         };
         let name = entity.name();
         if entity.is::<ClassType>() || entity.is::<EnumType>() {
-            self.add_verify_error(&loc, SwDiagnosticKind::DuplicateClassDefinition, diagarg![name.local_name()]);
+            self.add_verify_error(&loc, WhackDiagnosticKind::DuplicateClassDefinition, diagarg![name.local_name()]);
         } else if entity.is::<InterfaceType>() {
-            self.add_verify_error(&loc, SwDiagnosticKind::DuplicateInterfaceDefinition, diagarg![name.local_name()]);
+            self.add_verify_error(&loc, WhackDiagnosticKind::DuplicateInterfaceDefinition, diagarg![name.local_name()]);
         } else if entity.is::<MethodSlot>() {
-            self.add_verify_error(&loc, SwDiagnosticKind::DuplicateFunctionDefinition, diagarg![name.local_name()]);
+            self.add_verify_error(&loc, WhackDiagnosticKind::DuplicateFunctionDefinition, diagarg![name.local_name()]);
         } else {
-            self.add_verify_error(&loc, SwDiagnosticKind::AConflictExistsWithDefinition, diagarg![name.local_name(), name.namespace()]);
+            self.add_verify_error(&loc, WhackDiagnosticKind::AConflictExistsWithDefinition, diagarg![name.local_name(), name.namespace()]);
         }
     }
 
@@ -651,7 +651,7 @@ impl Subverifier {
                     dup = p.prototype(&self.host).has(name);
                 }
                 if dup {
-                    self.add_syntax_error(name_loc, SwDiagnosticKind::ShadowingDefinitionInBaseClass, diagarg![name.to_string()]);
+                    self.add_syntax_error(name_loc, WhackDiagnosticKind::ShadowingDefinitionInBaseClass, diagarg![name.to_string()]);
                     break;
                 }
                 p1 = p.extends_class(&self.host);
@@ -728,7 +728,7 @@ mod tests {
         // Report diagnostics
         cu.sort_diagnostics();
         for diag in cu.nested_diagnostics() {
-            println!("{}", SwDiagnostic(&diag).format_english());
+            println!("{}", WhackDiagnostic(&diag).format_english());
         }
     }
 }

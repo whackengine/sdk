@@ -21,7 +21,7 @@ impl ObjectLiteralSubverifier {
             Self::verify_object_initializer_for_options_class(verifier, initializer, &context_type_esc)?;
         } else {
             if !context_type_esc.is::<InvalidationEntity>() {
-                verifier.add_verify_error(&initializer.location, SwDiagnosticKind::UnexpectedObject, diagarg![]);
+                verifier.add_verify_error(&initializer.location, WhackDiagnosticKind::UnexpectedObject, diagarg![]);
             }
             // Same as for * and Object; duplicating the call for now.
             Self::verify_object_initializer_for_ecma_object(verifier, initializer)?;
@@ -84,7 +84,7 @@ impl ObjectLiteralSubverifier {
                                 variable_data_type.defer()?;
                                 let coercion = ConversionMethods(&verifier.host).implicit(short_ref_1, &variable_data_type, false)?;
                                 let Some(coercion) = coercion else {
-                                    verifier.add_verify_error(&name.location, SwDiagnosticKind::ImplicitCoercionToUnrelatedType, diagarg![short_ref_1.static_type(&verifier.host), variable_data_type]);
+                                    verifier.add_verify_error(&name.location, WhackDiagnosticKind::ImplicitCoercionToUnrelatedType, diagarg![short_ref_1.static_type(&verifier.host), variable_data_type]);
                                     #[allow(unused_assignments)] {
                                         short_ref = None;
                                     }
@@ -104,7 +104,7 @@ impl ObjectLiteralSubverifier {
         }
 
         for m in &missing {
-            verifier.add_verify_error(&initializer.location, SwDiagnosticKind::MustSpecifyOption, diagarg![m.name().to_string()]);
+            verifier.add_verify_error(&initializer.location, WhackDiagnosticKind::MustSpecifyOption, diagarg![m.name().to_string()]);
         }
 
         Ok(())
@@ -153,7 +153,7 @@ impl ObjectLiteralSubverifier {
             },
             FieldName::NumericLiteral(_) => {
                 verifier.verify_expression(value_exp, &default())?;
-                verifier.add_verify_error(&name.1, SwDiagnosticKind::UnexpectedFieldName, diagarg![]);
+                verifier.add_verify_error(&name.1, WhackDiagnosticKind::UnexpectedFieldName, diagarg![]);
             },
         }
         Ok(())
@@ -170,25 +170,25 @@ impl ObjectLiteralSubverifier {
         if r.is_err() {
             match r.unwrap_err() {
                 PropertyLookupError::AmbiguousReference(name) => {
-                    verifier.add_verify_error(&id.location, SwDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
+                    verifier.add_verify_error(&id.location, WhackDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
                     return Ok(None);
                 },
                 PropertyLookupError::Defer => {
                     return Err(DeferError(None));
                 },
                 PropertyLookupError::VoidBase => {
-                    verifier.add_verify_error(&id.location, SwDiagnosticKind::AccessOfVoid, diagarg![]);
+                    verifier.add_verify_error(&id.location, WhackDiagnosticKind::AccessOfVoid, diagarg![]);
                     return Ok(None);
                 },
                 PropertyLookupError::NullableObject { .. } => {
-                    verifier.add_verify_error(&id.location, SwDiagnosticKind::AccessOfNullable, diagarg![]);
+                    verifier.add_verify_error(&id.location, WhackDiagnosticKind::AccessOfNullable, diagarg![]);
                     return Ok(None);
                 },
             }
         }
         let r = r.unwrap();
         if r.is_none() {
-            verifier.add_verify_error(&id.location, SwDiagnosticKind::UndefinedProperty, diagarg![key.local_name().unwrap()]);
+            verifier.add_verify_error(&id.location, WhackDiagnosticKind::UndefinedProperty, diagarg![key.local_name().unwrap()]);
             return Ok(None);
         }
         let r = r.unwrap();
@@ -214,7 +214,7 @@ impl ObjectLiteralSubverifier {
         let has_known_ns = qual.as_ref().map(|q| q.is_namespace_or_ns_constant()).unwrap_or(true);
 
         if !(has_known_ns && matches!(key, PropertyLookupKey::LocalName(_))) {
-            verifier.add_verify_error(&id.location, SwDiagnosticKind::DynamicOptionNotSupported, diagarg![]);
+            verifier.add_verify_error(&id.location, WhackDiagnosticKind::DynamicOptionNotSupported, diagarg![]);
             return Ok(None);
         }
 
@@ -226,7 +226,7 @@ impl ObjectLiteralSubverifier {
         if lookup.is_err() {
             match lookup.unwrap_err() {
                 PropertyLookupError::AmbiguousReference(name) => {
-                    verifier.add_verify_error(&id.location, SwDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
+                    verifier.add_verify_error(&id.location, WhackDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
                     return Ok(None);
                 },
                 PropertyLookupError::Defer => {
@@ -241,7 +241,7 @@ impl ObjectLiteralSubverifier {
         let lookup = lookup.unwrap();
         let variable = lookup.and_then(|v| if v.is::<VariableSlot>() { Some(v) } else { None });
         if variable.is_none() {
-            verifier.add_verify_error(&id.location, SwDiagnosticKind::UnknownOptionForClass, diagarg![local_name]);
+            verifier.add_verify_error(&id.location, WhackDiagnosticKind::UnknownOptionForClass, diagarg![local_name]);
             return Ok(None);
         }
         Ok(Some(variable.unwrap()))

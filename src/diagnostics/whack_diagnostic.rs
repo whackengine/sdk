@@ -1,30 +1,30 @@
 use crate::ns::*;
 
-#[path = "sw_diagnostics_texts.rs"]
+#[path = "whack_diagnostics_texts.rs"]
 mod data;
 
-pub struct SwDiagnostic<'a>(pub &'a Diagnostic);
+pub struct WhackDiagnostic<'a>(pub &'a Diagnostic);
 
-impl<'a> SwDiagnostic<'a> {
-    pub fn new_syntax_error(location: &Location, kind: SwDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) -> Diagnostic {
+impl<'a> WhackDiagnostic<'a> {
+    pub fn new_syntax_error(location: &Location, kind: WhackDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) -> Diagnostic {
         let d = Diagnostic::new_syntax_error(location, DiagnosticKind::Expecting, arguments);
         d.set_custom_kind(Some(Rc::new(kind)));
         d
     }
 
-    pub fn new_verify_error(location: &Location, kind: SwDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) -> Diagnostic {
+    pub fn new_verify_error(location: &Location, kind: WhackDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) -> Diagnostic {
         let d = Diagnostic::new_verify_error(location, DiagnosticKind::Expecting, arguments);
         d.set_custom_kind(Some(Rc::new(kind)));
         d
     }
 
-    pub fn new_warning(location: &Location, kind: SwDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) -> Diagnostic {
+    pub fn new_warning(location: &Location, kind: WhackDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) -> Diagnostic {
         let d = Diagnostic::new_warning(location, DiagnosticKind::Expecting, arguments);
         d.set_custom_kind(Some(Rc::new(kind)));
         d
     }
 
-    pub fn fx_kind(&self) -> Option<SwDiagnosticKind> {
+    pub fn fx_kind(&self) -> Option<WhackDiagnosticKind> {
         if let Some(k) = self.custom_kind() {
             if let Ok(k) = Rc::downcast(k) {
                 Some(*k)
@@ -36,7 +36,7 @@ impl<'a> SwDiagnostic<'a> {
         }
     }
 
-    pub fn fx_kind_eq(&self, kind: SwDiagnosticKind) -> bool {
+    pub fn fx_kind_eq(&self, kind: WhackDiagnosticKind) -> bool {
         self.fx_kind().map(|k1| kind == k1).unwrap_or(false)
     }
 
@@ -75,7 +75,7 @@ impl<'a> SwDiagnostic<'a> {
     }
 }
 
-impl<'a> std::ops::Deref for SwDiagnostic<'a> {
+impl<'a> std::ops::Deref for WhackDiagnostic<'a> {
     type Target = &'a Diagnostic;
     fn deref(&self) -> &Self::Target {
         &self.0

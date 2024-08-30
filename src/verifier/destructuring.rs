@@ -146,7 +146,7 @@ impl DestructuringDeclarationSubverifier {
                         },
                         Element::Rest((restpat, loc)) => {
                             if rest_loc.is_some() {
-                                verifier.add_verify_error(loc, SwDiagnosticKind::UnexpectedRest, diagarg![]);
+                                verifier.add_verify_error(loc, WhackDiagnosticKind::UnexpectedRest, diagarg![]);
                             }
                             rest_i = i;
                             rest_loc = Some(loc.clone());
@@ -159,7 +159,7 @@ impl DestructuringDeclarationSubverifier {
                     i += 1;
                 }
                 if rest_loc.is_some() && rest_i != i - 1 {
-                    verifier.add_verify_error(&rest_loc.unwrap(), SwDiagnosticKind::UnexpectedRest, diagarg![]);
+                    verifier.add_verify_error(&rest_loc.unwrap(), WhackDiagnosticKind::UnexpectedRest, diagarg![]);
                 }
                 verifier.phase_of_entity.insert(slot.clone(), VerifierPhase::Beta);
                 Err(DeferError(Some(VerifierPhase::Beta)))
@@ -269,7 +269,7 @@ impl DestructuringDeclarationSubverifier {
         }
 
         if i > elem_types.length() && !rest_found {
-            verifier.add_verify_error(&literal.location, SwDiagnosticKind::ArrayLengthNotEqualsTupleLength, diagarg![tuple_type.clone()]);
+            verifier.add_verify_error(&literal.location, WhackDiagnosticKind::ArrayLengthNotEqualsTupleLength, diagarg![tuple_type.clone()]);
         }
 
         verifier.phase_of_entity.remove(&patslot);
@@ -388,7 +388,7 @@ impl DestructuringDeclarationSubverifier {
 
                 // Report warning
                 if init_st_is_non_null {
-                    verifier.add_warning(&literal.location, SwDiagnosticKind::ReferenceIsAlreadyNonNullable, diagarg![]);
+                    verifier.add_warning(&literal.location, WhackDiagnosticKind::ReferenceIsAlreadyNonNullable, diagarg![]);
                 }
 
                 verifier.phase_of_entity.remove(&slot);
@@ -467,7 +467,7 @@ impl DestructuringDeclarationSubverifier {
                                 None
                             }
                         }) else {
-                            verifier.add_syntax_error(&name.1, SwDiagnosticKind::UnexpectedFieldNameInDestructuring, diagarg![]);
+                            verifier.add_syntax_error(&name.1, WhackDiagnosticKind::UnexpectedFieldNameInDestructuring, diagarg![]);
                             continue;
                         };
 
@@ -475,7 +475,7 @@ impl DestructuringDeclarationSubverifier {
                     }
                 },
                 InitializerField::Rest((restpat, loc)) => {
-                    verifier.add_verify_error(loc, SwDiagnosticKind::UnexpectedRest, diagarg![]);
+                    verifier.add_verify_error(loc, WhackDiagnosticKind::UnexpectedRest, diagarg![]);
                     if let Err(DeferError(subphase)) = Self::verify_pattern(verifier, restpat, &verifier.host.unresolved_entity(), read_only, output, ns, parent, is_external) {
                         assert_eq!(subphase, Some(VerifierPhase::Beta));
                     }
@@ -562,7 +562,7 @@ impl DestructuringDeclarationSubverifier {
                                     Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
                                 }
                                 resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
-                                verifier.add_verify_error(name_loc, SwDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
+                                verifier.add_verify_error(name_loc, WhackDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
                                 continue;
                             },
                             PropertyLookupError::Defer => {
@@ -576,7 +576,7 @@ impl DestructuringDeclarationSubverifier {
                                     Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
                                 }
                                 resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
-                                verifier.add_verify_error(name_loc, SwDiagnosticKind::AccessOfVoid, diagarg![]);
+                                verifier.add_verify_error(name_loc, WhackDiagnosticKind::AccessOfVoid, diagarg![]);
                                 continue;
                             },
                             PropertyLookupError::NullableObject { .. } => {
@@ -587,7 +587,7 @@ impl DestructuringDeclarationSubverifier {
                                     Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
                                 }
                                 resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
-                                verifier.add_verify_error(name_loc, SwDiagnosticKind::AccessOfNullable, diagarg![]);
+                                verifier.add_verify_error(name_loc, WhackDiagnosticKind::AccessOfNullable, diagarg![]);
                                 continue;
                             },
                         }
@@ -601,7 +601,7 @@ impl DestructuringDeclarationSubverifier {
                             Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
                         }
                         resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
-                        verifier.add_verify_error(name_loc, SwDiagnosticKind::UndefinedPropertyWithStaticType, diagarg![key.local_name().unwrap(), init_st.clone()]);
+                        verifier.add_verify_error(name_loc, WhackDiagnosticKind::UndefinedPropertyWithStaticType, diagarg![key.local_name().unwrap(), init_st.clone()]);
                         continue;
                     }
                     let r = r.unwrap();

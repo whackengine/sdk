@@ -44,7 +44,7 @@ impl AssignmentDestructuringSubverifier {
         if r.is_err() {
             match r.unwrap_err() {
                 PropertyLookupError::AmbiguousReference(name) => {
-                    verifier.add_verify_error(&id.location, SwDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
+                    verifier.add_verify_error(&id.location, WhackDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
                     verifier.host.node_mapping().set(pattern, None);
                     return Ok(());
                 },
@@ -52,12 +52,12 @@ impl AssignmentDestructuringSubverifier {
                     return Err(DeferError(None));
                 },
                 PropertyLookupError::VoidBase => {
-                    verifier.add_verify_error(&id.location, SwDiagnosticKind::AccessOfVoid, diagarg![]);
+                    verifier.add_verify_error(&id.location, WhackDiagnosticKind::AccessOfVoid, diagarg![]);
                     verifier.host.node_mapping().set(pattern, None);
                     return Ok(());
                 },
                 PropertyLookupError::NullableObject { .. } => {
-                    verifier.add_verify_error(&id.location, SwDiagnosticKind::AccessOfNullable, diagarg![]);
+                    verifier.add_verify_error(&id.location, WhackDiagnosticKind::AccessOfNullable, diagarg![]);
                     verifier.host.node_mapping().set(pattern, None);
                     return Ok(());
                 },
@@ -65,7 +65,7 @@ impl AssignmentDestructuringSubverifier {
         }
         let r = r.unwrap();
         if r.is_none() {
-            verifier.add_verify_error(&id.location, SwDiagnosticKind::UndefinedProperty, diagarg![key.local_name().unwrap()]);
+            verifier.add_verify_error(&id.location, WhackDiagnosticKind::UndefinedProperty, diagarg![key.local_name().unwrap()]);
             verifier.host.node_mapping().set(pattern, None);
             return Ok(());
         }
@@ -82,7 +82,7 @@ impl AssignmentDestructuringSubverifier {
 
         // Implicit coercion
         let Some(val) = ConversionMethods(&verifier.host).implicit(&val, &init_st, false)? else {
-            verifier.add_verify_error(&id.location, SwDiagnosticKind::ImplicitCoercionToUnrelatedType, diagarg![val.static_type(&verifier.host), init_st]);
+            verifier.add_verify_error(&id.location, WhackDiagnosticKind::ImplicitCoercionToUnrelatedType, diagarg![val.static_type(&verifier.host), init_st]);
             verifier.host.node_mapping().set(pattern, None);
             return Ok(());
         };
@@ -127,7 +127,7 @@ impl AssignmentDestructuringSubverifier {
                 Element::Expression(_) => {},
                 Element::Rest((_, loc)) => {
                     if rest_loc.is_some() {
-                        verifier.add_verify_error(loc, SwDiagnosticKind::UnexpectedRest, diagarg![]);
+                        verifier.add_verify_error(loc, WhackDiagnosticKind::UnexpectedRest, diagarg![]);
                     }
                     rest_i = i;
                     rest_loc = Some(loc.clone());
@@ -137,7 +137,7 @@ impl AssignmentDestructuringSubverifier {
             i += 1;
         }
         if rest_loc.is_some() && rest_i != i - 1 {
-            verifier.add_verify_error(&rest_loc.unwrap(), SwDiagnosticKind::UnexpectedRest, diagarg![]);
+            verifier.add_verify_error(&rest_loc.unwrap(), WhackDiagnosticKind::UnexpectedRest, diagarg![]);
         }
 
         // Verify Vector.<T>
@@ -218,7 +218,7 @@ impl AssignmentDestructuringSubverifier {
         }
 
         if i > elem_types.length() && !rest_found {
-            verifier.add_verify_error(&literal.location, SwDiagnosticKind::ArrayLengthNotEqualsTupleLength, diagarg![tuple_type.clone()]);
+            verifier.add_verify_error(&literal.location, WhackDiagnosticKind::ArrayLengthNotEqualsTupleLength, diagarg![tuple_type.clone()]);
         }
 
         Ok(())
@@ -316,7 +316,7 @@ impl AssignmentDestructuringSubverifier {
                                     Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity())?;
                                 }
                                 resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
-                                verifier.add_verify_error(name_loc, SwDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
+                                verifier.add_verify_error(name_loc, WhackDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
                                 continue;
                             },
                             PropertyLookupError::Defer => {
@@ -327,7 +327,7 @@ impl AssignmentDestructuringSubverifier {
                                     Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity())?;
                                 }
                                 resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
-                                verifier.add_verify_error(name_loc, SwDiagnosticKind::AccessOfVoid, diagarg![]);
+                                verifier.add_verify_error(name_loc, WhackDiagnosticKind::AccessOfVoid, diagarg![]);
                                 continue;
                             },
                             PropertyLookupError::NullableObject { .. } => {
@@ -335,7 +335,7 @@ impl AssignmentDestructuringSubverifier {
                                     Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity())?;
                                 }
                                 resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
-                                verifier.add_verify_error(name_loc, SwDiagnosticKind::AccessOfNullable, diagarg![]);
+                                verifier.add_verify_error(name_loc, WhackDiagnosticKind::AccessOfNullable, diagarg![]);
                                 continue;
                             },
                         }
@@ -346,7 +346,7 @@ impl AssignmentDestructuringSubverifier {
                             Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity())?;
                         }
                         resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
-                        verifier.add_verify_error(name_loc, SwDiagnosticKind::UndefinedPropertyWithStaticType, diagarg![key.local_name().unwrap(), init_st.clone()]);
+                        verifier.add_verify_error(name_loc, WhackDiagnosticKind::UndefinedPropertyWithStaticType, diagarg![key.local_name().unwrap(), init_st.clone()]);
                         continue;
                     }
                     let r = r.unwrap();
@@ -371,7 +371,7 @@ impl AssignmentDestructuringSubverifier {
                                     None
                                 }
                             }) else {
-                                verifier.add_syntax_error(&name.1, SwDiagnosticKind::UnexpectedFieldNameInDestructuring, diagarg![]);
+                                verifier.add_syntax_error(&name.1, WhackDiagnosticKind::UnexpectedFieldNameInDestructuring, diagarg![]);
                                 continue;
                             };
     
@@ -380,7 +380,7 @@ impl AssignmentDestructuringSubverifier {
 
                                 // Implicit coercion
                                 let Some(_) = ConversionMethods(&verifier.host).implicit(&postval, &target.static_type(&verifier.host), false)? else {
-                                    verifier.add_verify_error(&name_loc, SwDiagnosticKind::ImplicitCoercionToUnrelatedType, diagarg![postval.static_type(&verifier.host), target.static_type(&verifier.host)]);
+                                    verifier.add_verify_error(&name_loc, WhackDiagnosticKind::ImplicitCoercionToUnrelatedType, diagarg![postval.static_type(&verifier.host), target.static_type(&verifier.host)]);
                                     verifier.host.node_mapping().set(pattern, None);
                                     continue;
                                 };
@@ -401,7 +401,7 @@ impl AssignmentDestructuringSubverifier {
                                     None
                                 }
                             }) else {
-                                verifier.add_syntax_error(&name.1, SwDiagnosticKind::UnexpectedFieldNameInDestructuring, diagarg![]);
+                                verifier.add_syntax_error(&name.1, WhackDiagnosticKind::UnexpectedFieldNameInDestructuring, diagarg![]);
                                 continue;
                             };
     
@@ -411,7 +411,7 @@ impl AssignmentDestructuringSubverifier {
                     }
                 },
                 InitializerField::Rest((restpat, loc)) => {
-                    verifier.add_verify_error(loc, SwDiagnosticKind::UnexpectedRest, diagarg![]);
+                    verifier.add_verify_error(loc, WhackDiagnosticKind::UnexpectedRest, diagarg![]);
                     Self::verify_pattern(verifier, restpat, &verifier.host.invalidation_entity())?;
                 },
             }
@@ -428,25 +428,25 @@ impl AssignmentDestructuringSubverifier {
         if r.is_err() {
             match r.unwrap_err() {
                 PropertyLookupError::AmbiguousReference(name) => {
-                    verifier.add_verify_error(&shorthand.1, SwDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
+                    verifier.add_verify_error(&shorthand.1, WhackDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
                     return Ok(None);
                 },
                 PropertyLookupError::Defer => {
                     return Err(DeferError(None));
                 },
                 PropertyLookupError::VoidBase => {
-                    verifier.add_verify_error(&shorthand.1, SwDiagnosticKind::AccessOfVoid, diagarg![]);
+                    verifier.add_verify_error(&shorthand.1, WhackDiagnosticKind::AccessOfVoid, diagarg![]);
                     return Ok(None);
                 },
                 PropertyLookupError::NullableObject { .. } => {
-                    verifier.add_verify_error(&shorthand.1, SwDiagnosticKind::AccessOfNullable, diagarg![]);
+                    verifier.add_verify_error(&shorthand.1, WhackDiagnosticKind::AccessOfNullable, diagarg![]);
                     return Ok(None);
                 },
             }
         }
         let r = r.unwrap();
         if r.is_none() {
-            verifier.add_verify_error(&shorthand.1, SwDiagnosticKind::UndefinedProperty, diagarg![key.local_name().unwrap()]);
+            verifier.add_verify_error(&shorthand.1, WhackDiagnosticKind::UndefinedProperty, diagarg![key.local_name().unwrap()]);
             return Ok(None);
         }
         let r = r.unwrap();

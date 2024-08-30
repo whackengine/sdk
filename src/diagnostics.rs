@@ -1,5 +1,5 @@
-mod sw_diagnostic;
-pub use sw_diagnostic::*;
+mod whack_diagnostic;
+pub use whack_diagnostic::*;
 
-mod sw_diagnostic_kind;
-pub use sw_diagnostic_kind::*;
+mod whack_diagnostic_kind;
+pub use whack_diagnostic_kind::*;
