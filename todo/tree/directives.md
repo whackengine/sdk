@@ -73,7 +73,8 @@ Note that statements and static binding initializers within a class or enum bloc
   - [ ] 4. (GUARD: do not double this step) Given all present `[Event]` meta-data
     - [ ] 4.1. Resolve the `type="Name"` pair for each meta-data into a local (but DEFER ONLY AT THE FINAL STEP if necessary.).
     - [ ] 4.2. Resolve every `[Event]` meta-data using the previous type locals, contributing events to the class.
-  - [ ] 5. If it is about to defer
+  - [ ] 5. Handle the `[Embed]` meta-data if any (BUT DEFER ONLY AT THE FINAL STEP if necessary)
+  - [ ] 6. If it is about to defer
     - Visit class block
 - [ ] Omega
   - [ ] 1. Visit class block but DEFER ONLY AT THE FINAL STEP if necessary.
