@@ -18,9 +18,9 @@
                 let is_external = if fn_parent.is::<Type>() && fn_parent.is_external() {
                     true
                 } else {
-                    // [SW::External]
+                    // [Whack::External]
                     defn.attributes.iter().find(|a| {
-                        if let Attribute::Metadata(m) = a { m.name.0 == "SW::External" } else { false }
+                        if let Attribute::Metadata(m) = a { m.name.0 == "Whack::External" } else { false }
                     }).is_some()
                 };
 

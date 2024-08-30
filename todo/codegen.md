@@ -2,7 +2,7 @@
 
 ## External definitions
 
-Definitions accompanied by `[SW::External]` meta-data are only verified, and not compiled.
+Definitions accompanied by `[Whack::External]` meta-data are only verified, and not compiled.
 
 ## Vector Data Type
 
@@ -16,7 +16,7 @@ The `Vector.<T>` data type translates to one of:
 
 ## Bindable
 
-See the [To Do List](sw.md) for SkyWhack for the `[Bindable]` meta-data.
+See the [To Do List](whack.md) for Whack for the `[Bindable]` meta-data.
 
 * [ ] Implement `[Bindable(...)]` at class definitions
 * [ ] Implement `[Bindable(...)]` at variable definitions

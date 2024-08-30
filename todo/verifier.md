@@ -2,7 +2,7 @@
 
 ## External definitions
 
-In external definitions (`[SW::External(...)]` or these contained within a class that has this meta-data), the verifier puts some restrictions, such as requiring only `native` or `abstract` methods, empty package and global initialization code, and variable bindings may only be assigned a constant.
+In external definitions (`[Whack::External(...)]` or these contained within a class that has this meta-data), the verifier puts some restrictions, such as requiring only `native` or `abstract` methods, empty package and global initialization code, and variable bindings may only be assigned a constant.
 
 ## Locations
 
@@ -24,9 +24,9 @@ Do not forget to set source locations of entities such as classes and variables.
 ## Meta-data
 
 * [ ] Set meta-data properly, except for aliases.
-* [ ] Handle SkyWhack `[Bindable]`
-* [ ] Handle SkyWhack `[Embed]`
-* [ ] Handle SkyWhack `[Event]`
+* [ ] Handle Whack `[Bindable]`
+* [ ] Handle Whack `[Embed]`
+* [ ] Handle Whack `[Event]`
 
 ### @copy
 

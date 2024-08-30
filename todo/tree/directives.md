@@ -57,7 +57,7 @@ Note that statements and static binding initializers within a class or enum bloc
   - [ ] 6. Check if the `[Options]` meta-data is specified, therefore calling `set_is_options_class(true)`
   - [ ] 7. Assign attributes correctly (`static`, `dynamic`, `abstract`, and `final`)
   - [ ] 8. Call `set_extends_class(Some(verifier.host.unresolved_entity()))`
-  - [ ] 9. Handle the `[SW::External]` if any
+  - [ ] 9. Handle the `[Whack::External]` if any
     - [ ] 9.1. Require the `slots="NUMBER"` pair, defining the number of elements contained in the instance Array at runtime (always counts the CONSTRUCTOR and DYNAMIC PROPERTIES slots, therefore it is at least "2").
     - [ ] 9.1. Mark as external
   - [ ] 10. Mark unused
@@ -92,7 +92,7 @@ Note that statements and static binding initializers within a class or enum bloc
 * [ ] Mark unused
 * [ ] For the interface block, verify only top-level function definitions
 
-- Remember: `[SW::External]`
+- Remember: `[Whack::External]`
 
 ## Function definitions
 
