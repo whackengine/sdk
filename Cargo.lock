@@ -77,17 +77,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "skywhack-mxmlc"
-version = "1.0.0"
-dependencies = [
- "late_format",
- "lazy_static",
- "maplit",
- "mxmlextrema-as3parser",
- "mxmlextrema-mxmlcaot",
-]
-
-[[package]]
 name = "hydroperfox-filepaths"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -365,6 +354,17 @@ dependencies = [
  "memchr",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "skywhack-mxmlc"
+version = "1.0.0"
+dependencies = [
+ "late_format",
+ "lazy_static",
+ "maplit",
+ "mxmlextrema-as3parser",
+ "mxmlextrema-mxmlcaot",
 ]
 
 [[package]]
