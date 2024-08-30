@@ -57,6 +57,7 @@ impl Verifier {
                 deferred_function_exp: SharedMap::new(),
                 function_definition_partials: SharedMap::new(),
                 definition_conflicts: SharedArray::new(),
+                class_defn_guard: HashMap::new(),
                 invalidated: false,
                 external: false,
                 // deferred_counter: 0,
@@ -218,6 +219,8 @@ pub(crate) struct Subverifier {
 
     pub definition_conflicts: SharedArray<(Entity, Entity)>,
 
+    pub class_defn_guard: HashMap<NodeAsKey<Rc<Directive>>, Rc<ClassDefnGuard>>,
+
     invalidated: bool,
     // pub deferred_counter: usize,
     pub scope: Option<Entity>,
@@ -243,6 +246,7 @@ impl Subverifier {
         self.phase_of_block.clear();
         self.deferred_function_exp.clear();
         self.function_definition_partials.clear();
+        self.class_defn_guard.clear();
     }
 
     pub fn lazy_init_drtv_phase(&mut self, drtv: &Rc<Directive>, initial_phase: VerifierPhase) -> VerifierPhase {
@@ -260,6 +264,17 @@ impl Subverifier {
         } else {
             self.phase_of_block.insert(NodeAsKey(block.clone()), initial_phase);
             initial_phase
+        }
+    }
+
+    pub fn class_defn_guard(&mut self, drtv: &Rc<Directive>) -> Rc<ClassDefnGuard> {
+        let k = NodeAsKey(drtv.clone());
+        if let Some(g) = self.class_defn_guard.get(&k) {
+            g.clone()
+        } else {
+            let g = Rc::new(ClassDefnGuard::new());
+            self.class_defn_guard.insert(k, g.clone());
+            g
         }
     }
 
@@ -685,6 +700,14 @@ impl Default for VerifierExpressionContext {
             mode: VerifyMode::Read,
             preceded_by_negative: false,
         }
+    }
+}
+
+pub(crate) struct ClassDefnGuard {}
+
+impl ClassDefnGuard {
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
