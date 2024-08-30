@@ -61,23 +61,27 @@ Note that statements and static binding initializers within a class or enum bloc
     - [ ] 9.1. Require the `slots="NUMBER"` pair, defining the number of elements contained in the instance Array at runtime (always counts the CONSTRUCTOR and DYNAMIC PROPERTIES slots, therefore it is at least "2").
     - [ ] 9.1. Mark as external
   - [ ] 10. Mark unused
+  - [ ] 11. Declare type parameters if specified in syntax
+  - [ ] 12. Visit class block but DO NOT defer
 - [ ] Beta
-  - [ ] 1. Resolve the class inheritance (which class it extends).
-- [ ] Delta
-  - [ ] 1. Ensure the inheritance is not circular (in case it is "unresolved" yet)
-  - [ ] 2. If `is_options_class()` is true and the class is not a direct subclass of `Object`, report a verify error and call `set_is_options_class(false)`.
-  - [ ] 3. Given all present `[Event]` meta-data
-    - [ ] 3.1. Resolve the `type="Name"` pair for each meta-data into a local.
-    - [ ] 3.2. Resolve every `[Event]` meta-data using the previous type locals, contributing events to the class.
-  - [ ] 4. Visit class block
-- [ ] Epsilon
-  - [ ] 1. Report a verify error for non overriden abstract methods
-  - [ ] 2. Visit class block
-- [ ] Eta
-  - [ ] 1. If the base class contains a non-empty constructor, that (sub)class must define a constructor.
+  - [ ] 1. Resolve the class inheritance (which class it extends) (CONDITION: in case it is "unresolved" yet).
+    - [ ] If the extended class is marked final then report a verify error.
+    - [ ] Ensure the inheritance is not circular.
+    - [ ] Add class as known subclass of the extended class except for Object.
+  - [ ] 2. (GUARD: do not double this step) Resolve the interface implements list, contributing to the list of implemented interfaces of the class; but DEFER ONLY AT THE FINAL STEP if necessary..
+  - [ ] 3. If `is_options_class()` is true and the class is not a direct subclass of `Object` (but DEFER ONLY AT THE FINAL STEP if necessary if failing to retrieve Object), then report a verify error and call `set_is_options_class(false)`.
+  - [ ] 4. (GUARD: do not double this step) Given all present `[Event]` meta-data
+    - [ ] 4.1. Resolve the `type="Name"` pair for each meta-data into a local (but DEFER ONLY AT THE FINAL STEP if necessary.).
+    - [ ] 4.2. Resolve every `[Event]` meta-data using the previous type locals, contributing events to the class.
+  - [ ] 5. If it is about to defer
+    - Visit class block
 - [ ] Omega
-  - [ ] 1. Visit class block
-  - [ ] 2. Mark as finished phase.
+  - [ ] 1. Visit class block but DEFER ONLY AT THE FINAL STEP if necessary.
+  - [ ] 2. (GUARD: do not double this step) Report a verify error for non overriden abstract methods but DEFER ONLY AT THE FINAL STEP if necessary.
+  - [ ] 3. (GUARD: do not double this step) Handle the `[Bindable]` meta-data but DEFER ONLY AT THE FINAL STEP if necessary.
+  - [ ] 4. If the base class contains a non-empty constructor, that (sub)class must define a constructor.
+  - [ ] 5. (GUARD: do not double this step) Verify interface implementations but DEFER ONLY AT THE FINAL STEP if necessary.
+  - [ ] 6. Mark as finished phase.
 
 ## Enum definitions
 
