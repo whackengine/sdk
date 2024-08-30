@@ -1,5 +1,4 @@
 {
-  "tabs": [
     {
       "name": "MXMLC",
       "tabGroups": [
@@ -18,7 +17,7 @@
         "orientation": 1,
         "groups": [
           {
-            "size": 671
+            "size": 550
           }
         ]
       }

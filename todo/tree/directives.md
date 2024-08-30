@@ -53,7 +53,6 @@ Note that statements and static binding initializers within a class or enum bloc
 * [ ] Assign location
 * [ ] Report a verify error for non overriden abstract methods
 * [ ] If the base class contains a non-empty constructor, the subclass must define a constructor.
-* [ ] Read the `[Options]` meta-data and apply `Options` classes restrictions
 * [ ] Assign every `[Event]` semantics to the class
 * [ ] Handle the `[Bindable]` meta-data right after variables are declared
 * [ ] Handle the `[Embed]` meta-data.
@@ -61,6 +60,21 @@ Note that statements and static binding initializers within a class or enum bloc
 * [ ] Mark unused
 
 - Remember: `[SW::External]` (transitive)
+
+- [ ] Alpha
+  - [ ] 1. Attempt to define the class partially; or fail if a conflict occurs, therefore ignoring this class definition.
+  - [ ] 2. Set parent
+  - [ ] 3. Check if the `[Options]` meta-data is specified, therefore calling `set_is_options_class(true)`
+- [ ] Beta
+  - [ ] 1.
+- [ ] Delta
+  - [ ] 1. If `is_options_class()` is true and the class is not a direct subclass of `Object`, report a verify error.
+- [ ] Epsilon
+  - [ ] 1.
+- [ ] Eta
+  - [ ] 1.
+- [ ] Omega
+  - [ ] 1.
 
 ## Enum definitions
 
