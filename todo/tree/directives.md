@@ -40,7 +40,7 @@ Procedure:
 ## Inheritance
 
 * [ ] For classes and interfaces, right after the phase in which the inheritance is solved, ensure the inheritance is not circular (an inherited type must not be equals to or a subtype of the inheritor type) by reporting a verify error in such case.
-* [ ] For definitions within classes and interfaces, ensure they either override a method or do not redefine a previously defined property.
+* [x] For definitions within classes and interfaces, ensure they either override a method or do not redefine a previously defined property.
 
 ## Class initialiser method
 
@@ -48,33 +48,36 @@ Note that statements and static binding initializers within a class or enum bloc
 
 ## Class definitions
 
-* [ ] Assign ASDoc
-* [ ] Assign meta-data
-* [ ] Assign location
-* [ ] Report a verify error for non overriden abstract methods
-* [ ] If the base class contains a non-empty constructor, the subclass must define a constructor.
-* [ ] Assign every `[Event]` semantics to the class
-* [ ] Handle the `[Bindable]` meta-data right after variables are declared
-* [ ] Handle the `[Embed]` meta-data.
-* [ ] Assign attributes correctly (`static`, `dynamic`, `abstract`, and `final`)
-* [ ] Mark unused
-
-- Remember: `[SW::External]` (transitive)
-
 - [ ] Alpha
   - [ ] 1. Attempt to define the class partially; or fail if a conflict occurs, therefore ignoring this class definition.
   - [ ] 2. Set parent
-  - [ ] 3. Check if the `[Options]` meta-data is specified, therefore calling `set_is_options_class(true)`
+  - [ ] 3. Set ASDoc
+  - [ ] 4. Set Location
+  - [ ] 5. Attach meta-data
+  - [ ] 6. Check if the `[Options]` meta-data is specified, therefore calling `set_is_options_class(true)`
+  - [ ] 7. Assign attributes correctly (`static`, `dynamic`, `abstract`, and `final`)
+  - [ ] 8. Call `set_extends_class(Some(verifier.host.unresolved_entity()))`
+  - [ ] 9. Handle the `[SW::External]` if any
+    - [ ] 9.1. Require the `slots="NUMBER"` pair, defining the number of elements contained in the instance Array at runtime (always counts the CONSTRUCTOR and DYNAMIC PROPERTIES slots, therefore it is at least "2").
+    - [ ] 9.1. Mark as external
+  - [ ] 10. Mark unused
 - [ ] Beta
-  - [ ] 1.
+  - [ ] 1. Resolve the class inheritance (which class it extends).
 - [ ] Delta
-  - [ ] 1. If `is_options_class()` is true and the class is not a direct subclass of `Object`, report a verify error.
+  - [ ] 1. Ensure the inheritance is not circular (in case it is "unresolved" yet)
+  - [ ] 2. If `is_options_class()` is true and the class is not a direct subclass of `Object`, report a verify error and call `set_is_options_class(false)`.
+  - [ ] 3. Given all present `[Event]` meta-data
+    - [ ] 3.1. Resolve the `type="Name"` pair for each meta-data into a local.
+    - [ ] 3.2. Resolve every `[Event]` meta-data using the previous type locals, contributing events to the class.
+  - [ ] 4. Visit class block
 - [ ] Epsilon
-  - [ ] 1.
+  - [ ] 1. Report a verify error for non overriden abstract methods
+  - [ ] 2. Visit class block
 - [ ] Eta
-  - [ ] 1.
+  - [ ] 1. If the base class contains a non-empty constructor, that (sub)class must define a constructor.
 - [ ] Omega
-  - [ ] 1.
+  - [ ] 1. Visit class block
+  - [ ] 2. Mark as finished phase.
 
 ## Enum definitions
 

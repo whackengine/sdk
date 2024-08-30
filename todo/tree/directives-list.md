@@ -7,6 +7,8 @@ Tip: use a mapping from directive to phase for certain of the following directiv
 * [x] Function definition
   * [ ] Framework specific meta-data (`[Bindable]` for example)
 * [ ] Class definition
+  * [ ] Handle the `[Bindable]` meta-data right after variables are declared
+  * [ ] Handle the `[Embed]` meta-data.
 * [ ] Enum definition
 * [ ] Interface definition
 * [ ] Type definition
