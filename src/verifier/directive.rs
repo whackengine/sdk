@@ -164,6 +164,28 @@ impl DirectiveSubverifier {
         }
     }
 
+    fn verify_class_defn(verifier: &mut Subverifier, drtv: &Rc<Directive>, defn: &ClassDefinition) -> Result<(), DeferError> {
+        let phase = verifier.lazy_init_drtv_phase(drtv, VerifierPhase::Alpha);
+        if phase == VerifierPhase::Finished {
+            return Ok(());
+        }
+
+        match phase {
+            // Alpha
+            VerifierPhase::Alpha => {
+                // Determine the class's scope, parent, property destination, and namespace.
+                let defn_local = Self::definition_local_maybe_static(verifier, &defn.attributes)?;
+                if defn_local.is_err() {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    return Ok(());
+                }
+                let (class_parent_scope, class_parent, mut class_out, ns) = defn_local.unwrap();
+                fixme()
+            },
+            _ => panic!(),
+        }
+    }
+
     fn verify_var_defn(verifier: &mut Subverifier, drtv: &Rc<Directive>, defn: &VariableDefinition) -> Result<(), DeferError> {
         let phase = verifier.lazy_init_drtv_phase(drtv, VerifierPhase::Alpha);
         if phase == VerifierPhase::Finished {
@@ -419,6 +441,58 @@ impl DirectiveSubverifier {
                         return Ok(Err(()));
                     }
                     ns = if is_static { var_parent.static_protected_ns() } else { var_parent.protected_ns() };
+                    break;
+                },
+                Attribute::Internal(_) => {
+                    ns = var_scope.search_system_ns_in_scope_chain(SystemNamespaceKind::Internal);
+                    break;
+                },
+                _ => {},
+            }
+        }
+        if ns.is_none() {
+            ns = var_scope.search_system_ns_in_scope_chain(if var_parent.is::<InterfaceType>() { SystemNamespaceKind::Public } else { SystemNamespaceKind::Internal });
+        }
+        let ns = ns.unwrap();
+
+        Ok(Ok((var_scope, var_parent, var_out, ns)))
+    }
+
+    /// Returns (var_scope, var_parent, var_out, ns) for a
+    /// annotatable directive.
+    fn definition_local_never_static(verifier: &mut Subverifier, attributes: &[Attribute]) -> Result<Result<(Entity, Entity, Names, Entity), ()>, DeferError> {
+        let var_scope = verifier.scope().search_hoist_scope();
+        let var_parent = if var_scope.is::<ClassScope>() || var_scope.is::<EnumScope>() {
+            var_scope.class()
+        } else if var_scope.is::<InterfaceScope>() {
+            var_scope.interface()
+        } else {
+            var_scope.clone()
+        };
+        let var_out = var_parent.properties(&verifier.host);
+
+        // Determine the namespace according to the attribute combination
+        let mut ns = None;
+        for attr in attributes.iter().rev() {
+            match attr {
+                Attribute::Expression(exp) => {
+                    let nsconst = verifier.verify_expression(exp, &Default::default())?;
+                    if nsconst.as_ref().map(|k| !k.is::<NamespaceConstant>()).unwrap_or(false) {
+                        verifier.add_verify_error(&exp.location(), WhackDiagnosticKind::NotANamespaceConstant, diagarg![]);
+                        return Ok(Err(()));
+                    }
+                    if !(var_parent.is::<ClassType>() || var_parent.is::<EnumType>()) {
+                        verifier.add_verify_error(&exp.location(), WhackDiagnosticKind::AccessControlNamespaceNotAllowedHere, diagarg![]);
+                        return Ok(Err(()));
+                    }
+                    if nsconst.is_none() {
+                        return Ok(Err(()));
+                    }
+                    ns = Some(nsconst.unwrap().referenced_ns());
+                    break;
+                },
+                Attribute::Public(_) => {
+                    ns = var_scope.search_system_ns_in_scope_chain(SystemNamespaceKind::Public);
                     break;
                 },
                 Attribute::Internal(_) => {

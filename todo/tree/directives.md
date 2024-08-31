@@ -62,7 +62,8 @@ Note that statements and static binding initializers within a class or enum bloc
     - [ ] 9.1. Mark as external
   - [ ] 10. Mark unused
   - [ ] 11. Declare type parameters if specified in syntax
-  - [ ] 12. Visit class block but DO NOT defer
+  - [ ] 12. Create class block scope
+  - [ ] 12. Enter class block scope and visit class block but DO NOT defer; then exit scope
 - [ ] Beta
   - [ ] 1. Resolve the class inheritance (which class it extends) (CONDITION: in case it is "unresolved" yet).
     - [ ] If the extended class is marked final then report a verify error.
@@ -75,9 +76,9 @@ Note that statements and static binding initializers within a class or enum bloc
     - [ ] 4.2. Resolve every `[Event]` meta-data using the previous type locals, contributing events to the class.
   - [ ] 5. Handle the `[Embed]` meta-data if any (BUT DEFER ONLY AT THE FINAL STEP if necessary)
   - [ ] 6. If it is about to defer
-    - Visit class block
+    - Enter class block scope, then visit class block and then exit scope
 - [ ] Omega
-  - [ ] 1. Visit class block but DEFER ONLY AT THE FINAL STEP if necessary.
+  - [ ] 1. Enter class block scope, then visit class block but DEFER ONLY AT THE FINAL STEP if necessary; exit scope as well.
   - [ ] 2. (GUARD: do not double this step) Report a verify error for non overriden abstract methods but DEFER ONLY AT THE FINAL STEP if necessary.
   - [ ] 3. (GUARD: do not double this step) Handle the `[Bindable]` meta-data but DEFER ONLY AT THE FINAL STEP if necessary.
   - [ ] 4. If the base class contains a non-empty constructor, that (sub)class must define a constructor.
