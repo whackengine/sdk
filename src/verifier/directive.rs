@@ -250,6 +250,42 @@ impl DirectiveSubverifier {
                     return Ok(());
                 }
 
+                // Create class block scope
+                let block_scope = verifier.host.factory().create_class_scope(&class_entity);
+                verifier.node_mapping().set(&defn.block, Some(block_scope.clone()));
+
+                // Declare type parameters if specified in syntax
+                if let Some(list) = defn.type_parameters.as_ref() {
+                    let internal_ns = class_parent_scope.search_system_ns_in_scope_chain(SystemNamespaceKind::Internal).unwrap();
+                    for type_param_node in list {
+                        let name = verifier.host.factory().create_qname(&internal_ns, type_param_node.name.0.clone());
+                        let type_param = verifier.host.factory().create_type_parameter_type(&name);
+
+                        // Contribute type parameter
+                        if class_entity.type_params().is_none() {
+                            class_entity.set_type_params(Some(shared_array![]));
+                        }
+                        class_entity.type_params().unwrap().push(type_param.clone());
+
+                        // Place type parameter into block scope
+                        let type_alias = verifier.host.factory().create_alias(name.clone(), type_param.clone());
+                        block_scope.properties(&verifier.host).set(name.clone(), type_alias);
+                    }
+                }
+
+                // Enter class block scope and visit class block but DO NOT defer; then exit scope
+                verifier.inherit_and_enter_scope(&block_scope);
+                let _ = DirectiveSubverifier::verify_directives(verifier, &defn.block.directives);
+                verifier.exit_scope();
+
+                // Next phase
+                verifier.set_drtv_phase(drtv, VerifierPhase::Beta);
+                return Err(DeferError(None));
+            },
+            VerifierPhase::Beta => {
+                fixme()
+            },
+            VerifierPhase::Omega => {
                 fixme()
             },
             _ => panic!(),
