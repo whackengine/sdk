@@ -74,8 +74,18 @@ impl Verifier {
 
     /// Class information used in code generation, such as
     /// number of slots and variable slot order.
-    pub fn codegen_class_info(&self) -> SharedMap<Entity, Rc<CodegenClassInfo>> {
+    pub fn codegen_class_info_mapping(&self) -> SharedMap<Entity, Rc<CodegenClassInfo>> {
         self.verifier.codegen_class_info.clone()
+    }
+
+    pub fn codegen_class_info(&mut self, class_entity: &Entity) -> Rc<CodegenClassInfo> {
+        if let Some(info) = self.verifier.codegen_class_info.get(class_entity) {
+            info
+        } else {
+            let info = Rc::new(CodegenClassInfo::new());
+            self.verifier.codegen_class_info.set(class_entity.clone(), info.clone());
+            info
+        }
     }
 
     /// # Panics
