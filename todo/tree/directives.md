@@ -63,7 +63,7 @@ Note that statements and static binding initializers within a class or enum bloc
   - [x] 10. Mark unused
   - [ ] 11. Declare type parameters if specified in syntax
   - [ ] 12. Create class block scope
-  - [ ] 12. Enter class block scope and visit class block but DO NOT defer; then exit scope
+  - [ ] 13. Enter class block scope and visit class block but DO NOT defer; then exit scope
 - [ ] Beta
   - [ ] 1. Resolve the class inheritance (which class it extends) (CONDITION: in case it is "unresolved" yet).
     - [ ] If the extended class is marked final then report a verify error.

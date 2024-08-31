@@ -58,6 +58,7 @@ impl Verifier {
                 function_definition_partials: SharedMap::new(),
                 definition_conflicts: SharedArray::new(),
                 class_defn_guard: HashMap::new(),
+                codegen_class_info: SharedMap::new(),
                 invalidated: false,
                 external: false,
                 // deferred_counter: 0,
@@ -69,6 +70,12 @@ impl Verifier {
     /// Indicates whether an error was found while verifying the program.
     pub fn invalidated(&self) -> bool {
         self.verifier.invalidated
+    }
+
+    /// Class information used in code generation, such as
+    /// number of slots and variable slot order.
+    pub fn codegen_class_info(&self) -> SharedMap<Entity, Rc<CodegenClassInfo>> {
+        self.verifier.codegen_class_info.clone()
     }
 
     /// # Panics
@@ -220,6 +227,8 @@ pub(crate) struct Subverifier {
     pub definition_conflicts: SharedArray<(Entity, Entity)>,
 
     pub class_defn_guard: HashMap<NodeAsKey<Rc<Directive>>, Rc<ClassDefnGuard>>,
+
+    pub codegen_class_info: SharedMap<Entity, Rc<CodegenClassInfo>>,
 
     invalidated: bool,
     // pub deferred_counter: usize,
