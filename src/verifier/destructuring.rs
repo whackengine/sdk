@@ -42,6 +42,11 @@ impl DestructuringDeclarationSubverifier {
             slot1.set_parent(Some(parent.clone()));
             slot1.set_is_external(is_external);
 
+            // Push variable as slot to codegen information
+            if parent.is::<ClassType>() && !parent.is_external() && *output == parent.prototype(&verifier.host) {
+                verifier.codegen_class_info(&parent).slot_vars.clone().push(slot1.clone());
+            }
+
             // Ensure definition is not shadowing another definition
             verifier.ensure_not_shadowing_definition(&pattern.location(), output, parent, &name);
 
@@ -493,6 +498,11 @@ impl DestructuringDeclarationSubverifier {
         slot.set_location(Some(shorthand.1.clone()));
         slot.set_parent(Some(parent.clone()));
         slot.set_is_external(is_external);
+
+        // Push variable as slot to codegen information
+        if parent.is::<ClassType>() && !parent.is_external() && *output == parent.prototype(&verifier.host) {
+            verifier.codegen_class_info(&parent).slot_vars.clone().push(slot.clone());
+        }
 
         // Ensure definition is not shadowing another definition
         verifier.ensure_not_shadowing_definition(&shorthand.1, output, parent, &name);

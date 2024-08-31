@@ -194,11 +194,20 @@ impl DirectiveSubverifier {
                         class_entity.set_is_options_class(true);
                     // [Whack::External] meta-data
                     } else if m.name.0 == "Whack::External" {
+                        let mut slots = 0usize;
+
                         // Require the `slots="NUMBER"` pair,
                         // defining the number of elements contained in the instance Array
                         // at runtime (always counts the CONSTRUCTOR and DYNAMIC
                         // PROPERTIES slots, therefore it is at least "2").
-                        fixme();
+                        if let Some(entries) = m.entries.as_ref() {
+                            fixme();
+                        } else {
+                            fixme();
+                        }
+
+                        // Set slots number
+                        verifier.codegen_class_info(&class_entity).slots.set(slots);
 
                         // Mark as external
                         class_entity.set_is_external(true);

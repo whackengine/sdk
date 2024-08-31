@@ -78,16 +78,6 @@ impl Verifier {
         self.verifier.codegen_class_info.clone()
     }
 
-    pub fn codegen_class_info(&mut self, class_entity: &Entity) -> Rc<CodegenClassInfo> {
-        if let Some(info) = self.verifier.codegen_class_info.get(class_entity) {
-            info
-        } else {
-            let info = Rc::new(CodegenClassInfo::new());
-            self.verifier.codegen_class_info.set(class_entity.clone(), info.clone());
-            info
-        }
-    }
-
     /// # Panics
     ///
     /// Panics if the verifier is already invalidated before verifying.
@@ -294,6 +284,16 @@ impl Subverifier {
             let g = Rc::new(ClassDefnGuard::new());
             self.class_defn_guard.insert(k, g.clone());
             g
+        }
+    }
+
+    pub fn codegen_class_info(&mut self, class_entity: &Entity) -> Rc<CodegenClassInfo> {
+        if let Some(info) = self.codegen_class_info.get(class_entity) {
+            info
+        } else {
+            let info = Rc::new(CodegenClassInfo::new());
+            self.codegen_class_info.set(class_entity.clone(), info.clone());
+            info
         }
     }
 
