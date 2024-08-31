@@ -49,18 +49,18 @@ Note that statements and static binding initializers within a class or enum bloc
 ## Class definitions
 
 - [ ] Alpha
-  - [ ] 1. Attempt to define the class partially; or fail if a conflict occurs, therefore ignoring this class definition.
-  - [ ] 2. Set parent
-  - [ ] 3. Set ASDoc
-  - [ ] 4. Set Location
-  - [ ] 5. Attach meta-data
-  - [ ] 6. Check if the `[Options]` meta-data is specified, therefore calling `set_is_options_class(true)`
-  - [ ] 7. Assign attributes correctly (`static`, `dynamic`, `abstract`, and `final`)
-  - [ ] 8. Call `set_extends_class(Some(verifier.host.unresolved_entity()))`
-  - [ ] 9. Handle the `[Whack::External]` if any
+  - [x] 1. Attempt to define the class partially; or fail if a conflict occurs, therefore ignoring this class definition.
+  - [x] 2. Set parent
+  - [x] 3. Set ASDoc
+  - [x] 4. Set Location
+  - [x] 5. Attach meta-data
+  - [x] 6. Check if the `[Options]` meta-data is specified, therefore calling `set_is_options_class(true)`
+  - [x] 7. Assign attributes correctly (`static`, `dynamic`, `abstract`, and `final`)
+  - [x] 8. Call `set_extends_class(Some(verifier.host.unresolved_entity()))`
+  - [x] 9. Handle the `[Whack::External]` if any
     - [ ] 9.1. Require the `slots="NUMBER"` pair, defining the number of elements contained in the instance Array at runtime (always counts the CONSTRUCTOR and DYNAMIC PROPERTIES slots, therefore it is at least "2").
-    - [ ] 9.1. Mark as external
-  - [ ] 10. Mark unused
+    - [x] 9.1. Mark as external
+  - [x] 10. Mark unused
   - [ ] 11. Declare type parameters if specified in syntax
   - [ ] 12. Create class block scope
   - [ ] 12. Enter class block scope and visit class block but DO NOT defer; then exit scope

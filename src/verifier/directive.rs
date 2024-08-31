@@ -174,12 +174,57 @@ impl DirectiveSubverifier {
             // Alpha
             VerifierPhase::Alpha => {
                 // Determine the class's scope, parent, property destination, and namespace.
-                let defn_local = Self::definition_local_maybe_static(verifier, &defn.attributes)?;
+                let defn_local = Self::definition_local_never_static(verifier, &defn.attributes)?;
                 if defn_local.is_err() {
                     verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
                     return Ok(());
                 }
                 let (class_parent_scope, class_parent, mut class_out, ns) = defn_local.unwrap();
+
+                let public_ns = class_parent_scope.search_system_ns_in_scope_chain(SystemNamespaceKind::Public).unwrap();
+                let name = verifier.host.factory().create_qname(&ns, defn.name.0.clone());
+                let mut class_entity = verifier.host.factory().create_class_type(name, &public_ns);
+                class_entity.set_parent(Some(class_parent.clone()));
+                class_entity.set_asdoc(defn.asdoc.clone());
+                class_entity.set_location(Some(defn.name.1.clone()));
+                let metadata = Attribute::find_metadata(&defn.attributes);
+                for m in metadata {
+                    // [Options] meta-data
+                    if m.name.0 == "Options" {
+                        class_entity.set_is_options_class(true);
+                    // [Whack::External] meta-data
+                    } else if m.name.0 == "Whack::External" {
+                        // Require the `slots="NUMBER"` pair,
+                        // defining the number of elements contained in the instance Array
+                        // at runtime (always counts the CONSTRUCTOR and DYNAMIC
+                        // PROPERTIES slots, therefore it is at least "2").
+                        fixme();
+
+                        // Mark as external
+                        class_entity.set_is_external(true);
+                    }
+                }
+                class_entity.metadata().extend(metadata);
+                class_entity.set_is_static(Attribute::find_static(&defn.attributes).is_some());
+                class_entity.set_is_dynamic(Attribute::find_dynamic(&defn.attributes).is_some());
+                class_entity.set_is_abstract(Attribute::find_abstract(&defn.attributes).is_some());
+                class_entity.set_is_final(Attribute::find_final(&defn.attributes).is_some());
+                class_entity.set_extends_class(Some(verifier.host.unresolved_entity()));
+
+                // Attempt to define the class partially;
+                // or fail if a conflict occurs, therefore ignoring
+                // this class definition.
+                if let Some(prev) = class_out.get(&name) {
+                    class_entity = verifier.handle_definition_conflict(&prev, &class_entity);
+                } else {
+                    Unused(&verifier.host).add_nominal(&class_entity);
+                    class_out.set(name, class_entity.clone());
+                }
+                if !class_entity.is::<ClassType>() {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    return Ok(());
+                }
+
                 fixme()
             },
             _ => panic!(),
