@@ -201,9 +201,25 @@ impl DirectiveSubverifier {
                         // at runtime (always counts the CONSTRUCTOR and DYNAMIC
                         // PROPERTIES slots, therefore it is at least "2").
                         if let Some(entries) = m.entries.as_ref() {
-                            fixme();
+                            let mut found_slots = false;
+                            for entry in entries {
+                                if let Some(k) = entry.key {
+                                    if k.0 == "slots" {
+                                        use std::str::FromStr;
+                                        let val = match entry.value.as_ref() {
+                                            MetadataValue::String(v) => v.0.clone(),
+                                            MetadataValue::IdentifierString(v) => v.0.clone(),
+                                        };
+                                        slots = usize::from_str(&val).unwrap_or(0);
+                                        found_slots = true;
+                                    }
+                                }
+                            }
+                            if !found_slots {
+                                verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::ExternalClassMustSetSlots, diagarg![]);
+                            }
                         } else {
-                            fixme();
+                            verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::ExternalClassMustSetSlots, diagarg![]);
                         }
 
                         // Set slots number

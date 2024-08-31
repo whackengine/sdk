@@ -58,7 +58,7 @@ Note that statements and static binding initializers within a class or enum bloc
   - [x] 7. Assign attributes correctly (`static`, `dynamic`, `abstract`, and `final`)
   - [x] 8. Call `set_extends_class(Some(verifier.host.unresolved_entity()))`
   - [x] 9. Handle the `[Whack::External]` if any
-    - [ ] 9.1. Require the `slots="NUMBER"` pair, defining the number of elements contained in the instance Array at runtime (always counts the CONSTRUCTOR and DYNAMIC PROPERTIES slots, therefore it is at least "2").
+    - [x] 9.1. Require the `slots="NUMBER"` pair, defining the number of elements contained in the instance Array at runtime (always counts the CONSTRUCTOR and DYNAMIC PROPERTIES slots, therefore it is at least "2").
     - [x] 9.1. Mark as external
   - [x] 10. Mark unused
   - [ ] 11. Declare type parameters if specified in syntax
