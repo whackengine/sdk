@@ -621,6 +621,52 @@ impl DirectiveSubverifier {
                     }
                 }
 
+                // Verify interface implementations but DEFER ONLY AT THE FINAL STEP if necessary.
+                if !guard.interface_impl_done.get() {
+                    let mut cancel_impl = false;
+                    for itrfc in class_entity.implements(&host).iter() {
+                        let logs = InterfaceImplement(&host).verify(&class_entity, &itrfc);
+                        if logs.is_err() {
+                            about_to_defer = true;
+                            cancel_impl = true;
+                            break;
+                        }
+                        let logs = logs.unwrap();
+                        for log in logs {
+                            match log {
+                                InterfaceImplementationLog::MethodNotImplemented { name } => {
+                                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::MethodNotImplemented, diagarg![name]);
+                                },
+                                InterfaceImplementationLog::GetterNotImplemented { name } => {
+                                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::GetterNotImplemented, diagarg![name]);
+                                },
+                                InterfaceImplementationLog::SetterNotImplemented { name } => {
+                                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::SetterNotImplemented, diagarg![name]);
+                                },
+                                InterfaceImplementationLog::IncompatibleMethodSignature { name, expected_signature } => {
+                                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::IncompatibleMethodSignature, diagarg![name, expected_signature]);
+                                },
+                                InterfaceImplementationLog::IncompatibleGetterSignature { name, expected_signature } => {
+                                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::IncompatibleGetterSignature, diagarg![name, expected_signature]);
+                                },
+                                InterfaceImplementationLog::IncompatibleSetterSignature { name, expected_signature } => {
+                                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::IncompatibleSetterSignature, diagarg![name, expected_signature]);
+                                },
+                                InterfaceImplementationLog::PropertyMustBeMethod { name } => {
+                                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::PropertyMustBeMethod, diagarg![name]);
+                                },
+                                InterfaceImplementationLog::PropertyMustBeVirtual { name } => {
+                                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::PropertyMustBeVirtual, diagarg![name]);
+                                },
+                            }
+                        }
+                    }
+
+                    if !cancel_impl {
+                        guard.interface_impl_done.set(true);
+                    }
+                }
+
                 if about_to_defer {
                     Err(DeferError(None))
                 } else {

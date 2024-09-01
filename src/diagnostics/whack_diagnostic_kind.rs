@@ -90,6 +90,14 @@ pub enum WhackDiagnosticKind {
     AbstractGetterMustBeOverriden = 2134,
     AbstractSetterMustBeOverriden = 2135,
     ClassMustDefineAConstructor = 2136,
+    MethodNotImplemented = 2137,
+    GetterNotImplemented = 2138,
+    SetterNotImplemented = 2139,
+    IncompatibleMethodSignature = 2137,
+    IncompatibleGetterSignature = 2138,
+    IncompatibleSetterSignature = 2139,
+    PropertyMustBeMethod = 2140,
+    PropertyMustBeVirtual = 2141,
 }
 
 impl WhackDiagnosticKind {

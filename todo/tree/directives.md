@@ -50,20 +50,9 @@ Note that statements and static binding initializers within a class or enum bloc
 
 - [x] Alpha
 - [x] Beta
-  - [x] 1. Resolve the class inheritance.
-  - [x] 2. Resolve the interface implements list.
-  - [x] 3. If `is_options_class()` is true and the class is not a direct subclass of `Object` (but DEFER ONLY AT THE FINAL STEP if necessary if failing to retrieve Object), then report a verify error and call `set_is_options_class(false)`.
-  - [x] 4. Given all present `[Event]` meta-data
   - [ ] 5. Handle the `[Embed]` meta-data if any (BUT DEFER ONLY AT THE FINAL STEP if necessary)
-  - [x] 6. If it is about to defer
-    - Enter class block scope, then visit class block and then exit scope
-- [ ] Omega
-  - [x] 1. Enter class block scope, then visit class block but DEFER ONLY AT THE FINAL STEP if necessary; exit scope as well.
-  - [x] 2. (GUARD: do not double this step) Report a verify error for non overriden abstract methods but DEFER ONLY AT THE FINAL STEP if necessary.
+- [x] Omega
   - [ ] 3. (GUARD: do not double this step) Handle the `[Bindable]` meta-data but DEFER ONLY AT THE FINAL STEP if necessary.
-  - [x] 4. If the base class contains a non-empty constructor, that (sub)class must define a constructor.
-  - [ ] 5. (GUARD: do not double this step) Verify interface implementations but DEFER ONLY AT THE FINAL STEP if necessary.
-  - [x] 6. Mark as finished phase.
 
 ## Enum definitions
 

@@ -94,6 +94,14 @@ lazy_static! {
         WhackDiagnosticKind::AbstractGetterMustBeOverriden.id() => "Abstract getter must be overriden: $1.".into(),
         WhackDiagnosticKind::AbstractSetterMustBeOverriden.id() => "Abstract setter must be overriden: $1.".into(),
         WhackDiagnosticKind::ClassMustDefineAConstructor.id() => "Class must define a constructor.".into(),
+        WhackDiagnosticKind::MethodNotImplemented.id() => "Method not implemented: $1.".into(),
+        WhackDiagnosticKind::GetterNotImplemented.id() => "Getter not implemented: $1.".into(),
+        WhackDiagnosticKind::SetterNotImplemented.id() => "Setter not implemented: $1.".into(),
+        WhackDiagnosticKind::IncompatibleMethodSignature.id() => "Incompatible method signature for $1: expected $2.".into(),
+        WhackDiagnosticKind::IncompatibleGetterSignature.id() => "Incompatible getter signature for $1: expected $2.".into(),
+        WhackDiagnosticKind::IncompatibleSetterSignature.id() => "Incompatible setter signature for $1: expected $2.".into(),
+        WhackDiagnosticKind::PropertyMustBeMethod.id() => "Property must be method: $1.".into(),
+        WhackDiagnosticKind::PropertyMustBeVirtual.id() => "Property must be virtual variable: $1.".into(),
         // WhackDiagnosticKind::K.id() => ".".into(),
     };
 }

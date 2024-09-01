@@ -730,6 +730,7 @@ pub(crate) struct ClassDefnGuard {
     pub event_metadata_done: Cell<bool>,
     pub abstract_overrides_done: Cell<bool>,
     pub default_constructor_done: Cell<bool>,
+    pub interface_impl_done: Cell<bool>,
 }
 
 impl ClassDefnGuard {
@@ -739,6 +740,7 @@ impl ClassDefnGuard {
             event_metadata_done: Cell::new(false),
             abstract_overrides_done: Cell::new(false),
             default_constructor_done: Cell::new(false),
+            interface_impl_done: Cell::new(false),
         }
     }
 }
