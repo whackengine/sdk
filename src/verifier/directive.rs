@@ -365,7 +365,164 @@ impl DirectiveSubverifier {
                     guard.implements_list_done.set(true);
                 }
 
-                fixme()
+                let mut about_to_defer = host.object_type().is::<UnresolvedEntity>();
+
+                // If `is_options_class()` is true and the class is not a direct subclass
+                // of `Object`, report a verify error and call `set_is_options_class(false)`.
+                if !about_to_defer && class_entity.is_options_class() && class_entity.extends_class(&host).map(|b| b == host.object_type()).unwrap_or(true) {
+                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::OptionsClassMustExtendObject, diagarg![]);
+                    class_entity.set_is_options_class(false);
+                }
+
+                // Given all present `[Event]` meta-data
+                if !guard.event_metadata_done.get() {
+                    let event_metadata_list = Attribute::find_metadata(&defn.attributes).iter().filter(|m| {
+                        m.name.0 == "Event"
+                    }).collect::<Vec<_>>();
+
+                    // Resolve the `type="Name"` pair for each meta-data into a local (but DEFER ONLY AT THE FINAL STEP if necessary.).
+                    let mut type_list: Vec<Entity> = vec![];
+                    let mut cancel = false;
+                    'm: for m in event_metadata_list {
+                        let mut found_type = false;
+                        if let Some(entries) = m.entries.as_ref() {
+                            for entry in entries {
+                                if let Some((k, _)) = entry.key.as_ref() {
+                                    // type="T" entry
+                                    if k == "type" {
+                                        // Value
+                                        let val = match entry.value.as_ref() {
+                                            MetadataValue::String(val) => {
+                                                (val.0.clone(), Location::with_offsets(&val.1.compilation_unit(), val.1.first_offset() + 1, val.1.last_offset() - 1))
+                                            },
+                                            MetadataValue::IdentifierString(val) => val.clone(),
+                                        };
+
+                                        // Parse type expression
+                                        let tyexp = ParserFacade(&val.1.compilation_unit(), ParserOptions {
+                                            byte_range: Some((val.1.first_offset(), val.1.last_offset())),
+                                            ..default()
+                                        }).parse_type_expression();
+
+                                        // Verify
+                                        let t = verifier.verify_type_expression(&tyexp);
+                                        if let Ok(t) = t {
+                                            let t = t.unwrap_or(host.object_type());
+                                            about_to_defer = t.is::<UnresolvedEntity>();
+                                            if about_to_defer {
+                                                cancel = true;
+                                                break 'm;
+                                            }
+                                            type_list.push(t);
+                                        } else {
+                                            about_to_defer = true;
+                                            cancel = true;
+                                            break 'm;
+                                        }
+
+                                        found_type = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if !found_type {
+                            // push Object
+                            about_to_defer = host.object_type().is::<UnresolvedEntity>();
+                            if about_to_defer {
+                                cancel = true;
+                                break 'm;
+                            }
+                            type_list.push(host.object_type());
+                        }
+                    }
+
+                    if !cancel {
+                        // Resolve every `[Event]` meta-data using
+                        // the previous type locals, contributing events to the class.
+                        'm: for i in 0..event_metadata_list.len() {
+                            let m = event_metadata_list[i];
+                            let mut name: Option<String> = None;
+                            let m_type = &type_list[i];
+                            let mut bubbles: Option<bool> = None;
+
+                            if let Some(entries) = m.entries.as_ref() {
+                                for entry in entries {
+                                    if let Some((k, _)) = entry.key.as_ref() {
+                                        // Value
+                                        let val = match entry.value.as_ref() {
+                                            MetadataValue::String(val) => val.0.clone(),
+                                            MetadataValue::IdentifierString(val) => val.0.clone(),
+                                        };
+
+                                        // name="eventName" entry
+                                        if k == "name" {
+                                            name = Some(val);
+                                        // bubbles="boolean" entry
+                                        } else if k == "bubbles" {
+                                            bubbles = Some(val == "true");
+                                        }
+                                    }
+                                }
+                            }
+
+                            if name.is_none() {
+                                verifier.add_verify_error(&m.location, WhackDiagnosticKind::MalformedEventMetadata, diagarg![]);
+                            } else {
+                                let name = name.unwrap();
+                                let mut constant: Option<Entity> = None;
+
+                                // Resolve @eventType ASDoc tag
+                                if let Some(asdoc) = m.asdoc.as_ref() {
+                                    for tag in &asdoc.tags {
+                                        if let AsdocTag::EventType(exp) = &tag.0 {
+                                            let val = verifier.verify_expression(exp, &Default::default());
+                                            if val.is_err() {
+                                                cancel = true;
+                                                about_to_defer = true;
+                                                break 'm;
+                                            }
+                                            let val = val.unwrap();
+                                            if val.is_none() {
+                                                break;
+                                            }
+                                            let val = val.unwrap();
+
+                                            if (val.is::<StaticReferenceValue>() || val.is::<PackageReferenceValue>()) && val.property().is::<VariableSlot>() {
+                                                constant = Some(val.property());
+                                            }
+
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                // Contribute Event
+                                class_entity.events().set(name.clone(), Event {
+                                    data_type: m_type.clone(),
+                                    bubbles,
+                                    constant,
+                                });
+                            }
+                        }
+
+                        if !cancel {
+                            guard.event_metadata_done.set(true);
+                        }
+                    }
+                }
+
+                if about_to_defer {
+                    // Enter class block scope and visit class block, then exit.
+                    verifier.inherit_and_enter_scope(&verifier.host.node_mapping().get(&defn.block).unwrap());
+                    let _ = DirectiveSubverifier::verify_directives(verifier, &defn.block.directives);
+                    verifier.exit_scope();
+                } else {
+                    // Next phase
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Omega);
+                }
+
+                Err(DeferError(None))
             },
             VerifierPhase::Omega => {
                 fixme()

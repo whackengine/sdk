@@ -49,15 +49,13 @@ Note that statements and static binding initializers within a class or enum bloc
 ## Class definitions
 
 - [x] Alpha
-- [ ] Beta
+- [x] Beta
   - [x] 1. Resolve the class inheritance.
   - [x] 2. Resolve the interface implements list.
-  - [ ] 3. If `is_options_class()` is true and the class is not a direct subclass of `Object` (but DEFER ONLY AT THE FINAL STEP if necessary if failing to retrieve Object), then report a verify error and call `set_is_options_class(false)`.
-  - [ ] 4. (GUARD: do not double this step) Given all present `[Event]` meta-data
-    - [ ] 4.1. Resolve the `type="Name"` pair for each meta-data into a local (but DEFER ONLY AT THE FINAL STEP if necessary.).
-    - [ ] 4.2. Resolve every `[Event]` meta-data using the previous type locals, contributing events to the class.
+  - [x] 3. If `is_options_class()` is true and the class is not a direct subclass of `Object` (but DEFER ONLY AT THE FINAL STEP if necessary if failing to retrieve Object), then report a verify error and call `set_is_options_class(false)`.
+  - [x] 4. Given all present `[Event]` meta-data
   - [ ] 5. Handle the `[Embed]` meta-data if any (BUT DEFER ONLY AT THE FINAL STEP if necessary)
-  - [ ] 6. If it is about to defer
+  - [x] 6. If it is about to defer
     - Enter class block scope, then visit class block and then exit scope
 - [ ] Omega
   - [ ] 1. Enter class block scope, then visit class block but DEFER ONLY AT THE FINAL STEP if necessary; exit scope as well.

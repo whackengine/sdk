@@ -84,6 +84,8 @@ pub enum WhackDiagnosticKind {
     CannotExtendFinalClass = 2128,
     ExtendingSelfReferentialClass = 2129,
     NotAnInterface = 2130,
+    OptionsClassMustExtendObject = 2131,
+    MalformedEventMetadata = 2132,
 }
 
 impl WhackDiagnosticKind {
