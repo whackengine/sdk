@@ -63,7 +63,7 @@ Note that statements and static binding initializers within a class or enum bloc
   - [ ] 3. (GUARD: do not double this step) Handle the `[Bindable]` meta-data but DEFER ONLY AT THE FINAL STEP if necessary.
   - [ ] 4. If the base class contains a non-empty constructor, that (sub)class must define a constructor.
   - [ ] 5. (GUARD: do not double this step) Verify interface implementations but DEFER ONLY AT THE FINAL STEP if necessary.
-  - [ ] 6. Mark as finished phase.
+  - [x] 6. Mark as finished phase.
 
 ## Enum definitions
 
