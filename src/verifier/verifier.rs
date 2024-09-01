@@ -722,11 +722,15 @@ impl Default for VerifierExpressionContext {
     }
 }
 
-pub(crate) struct ClassDefnGuard {}
+pub(crate) struct ClassDefnGuard {
+    pub implements_list_done: Cell<bool>,
+}
 
 impl ClassDefnGuard {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            implements_list_done: Cell::new(false),
+        }
     }
 }
 

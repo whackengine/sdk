@@ -87,6 +87,7 @@ lazy_static! {
         WhackDiagnosticKind::NotAClass.id() => "Not a class.".into(),
         WhackDiagnosticKind::CannotExtendFinalClass.id() => "Cannot extend final class $1.".into(),
         WhackDiagnosticKind::ExtendingSelfReferentialClass.id() => "Extending self-referential class.".into(),
+        WhackDiagnosticKind::NotAnInterface.id() => "Not an interface.".into(),
         // WhackDiagnosticKind::K.id() => ".".into(),
     };
 }

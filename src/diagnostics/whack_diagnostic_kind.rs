@@ -83,6 +83,7 @@ pub enum WhackDiagnosticKind {
     NotAClass = 2127,
     CannotExtendFinalClass = 2128,
     ExtendingSelfReferentialClass = 2129,
+    NotAnInterface = 2130,
 }
 
 impl WhackDiagnosticKind {

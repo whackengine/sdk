@@ -305,7 +305,7 @@ impl DirectiveSubverifier {
                         if let Some(t_node) = defn.extends_clause.as_ref() {
                             let t = verifier.verify_type_expression(&t_node)?;
                             if let Some(t) = t {
-                                if t.is::<ClassType>() {
+                                if t.is_class_type_possibly_after_sub() {
                                     // Ensure extended class is not final
                                     if t.is_final() {
                                         verifier.add_verify_error(&t_node.location(), WhackDiagnosticKind::CannotExtendFinalClass, diagarg![t.clone()]);
@@ -333,6 +333,36 @@ impl DirectiveSubverifier {
                             class_entity.set_extends_class(Some(host.object_type().defer()?));
                         }
                     }
+                }
+
+                let guard = verifier.class_defn_guard(drtv);
+
+                // (GUARD: do not double this step)
+                // Resolve the interface implements list,
+                // contributing to the list of implemented interfaces of the class.
+                if !guard.implements_list_done.get() {
+                    if let Some(implements_list) = defn.implements_clause.as_ref() {
+                        let mut implements_t: Vec<Entity> = vec![];
+                        for t_node in implements_list {
+                            let t = verifier.verify_type_expression(&t_node)?;
+                            if let Some(t) = t {
+                                if t.is_interface_type_possibly_after_sub() {
+                                    implements_t.push(t);
+                                } else {
+                                    verifier.add_verify_error(&t_node.location(), WhackDiagnosticKind::NotAnInterface, diagarg![]);
+                                }
+                            }
+                        }
+                        for t in &implements_t {
+                            if class_entity.implements(&host).index_of(t).is_none() { 
+                                class_entity.implements(&host).push(t.clone());
+
+                                // Count implementor
+                                t.known_implementors().push(class_entity.clone());
+                            }
+                        }
+                    }
+                    guard.implements_list_done.set(true);
                 }
 
                 fixme()

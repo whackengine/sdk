@@ -51,7 +51,7 @@ Note that statements and static binding initializers within a class or enum bloc
 - [x] Alpha
 - [ ] Beta
   - [x] 1. Resolve the class inheritance.
-  - [ ] 2. (GUARD: do not double this step) Resolve the interface implements list, contributing to the list of implemented interfaces of the class; but DEFER ONLY AT THE FINAL STEP if necessary..
+  - [x] 2. Resolve the interface implements list.
   - [ ] 3. If `is_options_class()` is true and the class is not a direct subclass of `Object` (but DEFER ONLY AT THE FINAL STEP if necessary if failing to retrieve Object), then report a verify error and call `set_is_options_class(false)`.
   - [ ] 4. (GUARD: do not double this step) Given all present `[Event]` meta-data
     - [ ] 4.1. Resolve the `type="Name"` pair for each meta-data into a local (but DEFER ONLY AT THE FINAL STEP if necessary.).
