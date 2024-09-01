@@ -86,6 +86,9 @@ pub enum WhackDiagnosticKind {
     NotAnInterface = 2130,
     OptionsClassMustExtendObject = 2131,
     MalformedEventMetadata = 2132,
+    AbstractMethodMustBeOverriden = 2133,
+    AbstractGetterMustBeOverriden = 2134,
+    AbstractSetterMustBeOverriden = 2135,
 }
 
 impl WhackDiagnosticKind {

@@ -90,6 +90,9 @@ lazy_static! {
         WhackDiagnosticKind::NotAnInterface.id() => "Not an interface.".into(),
         WhackDiagnosticKind::OptionsClassMustExtendObject.id() => "Options class must extend Object.".into(),
         WhackDiagnosticKind::MalformedEventMetadata.id() => "Malformed Event meta-data.".into(),
+        WhackDiagnosticKind::AbstractMethodMustBeOverriden.id() => "Abstract method must be overriden: $1.".into(),
+        WhackDiagnosticKind::AbstractGetterMustBeOverriden.id() => "Abstract getter must be overriden: $1.".into(),
+        WhackDiagnosticKind::AbstractSetterMustBeOverriden.id() => "Abstract setter must be overriden: $1.".into(),
         // WhackDiagnosticKind::K.id() => ".".into(),
     };
 }
