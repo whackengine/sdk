@@ -85,6 +85,8 @@ lazy_static! {
         WhackDiagnosticKind::SetterMustReturnVoid.id() => "Setter must return void.".into(),
         WhackDiagnosticKind::ExternalClassMustSetSlots.id() => "External class must assign a number to the 'slots' key of the 'Whack::External' meta-data.".into(),
         WhackDiagnosticKind::NotAClass.id() => "Not a class.".into(),
+        WhackDiagnosticKind::CannotExtendFinalClass.id() => "Cannot extend final class $1.".into(),
+        WhackDiagnosticKind::ExtendingSelfReferentialClass.id() => "Extending self-referential class.".into(),
         // WhackDiagnosticKind::K.id() => ".".into(),
     };
 }

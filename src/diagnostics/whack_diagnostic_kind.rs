@@ -81,6 +81,8 @@ pub enum WhackDiagnosticKind {
     SetterMustReturnVoid = 2125,
     ExternalClassMustSetSlots = 2126,
     NotAClass = 2127,
+    CannotExtendFinalClass = 2128,
+    ExtendingSelfReferentialClass = 2129,
 }
 
 impl WhackDiagnosticKind {

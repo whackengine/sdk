@@ -306,9 +306,22 @@ impl DirectiveSubverifier {
                             let t = verifier.verify_type_expression(&t_node)?;
                             if let Some(t) = t {
                                 if t.is::<ClassType>() {
-                                    fixme();
-                                    class_entity.set_extends_class(Some(t));
-                                    fixme();
+                                    // Ensure extended class is not final
+                                    if t.is_final() {
+                                        verifier.add_verify_error(&t_node.location(), WhackDiagnosticKind::CannotExtendFinalClass, diagarg![t.clone()]);
+                                    }
+
+                                    // Ensure extended class is not self referential
+                                    if class_entity == t || t.is_subtype_of(&class_entity, &host)? {
+                                        verifier.add_verify_error(&t_node.location(), WhackDiagnosticKind::ExtendingSelfReferentialClass, diagarg![]);
+                                        class_entity.set_extends_class(Some(host.object_type().defer()?));
+                                    } else {
+                                        // Contribute class to the list of known subclasses of t.
+                                        t.known_subclasses().push(class_entity.clone());
+
+                                        // Set extended class
+                                        class_entity.set_extends_class(Some(t));
+                                    }
                                 } else {
                                     verifier.add_verify_error(&t_node.location(), WhackDiagnosticKind::NotAClass, diagarg![]);
                                     class_entity.set_extends_class(Some(host.object_type().defer()?));
