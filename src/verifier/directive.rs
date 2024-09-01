@@ -566,7 +566,7 @@ impl DirectiveSubverifier {
 
                 // Report a verify error for non overriden abstract methods
                 // but DEFER ONLY AT THE FINAL STEP if necessary.
-                if guard.abstract_overrides_done.get() {
+                if !guard.abstract_overrides_done.get() {
                     let list = MethodOverride(&host).abstract_methods_not_overriden(&class_entity, &block_scope.concat_open_ns_set_of_scope_chain());
                     if let Ok(list) = list {
                         for m in list.iter() {
@@ -589,6 +589,35 @@ impl DirectiveSubverifier {
                         guard.abstract_overrides_done.set(true);
                     } else {
                         about_to_defer = true;
+                    }
+                }
+
+                // If the base class contains a non-empty constructor,
+                // that (sub)class must define a constructor
+                if !guard.default_constructor_done.get() {
+                    let base_class = class_entity.extends_class(&host);
+                    if base_class.as_ref().map(|c| c.is::<UnresolvedEntity>()).unwrap_or(true) {
+                        if base_class.is_none() {
+                            guard.default_constructor_done.set(true);
+                        } else {
+                            about_to_defer = true;
+                        }
+                    } else {
+                        let ctor = base_class.unwrap().constructor_method(&host);
+                        if let Some(ctor) = ctor {
+                            let sig = ctor.signature(&host);
+                            if sig.is::<UnresolvedEntity>() {
+                                about_to_defer = true;
+                            } else {
+                                let has_required = sig.params().iter().any(|p| p.kind == ParameterKind::Required);
+                                if has_required && class_entity.constructor_method(&host).is_none() {
+                                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::ClassMustDefineAConstructor, diagarg![]);
+                                }
+                                guard.default_constructor_done.set(true);
+                            }
+                        } else {
+                            guard.default_constructor_done.set(true);
+                        }
                     }
                 }
 

@@ -93,6 +93,7 @@ lazy_static! {
         WhackDiagnosticKind::AbstractMethodMustBeOverriden.id() => "Abstract method must be overriden: $1.".into(),
         WhackDiagnosticKind::AbstractGetterMustBeOverriden.id() => "Abstract getter must be overriden: $1.".into(),
         WhackDiagnosticKind::AbstractSetterMustBeOverriden.id() => "Abstract setter must be overriden: $1.".into(),
+        WhackDiagnosticKind::ClassMustDefineAConstructor.id() => "Class must define a constructor.".into(),
         // WhackDiagnosticKind::K.id() => ".".into(),
     };
 }

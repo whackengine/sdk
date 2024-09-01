@@ -89,6 +89,7 @@ pub enum WhackDiagnosticKind {
     AbstractMethodMustBeOverriden = 2133,
     AbstractGetterMustBeOverriden = 2134,
     AbstractSetterMustBeOverriden = 2135,
+    ClassMustDefineAConstructor = 2136,
 }
 
 impl WhackDiagnosticKind {

@@ -61,7 +61,7 @@ Note that statements and static binding initializers within a class or enum bloc
   - [x] 1. Enter class block scope, then visit class block but DEFER ONLY AT THE FINAL STEP if necessary; exit scope as well.
   - [x] 2. (GUARD: do not double this step) Report a verify error for non overriden abstract methods but DEFER ONLY AT THE FINAL STEP if necessary.
   - [ ] 3. (GUARD: do not double this step) Handle the `[Bindable]` meta-data but DEFER ONLY AT THE FINAL STEP if necessary.
-  - [ ] 4. If the base class contains a non-empty constructor, that (sub)class must define a constructor.
+  - [x] 4. If the base class contains a non-empty constructor, that (sub)class must define a constructor.
   - [ ] 5. (GUARD: do not double this step) Verify interface implementations but DEFER ONLY AT THE FINAL STEP if necessary.
   - [x] 6. Mark as finished phase.
 

@@ -729,6 +729,7 @@ pub(crate) struct ClassDefnGuard {
     pub implements_list_done: Cell<bool>,
     pub event_metadata_done: Cell<bool>,
     pub abstract_overrides_done: Cell<bool>,
+    pub default_constructor_done: Cell<bool>,
 }
 
 impl ClassDefnGuard {
@@ -737,6 +738,7 @@ impl ClassDefnGuard {
             implements_list_done: Cell::new(false),
             event_metadata_done: Cell::new(false),
             abstract_overrides_done: Cell::new(false),
+            default_constructor_done: Cell::new(false),
         }
     }
 }
