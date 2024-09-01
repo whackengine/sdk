@@ -183,7 +183,7 @@ impl DirectiveSubverifier {
 
                 let public_ns = class_parent_scope.search_system_ns_in_scope_chain(SystemNamespaceKind::Public).unwrap();
                 let name = verifier.host.factory().create_qname(&ns, defn.name.0.clone());
-                let mut class_entity = verifier.host.factory().create_class_type(name, &public_ns);
+                let mut class_entity = verifier.host.factory().create_class_type(name.clone(), &public_ns);
                 class_entity.set_parent(Some(class_parent.clone()));
                 class_entity.set_asdoc(defn.asdoc.clone());
                 class_entity.set_location(Some(defn.name.1.clone()));
@@ -234,7 +234,13 @@ impl DirectiveSubverifier {
                 class_entity.set_is_dynamic(Attribute::find_dynamic(&defn.attributes).is_some());
                 class_entity.set_is_abstract(Attribute::find_abstract(&defn.attributes).is_some());
                 class_entity.set_is_final(Attribute::find_final(&defn.attributes).is_some());
-                class_entity.set_extends_class(Some(verifier.host.unresolved_entity()));
+
+                let is_the_object_class = name.namespace() == verifier.host.top_level_package().public_ns().unwrap() && name.local_name() == "Object";
+                if is_the_object_class {
+                    class_entity.set_extends_class(None);
+                } else {
+                    class_entity.set_extends_class(Some(verifier.host.unresolved_entity()));
+                }
 
                 // Attempt to define the class partially;
                 // or fail if a conflict occurs, therefore ignoring
@@ -249,6 +255,9 @@ impl DirectiveSubverifier {
                     verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
                     return Ok(());
                 }
+
+                // Map directive to class entity
+                verifier.host.node_mapping().set(drtv, if class_entity.is::<ClassType>() { Some(class_entity.clone()) } else { None });
 
                 // Create class block scope
                 let block_scope = verifier.host.factory().create_class_scope(&class_entity);
@@ -283,6 +292,36 @@ impl DirectiveSubverifier {
                 return Err(DeferError(None));
             },
             VerifierPhase::Beta => {
+                // Database
+                let host = verifier.host.clone();
+
+                // Class entity
+                let class_entity = host.node_mapping().get(drtv).unwrap();
+
+                // Resolve the class inheritance (which class it extends)
+                // (CONDITION: in case it is "unresolved" yet).
+                if let Some(base_class) = class_entity.extends_class(&host) {
+                    if base_class.is::<UnresolvedEntity>() {
+                        if let Some(t_node) = defn.extends_clause.as_ref() {
+                            let t = verifier.verify_type_expression(&t_node)?;
+                            if let Some(t) = t {
+                                if t.is::<ClassType>() {
+                                    fixme();
+                                    class_entity.set_extends_class(Some(t));
+                                    fixme();
+                                } else {
+                                    verifier.add_verify_error(&t_node.location(), WhackDiagnosticKind::NotAClass, diagarg![]);
+                                    class_entity.set_extends_class(Some(host.object_type().defer()?));
+                                }
+                            } else {
+                                class_entity.set_extends_class(Some(host.object_type().defer()?));
+                            }
+                        } else {
+                            class_entity.set_extends_class(Some(host.object_type().defer()?));
+                        }
+                    }
+                }
+
                 fixme()
             },
             VerifierPhase::Omega => {

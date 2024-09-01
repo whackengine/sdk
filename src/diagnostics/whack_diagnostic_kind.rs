@@ -80,6 +80,7 @@ pub enum WhackDiagnosticKind {
     SetterMustTakeDataType = 2124,
     SetterMustReturnVoid = 2125,
     ExternalClassMustSetSlots = 2126,
+    NotAClass = 2127,
 }
 
 impl WhackDiagnosticKind {

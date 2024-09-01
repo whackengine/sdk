@@ -84,6 +84,7 @@ lazy_static! {
         WhackDiagnosticKind::SetterMustTakeDataType.id() => "Setter must take data type $1.".into(),
         WhackDiagnosticKind::SetterMustReturnVoid.id() => "Setter must return void.".into(),
         WhackDiagnosticKind::ExternalClassMustSetSlots.id() => "External class must assign a number to the 'slots' key of the 'Whack::External' meta-data.".into(),
+        WhackDiagnosticKind::NotAClass.id() => "Not a class.".into(),
         // WhackDiagnosticKind::K.id() => ".".into(),
     };
 }

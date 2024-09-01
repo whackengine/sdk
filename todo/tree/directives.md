@@ -50,7 +50,7 @@ Note that statements and static binding initializers within a class or enum bloc
 
 - [x] Alpha
 - [ ] Beta
-  - [ ] 1. Resolve the class inheritance (which class it extends) (CONDITION: in case it is "unresolved" yet).
+  - [x] 1. Resolve the class inheritance (which class it extends) (CONDITION: in case it is "unresolved" yet).
     - [ ] If the extended class is marked final then report a verify error.
     - [ ] Ensure the inheritance is not circular.
     - [ ] Add class as known subclass of the extended class except for Object.
