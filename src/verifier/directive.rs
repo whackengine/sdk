@@ -188,7 +188,7 @@ impl DirectiveSubverifier {
                 class_entity.set_asdoc(defn.asdoc.clone());
                 class_entity.set_location(Some(defn.name.1.clone()));
                 let metadata = Attribute::find_metadata(&defn.attributes);
-                for m in metadata {
+                for m in metadata.iter() {
                     // [Options] meta-data
                     if m.name.0 == "Options" {
                         class_entity.set_is_options_class(true);
@@ -203,7 +203,7 @@ impl DirectiveSubverifier {
                         if let Some(entries) = m.entries.as_ref() {
                             let mut found_slots = false;
                             for entry in entries {
-                                if let Some(k) = entry.key {
+                                if let Some(k) = entry.key.as_ref() {
                                     if k.0 == "slots" {
                                         use std::str::FromStr;
                                         let val = match entry.value.as_ref() {
@@ -262,6 +262,9 @@ impl DirectiveSubverifier {
                 // Create class block scope
                 let block_scope = verifier.host.factory().create_class_scope(&class_entity);
                 verifier.node_mapping().set(&defn.block, Some(block_scope.clone()));
+
+                // Contribute private namespace to open namespace set
+                block_scope.open_ns_set().push(class_entity.private_ns().unwrap());
 
                 // Declare type parameters if specified in syntax
                 if let Some(list) = defn.type_parameters.as_ref() {
@@ -376,14 +379,15 @@ impl DirectiveSubverifier {
 
                 // Given all present `[Event]` meta-data
                 if !guard.event_metadata_done.get() {
-                    let event_metadata_list = Attribute::find_metadata(&defn.attributes).iter().filter(|m| {
+                    let metadata = Attribute::find_metadata(&defn.attributes);
+                    let event_metadata_list = metadata.iter().filter(|m| {
                         m.name.0 == "Event"
                     }).collect::<Vec<_>>();
 
                     // Resolve the `type="Name"` pair for each meta-data into a local (but DEFER ONLY AT THE FINAL STEP if necessary.).
                     let mut type_list: Vec<Entity> = vec![];
                     let mut cancel = false;
-                    'm: for m in event_metadata_list {
+                    'm: for m in event_metadata_list.iter() {
                         let mut found_type = false;
                         if let Some(entries) = m.entries.as_ref() {
                             for entry in entries {
@@ -512,12 +516,28 @@ impl DirectiveSubverifier {
                     }
                 }
 
-                if about_to_defer {
-                    // Enter class block scope and visit class block, then exit.
-                    verifier.inherit_and_enter_scope(&verifier.host.node_mapping().get(&defn.block).unwrap());
-                    let _ = DirectiveSubverifier::verify_directives(verifier, &defn.block.directives);
-                    verifier.exit_scope();
-                } else {
+                let block_scope = verifier.host.node_mapping().get(&defn.block).unwrap();
+
+                // Contribute protected namespaces to open namespace set
+                let mut c = Some(class_entity);
+                let mut protected_ns_list: Vec<Entity> = vec![];
+                let mut cancel_protected_ns = false;
+                while let Some(c1) = c {
+                    if c1.is::<UnresolvedEntity>() {
+                        about_to_defer = true;
+                        cancel_protected_ns = true;
+                        break;
+                    }
+                    protected_ns_list.push(c1.protected_ns().unwrap());
+                    c = c1.extends_class(&verifier.host);
+                }
+                if !cancel_protected_ns {
+                    for ns in &protected_ns_list {
+                        block_scope.open_ns_set().push(ns.clone());
+                    }
+                }
+
+                if !about_to_defer {
                     // Next phase
                     verifier.set_drtv_phase(drtv, VerifierPhase::Omega);
                 }
@@ -525,7 +545,59 @@ impl DirectiveSubverifier {
                 Err(DeferError(None))
             },
             VerifierPhase::Omega => {
-                fixme()
+                // Database
+                let host = verifier.host.clone();
+
+                // Class entity
+                let class_entity = host.node_mapping().get(drtv).unwrap();
+
+                let mut about_to_defer: bool;
+
+                // Class block scope
+                let block_scope = verifier.host.node_mapping().get(&defn.block).unwrap();
+
+                // Enter class block scope, then visit class block
+                // but DEFER ONLY AT THE FINAL STEP if necessary; then exit scope.
+                verifier.inherit_and_enter_scope(&block_scope);
+                about_to_defer = DirectiveSubverifier::verify_directives(verifier, &defn.block.directives).is_err();
+                verifier.exit_scope();
+
+                let guard = verifier.class_defn_guard(drtv);
+
+                // Report a verify error for non overriden abstract methods
+                // but DEFER ONLY AT THE FINAL STEP if necessary.
+                if guard.abstract_overrides_done.get() {
+                    let list = MethodOverride(&host).abstract_methods_not_overriden(&class_entity, &block_scope.concat_open_ns_set_of_scope_chain());
+                    if let Ok(list) = list {
+                        for m in list.iter() {
+                            if let Some(virtual_slot) = m.of_virtual_slot(&host) {
+                                let mut is_getter = false;
+                                if let Some(getter) = virtual_slot.getter(&host) {
+                                    if m == &getter {
+                                        is_getter = true;
+                                    }
+                                }
+                                if is_getter {
+                                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::AbstractGetterMustBeOverriden, diagarg![m.name().to_string()]);
+                                } else {
+                                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::AbstractSetterMustBeOverriden, diagarg![m.name().to_string()]);
+                                }
+                            } else {
+                                verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::AbstractMethodMustBeOverriden, diagarg![m.name().to_string()]);
+                            }
+                        }
+                        guard.abstract_overrides_done.set(true);
+                    } else {
+                        about_to_defer = true;
+                    }
+                }
+
+                if about_to_defer {
+                    Err(DeferError(None))
+                } else {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    Ok(())
+                }
             },
             _ => panic!(),
         }

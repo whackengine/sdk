@@ -94,6 +94,7 @@ impl Verifier {
         let mut rem_pckg_list = packages.clone();
 
         // Do a first pass in every package to declare them.
+        // Declare block scope opening public and internal.
         todo_here();
 
         // Verify directives across packages ("rem_pckg_list")
@@ -106,6 +107,8 @@ impl Verifier {
         todo_here();
 
         // Verify directives and then statements in the top-level of all programs.
+        // Assign activation to program, which includes public and internal
+        // namespaces, which will also be opened.
         todo_here();
 
         // * [ ] Handle deferred function commons for lambdas.
@@ -725,6 +728,7 @@ impl Default for VerifierExpressionContext {
 pub(crate) struct ClassDefnGuard {
     pub implements_list_done: Cell<bool>,
     pub event_metadata_done: Cell<bool>,
+    pub abstract_overrides_done: Cell<bool>,
 }
 
 impl ClassDefnGuard {
@@ -732,6 +736,7 @@ impl ClassDefnGuard {
         Self {
             implements_list_done: Cell::new(false),
             event_metadata_done: Cell::new(false),
+            abstract_overrides_done: Cell::new(false),
         }
     }
 }
