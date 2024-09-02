@@ -18,7 +18,7 @@ Tip: use a mapping from directive to phase for certain of the following directiv
 * [x] If statement
 * [x] Switch statement
 * [x] Switch type statement
-  * [ ] Verify case binding if any
+  * [x] Verify case binding if any
 * [x] Do statement
 * [x] While statement
 * [x] For statement
