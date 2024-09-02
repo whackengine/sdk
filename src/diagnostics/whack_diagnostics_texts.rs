@@ -106,6 +106,7 @@ lazy_static! {
         WhackDiagnosticKind::DuplicateEnumString.id() => "Duplicate enum string: $1.".into(),
         WhackDiagnosticKind::DuplicateEnumValue.id() => "Duplicate enum value: $1.".into(),
         WhackDiagnosticKind::DuplicateEnumConstant.id() => "Duplicate enum constant: $1.".into(),
+        WhackDiagnosticKind::ExtendingSelfReferentialInterface.id() => "Extending self-referential interface.".into(),
         // WhackDiagnosticKind::K.id() => ".".into(),
     };
 }

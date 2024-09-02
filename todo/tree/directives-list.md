@@ -10,7 +10,7 @@ Tip: use a mapping from directive to phase for certain of the following directiv
   * [ ] Handle the `[Bindable]` meta-data right after variables are declared
   * [ ] Handle the `[Embed]` meta-data.
 * [x] Enum definition
-* [ ] Interface definition
+* [x] Interface definition
 * [ ] Type definition
 * [ ] Namespace definition
   * [ ] Declares an alias to a namespace.

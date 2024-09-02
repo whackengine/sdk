@@ -26,6 +26,9 @@ impl DirectiveSubverifier {
             Directive::EnumDefinition(defn) => {
                 Self::verify_enum_defn(verifier, drtv, defn)
             },
+            Directive::InterfaceDefinition(defn) => {
+                Self::verify_interface_defn(verifier, drtv, defn)
+            },
             Directive::Block(block) => {
                 let phase = verifier.lazy_init_drtv_phase(drtv, VerifierPhase::Alpha);
                 if phase == VerifierPhase::Finished {
@@ -348,6 +351,9 @@ impl DirectiveSubverifier {
                 // contributing to the list of implemented interfaces of the class.
                 if !guard.implements_list_done.get() {
                     if let Some(implements_list) = defn.implements_clause.as_ref() {
+                        class_entity.implements(&host).clear();
+                        class_entity.implements(&host).push(host.unresolved_entity());
+
                         let mut implements_t: Vec<Entity> = vec![];
                         for t_node in implements_list {
                             let t = verifier.verify_type_expression(&t_node)?;
@@ -359,6 +365,8 @@ impl DirectiveSubverifier {
                                 }
                             }
                         }
+
+                        class_entity.implements(&host).clear();
                         for t in &implements_t {
                             if class_entity.implements(&host).index_of(t).is_none() { 
                                 class_entity.implements(&host).push(t.clone());
@@ -736,9 +744,6 @@ impl DirectiveSubverifier {
                 // Enter enum block scope
                 verifier.inherit_and_enter_scope(&block_scope);
 
-                // Visit enum block but DO NOT defer
-                let _ = DirectiveSubverifier::verify_directives(verifier, &defn.block.directives);
-
                 // Process defining constants and mark them as in the finished phase.
                 let mut counter: f64 = 0.0;
                 for drtv in defn.block.directives.iter() {
@@ -879,6 +884,9 @@ impl DirectiveSubverifier {
                     }
                 }
 
+                // Visit enum block but DO NOT defer
+                let _ = DirectiveSubverifier::verify_directives(verifier, &defn.block.directives);
+
                 // Exit scope
                 verifier.exit_scope();
 
@@ -900,6 +908,307 @@ impl DirectiveSubverifier {
                 // but DEFER ONLY AT THE FINAL STEP if necessary; then exit scope.
                 verifier.inherit_and_enter_scope(&block_scope);
                 about_to_defer = DirectiveSubverifier::verify_directives(verifier, &defn.block.directives).is_err();
+                verifier.exit_scope();
+
+                if about_to_defer {
+                    Err(DeferError(None))
+                } else {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    Ok(())
+                }
+            },
+            _ => panic!(),
+        }
+    }
+
+    fn verify_interface_defn(verifier: &mut Subverifier, drtv: &Rc<Directive>, defn: &InterfaceDefinition) -> Result<(), DeferError> {
+        let phase = verifier.lazy_init_drtv_phase(drtv, VerifierPhase::Alpha);
+        if phase == VerifierPhase::Finished {
+            return Ok(());
+        }
+
+        match phase {
+            // Alpha
+            VerifierPhase::Alpha => {
+                // Determine the class's scope, parent, property destination, and namespace.
+                let defn_local = Self::definition_local_never_static(verifier, &defn.attributes)?;
+                if defn_local.is_err() {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    return Ok(());
+                }
+                let (itrfc_parent_scope, itrfc_parent, mut itrfc_out, ns) = defn_local.unwrap();
+
+                let name = verifier.host.factory().create_qname(&ns, defn.name.0.clone());
+                let mut itrfc_entity = verifier.host.factory().create_interface_type(name.clone());
+                itrfc_entity.set_parent(Some(itrfc_parent.clone()));
+                itrfc_entity.set_asdoc(defn.asdoc.clone());
+                itrfc_entity.set_location(Some(defn.name.1.clone()));
+                let metadata = Attribute::find_metadata(&defn.attributes);
+                for m in metadata.iter() {
+                    // [Whack::External] meta-data
+                    if m.name.0 == "Whack::External" {
+                        // Mark as external
+                        itrfc_entity.set_is_external(true);
+                    }
+                }
+                itrfc_entity.metadata().extend(metadata);
+
+                // Attempt to define the interface partially;
+                // or fail if a conflict occurs, therefore ignoring
+                // this interface definition.
+                if let Some(prev) = itrfc_out.get(&name) {
+                    itrfc_entity = verifier.handle_definition_conflict(&prev, &itrfc_entity);
+                } else {
+                    Unused(&verifier.host).add_nominal(&itrfc_entity);
+                    itrfc_out.set(name, itrfc_entity.clone());
+                }
+                if !itrfc_entity.is::<InterfaceType>() {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    return Ok(());
+                }
+
+                // Map directive to interface entity
+                verifier.host.node_mapping().set(drtv, if itrfc_entity.is::<InterfaceType>() { Some(itrfc_entity.clone()) } else { None });
+
+                // Create interface block scope
+                let block_scope = verifier.host.factory().create_interface_scope(&itrfc_entity);
+                verifier.node_mapping().set(&defn.block, Some(block_scope.clone()));
+
+                // Declare type parameters if specified in syntax
+                if let Some(list) = defn.type_parameters.as_ref() {
+                    let internal_ns = itrfc_parent_scope.search_system_ns_in_scope_chain(SystemNamespaceKind::Internal).unwrap();
+                    for type_param_node in list {
+                        let name = verifier.host.factory().create_qname(&internal_ns, type_param_node.name.0.clone());
+                        let type_param = verifier.host.factory().create_type_parameter_type(&name);
+
+                        // Contribute type parameter
+                        if itrfc_entity.type_params().is_none() {
+                            itrfc_entity.set_type_params(Some(shared_array![]));
+                        }
+                        itrfc_entity.type_params().unwrap().push(type_param.clone());
+
+                        // Place type parameter into block scope
+                        let type_alias = verifier.host.factory().create_alias(name.clone(), type_param.clone());
+                        block_scope.properties(&verifier.host).set(name.clone(), type_alias);
+                    }
+                }
+
+                // Enter interface block scope and visit interface block but DO NOT defer; then exit scope
+                verifier.inherit_and_enter_scope(&block_scope);
+                for drtv in defn.block.directives.iter() {
+                    if matches!(drtv.as_ref(), Directive::FunctionDefinition(_)) {
+                        let _ = DirectiveSubverifier::verify_directive(verifier, drtv);
+                    }
+                }
+                verifier.exit_scope();
+
+                // Next phase
+                verifier.set_drtv_phase(drtv, VerifierPhase::Beta);
+                return Err(DeferError(None));
+            },
+            VerifierPhase::Beta => {
+                // Database
+                let host = verifier.host.clone();
+
+                // Class entity
+                let itrfc_entity = host.node_mapping().get(drtv).unwrap();
+
+                let guard = verifier.itrfc_defn_guard(drtv);
+
+                // (GUARD: do not double this step)
+                // Resolve the interface extends list.
+                if !guard.extends_list_done.get() {
+                    if let Some(extends_list) = defn.extends_clause.as_ref() {
+                        itrfc_entity.extends_interfaces(&host).clear();
+                        itrfc_entity.extends_interfaces(&host).push(host.unresolved_entity());
+
+                        let mut extends_t: Vec<Entity> = vec![];
+                        for t_node in extends_list {
+                            let t = verifier.verify_type_expression(&t_node)?;
+                            if let Some(t) = t {
+                                if t.is_interface_type_possibly_after_sub() {
+                                    if t == itrfc_entity || t.is_subtype_of(&itrfc_entity, &host)? {
+                                        verifier.add_verify_error(&t_node.location(), WhackDiagnosticKind::ExtendingSelfReferentialInterface, diagarg![]);
+                                    } else {
+                                        extends_t.push(t);
+                                    }
+                                } else {
+                                    verifier.add_verify_error(&t_node.location(), WhackDiagnosticKind::NotAnInterface, diagarg![]);
+                                }
+                            }
+                        }
+                        itrfc_entity.extends_interfaces(&host).clear();
+                        for t in &extends_t {
+                            if itrfc_entity.extends_interfaces(&host).index_of(t).is_none() { 
+                                itrfc_entity.extends_interfaces(&host).push(t.clone());
+                            }
+                        }
+                    }
+                    guard.extends_list_done.set(true);
+                }
+
+                let mut about_to_defer = host.object_type().is::<UnresolvedEntity>();
+
+                // Given all present `[Event]` meta-data
+                if !guard.event_metadata_done.get() {
+                    let metadata = Attribute::find_metadata(&defn.attributes);
+                    let event_metadata_list = metadata.iter().filter(|m| {
+                        m.name.0 == "Event"
+                    }).collect::<Vec<_>>();
+
+                    // Resolve the `type="Name"` pair for each meta-data into a local (but DEFER ONLY AT THE FINAL STEP if necessary.).
+                    let mut type_list: Vec<Entity> = vec![];
+                    let mut cancel = false;
+                    'm: for m in event_metadata_list.iter() {
+                        let mut found_type = false;
+                        if let Some(entries) = m.entries.as_ref() {
+                            for entry in entries {
+                                if let Some((k, _)) = entry.key.as_ref() {
+                                    // type="T" entry
+                                    if k == "type" {
+                                        // Value
+                                        let val = match entry.value.as_ref() {
+                                            MetadataValue::String(val) => {
+                                                (val.0.clone(), Location::with_offsets(&val.1.compilation_unit(), val.1.first_offset() + 1, val.1.last_offset() - 1))
+                                            },
+                                            MetadataValue::IdentifierString(val) => val.clone(),
+                                        };
+
+                                        // Parse type expression
+                                        let tyexp = ParserFacade(&val.1.compilation_unit(), ParserOptions {
+                                            byte_range: Some((val.1.first_offset(), val.1.last_offset())),
+                                            ..default()
+                                        }).parse_type_expression();
+
+                                        // Verify
+                                        let t = verifier.verify_type_expression(&tyexp);
+                                        if let Ok(t) = t {
+                                            let t = t.unwrap_or(host.object_type());
+                                            about_to_defer = t.is::<UnresolvedEntity>();
+                                            if about_to_defer {
+                                                cancel = true;
+                                                break 'm;
+                                            }
+                                            type_list.push(t);
+                                        } else {
+                                            about_to_defer = true;
+                                            cancel = true;
+                                            break 'm;
+                                        }
+
+                                        found_type = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if !found_type {
+                            // push Object
+                            about_to_defer = host.object_type().is::<UnresolvedEntity>();
+                            if about_to_defer {
+                                cancel = true;
+                                break 'm;
+                            }
+                            type_list.push(host.object_type());
+                        }
+                    }
+
+                    if !cancel {
+                        // Resolve every `[Event]` meta-data using
+                        // the previous type locals, contributing events to the class.
+                        'm: for i in 0..event_metadata_list.len() {
+                            let m = event_metadata_list[i];
+                            let mut name: Option<String> = None;
+                            let m_type = &type_list[i];
+                            let mut bubbles: Option<bool> = None;
+
+                            if let Some(entries) = m.entries.as_ref() {
+                                for entry in entries {
+                                    if let Some((k, _)) = entry.key.as_ref() {
+                                        // Value
+                                        let val = match entry.value.as_ref() {
+                                            MetadataValue::String(val) => val.0.clone(),
+                                            MetadataValue::IdentifierString(val) => val.0.clone(),
+                                        };
+
+                                        // name="eventName" entry
+                                        if k == "name" {
+                                            name = Some(val);
+                                        // bubbles="boolean" entry
+                                        } else if k == "bubbles" {
+                                            bubbles = Some(val == "true");
+                                        }
+                                    }
+                                }
+                            }
+
+                            if name.is_none() {
+                                verifier.add_verify_error(&m.location, WhackDiagnosticKind::MalformedEventMetadata, diagarg![]);
+                            } else {
+                                let name = name.unwrap();
+                                let mut constant: Option<Entity> = None;
+
+                                // Resolve @eventType ASDoc tag
+                                if let Some(asdoc) = m.asdoc.as_ref() {
+                                    for tag in &asdoc.tags {
+                                        if let AsdocTag::EventType(exp) = &tag.0 {
+                                            let val = verifier.verify_expression(exp, &Default::default());
+                                            if val.is_err() {
+                                                cancel = true;
+                                                about_to_defer = true;
+                                                break 'm;
+                                            }
+                                            let val = val.unwrap();
+                                            if val.is_none() {
+                                                break;
+                                            }
+                                            let val = val.unwrap();
+
+                                            if (val.is::<StaticReferenceValue>() || val.is::<PackageReferenceValue>()) && val.property().is::<VariableSlot>() {
+                                                constant = Some(val.property());
+                                            }
+
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                // Contribute Event
+                                itrfc_entity.events().set(name.clone(), Event {
+                                    data_type: m_type.clone(),
+                                    bubbles,
+                                    constant,
+                                });
+                            }
+                        }
+
+                        if !cancel {
+                            guard.event_metadata_done.set(true);
+                        }
+                    }
+                }
+
+                if !about_to_defer {
+                    // Next phase
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Omega);
+                }
+
+                Err(DeferError(None))
+            },
+            VerifierPhase::Omega => {
+                let mut about_to_defer: bool = false;
+
+                // Class block scope
+                let block_scope = verifier.host.node_mapping().get(&defn.block).unwrap();
+
+                // Enter interface block scope, then visit interface block
+                // but DEFER ONLY AT THE FINAL STEP if necessary; then exit scope.
+                verifier.inherit_and_enter_scope(&block_scope);
+                for drtv in defn.block.directives.iter() {
+                    if matches!(drtv.as_ref(), Directive::FunctionDefinition(_)) {
+                        about_to_defer = DirectiveSubverifier::verify_directive(verifier, drtv).is_err() || about_to_defer;
+                    }
+                }
                 verifier.exit_scope();
 
                 if about_to_defer {

@@ -58,6 +58,7 @@ impl Verifier {
                 function_definition_partials: SharedMap::new(),
                 definition_conflicts: SharedArray::new(),
                 class_defn_guard: HashMap::new(),
+                itrfc_defn_guard: HashMap::new(),
                 codegen_class_info: SharedMap::new(),
                 invalidated: false,
                 external: false,
@@ -230,6 +231,7 @@ pub(crate) struct Subverifier {
     pub definition_conflicts: SharedArray<(Entity, Entity)>,
 
     pub class_defn_guard: HashMap<NodeAsKey<Rc<Directive>>, Rc<ClassDefnGuard>>,
+    pub itrfc_defn_guard: HashMap<NodeAsKey<Rc<Directive>>, Rc<InterfaceDefnGuard>>,
 
     pub codegen_class_info: SharedMap<Entity, Rc<CodegenClassInfo>>,
 
@@ -259,6 +261,7 @@ impl Subverifier {
         self.deferred_function_exp.clear();
         self.function_definition_partials.clear();
         self.class_defn_guard.clear();
+        self.itrfc_defn_guard.clear();
     }
 
     pub fn lazy_init_drtv_phase(&mut self, drtv: &Rc<Directive>, initial_phase: VerifierPhase) -> VerifierPhase {
@@ -286,6 +289,17 @@ impl Subverifier {
         } else {
             let g = Rc::new(ClassDefnGuard::new());
             self.class_defn_guard.insert(k, g.clone());
+            g
+        }
+    }
+
+    pub fn itrfc_defn_guard(&mut self, drtv: &Rc<Directive>) -> Rc<InterfaceDefnGuard> {
+        let k = NodeAsKey(drtv.clone());
+        if let Some(g) = self.itrfc_defn_guard.get(&k) {
+            g.clone()
+        } else {
+            let g = Rc::new(InterfaceDefnGuard::new());
+            self.itrfc_defn_guard.insert(k, g.clone());
             g
         }
     }
@@ -741,6 +755,20 @@ impl ClassDefnGuard {
             abstract_overrides_done: Cell::new(false),
             default_constructor_done: Cell::new(false),
             interface_impl_done: Cell::new(false),
+        }
+    }
+}
+
+pub(crate) struct InterfaceDefnGuard {
+    pub extends_list_done: Cell<bool>,
+    pub event_metadata_done: Cell<bool>,
+}
+
+impl InterfaceDefnGuard {
+    pub fn new() -> Self {
+        Self {
+            extends_list_done: Cell::new(false),
+            event_metadata_done: Cell::new(false),
         }
     }
 }
