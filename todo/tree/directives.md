@@ -2,10 +2,10 @@
 
 ## Defer
 
-* [ ] Statements are verified only after directives, in two different verification methods (one verification method for directives, and one pass verification method for statements). Block statements, with the right scopes, are entered recursively for directives.
-* [ ] Directives are always have a cache to prevent re-verification using the node mapping of SemanticHost; it may just be an invalidation entity when it does not matter, such as for an use namespace directive.
-* [ ] When at least one directive throws a defer error, the entire verification should reoccur next time.
-* [ ] Addition: the former explanations should be expanded such that deferred verification occurs in compilation unit level.
+* [x] Statements are verified only after directives, in two different verification methods (one verification method for directives, and one pass verification method for statements). Block statements, with the right scopes, are entered recursively for directives.
+* [x] Directives are always have a cache to prevent re-verification using the node mapping of SemanticHost; it may just be an invalidation entity when it does not matter, such as for an use namespace directive.
+* [x] When at least one directive throws a defer error, the entire verification should reoccur next time.
+* [x] Addition: the former explanations should be expanded such that deferred verification occurs in compilation unit level.
 
 ## Scopes
 
@@ -36,11 +36,6 @@ Procedure:
   * [ ] Handle the `[Bindable]` meta-data for simple identifier patterns
   * [ ] Handle the `[Embed]` meta-data for simple identifier patterns
 * [x] Omega
-
-## Inheritance
-
-* [ ] For classes and interfaces, right after the phase in which the inheritance is solved, ensure the inheritance is not circular (an inherited type must not be equals to or a subtype of the inheritor type) by reporting a verify error in such case.
-* [x] For definitions within classes and interfaces, ensure they either override a method or do not redefine a previously defined property.
 
 ## Class initialiser method
 
