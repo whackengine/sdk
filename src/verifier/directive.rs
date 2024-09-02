@@ -23,6 +23,9 @@ impl DirectiveSubverifier {
             Directive::ClassDefinition(defn) => {
                 Self::verify_class_defn(verifier, drtv, defn)
             },
+            Directive::EnumDefinition(defn) => {
+                Self::verify_enum_defn(verifier, drtv, defn)
+            },
             Directive::Block(block) => {
                 let phase = verifier.lazy_init_drtv_phase(drtv, VerifierPhase::Alpha);
                 if phase == VerifierPhase::Finished {
@@ -666,6 +669,238 @@ impl DirectiveSubverifier {
                         guard.interface_impl_done.set(true);
                     }
                 }
+
+                if about_to_defer {
+                    Err(DeferError(None))
+                } else {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    Ok(())
+                }
+            },
+            _ => panic!(),
+        }
+    }
+
+    fn verify_enum_defn(verifier: &mut Subverifier, drtv: &Rc<Directive>, defn: &EnumDefinition) -> Result<(), DeferError> {
+        let phase = verifier.lazy_init_drtv_phase(drtv, VerifierPhase::Alpha);
+        if phase == VerifierPhase::Finished {
+            return Ok(());
+        }
+
+        match phase {
+            // Alpha
+            VerifierPhase::Alpha => {
+                // Determine the enum's scope, parent, property destination, and namespace.
+                let defn_local = Self::definition_local_never_static(verifier, &defn.attributes)?;
+                if defn_local.is_err() {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    return Ok(());
+                }
+                let (enum_parent_scope, enum_parent, mut enum_out, ns) = defn_local.unwrap();
+
+                let public_ns = enum_parent_scope.search_system_ns_in_scope_chain(SystemNamespaceKind::Public).unwrap();
+                let name = verifier.host.factory().create_qname(&ns, defn.name.0.clone());
+                let mut enum_entity = verifier.host.factory().create_enum_type(name.clone(), &public_ns);
+                enum_entity.set_parent(Some(enum_parent.clone()));
+                enum_entity.set_asdoc(defn.asdoc.clone());
+                enum_entity.set_location(Some(defn.name.1.clone()));
+
+                // Attach meta-data
+                let metadata = Attribute::find_metadata(&defn.attributes);
+                enum_entity.metadata().extend(metadata);
+
+                // Attempt to define the enum partially;
+                // or fail if a conflict occurs, therefore ignoring
+                // this enum definition.
+                if let Some(prev) = enum_out.get(&name) {
+                    enum_entity = verifier.handle_definition_conflict(&prev, &enum_entity);
+                } else {
+                    Unused(&verifier.host).add_nominal(&enum_entity);
+                    enum_out.set(name, enum_entity.clone());
+                }
+                if !enum_entity.is::<EnumType>() {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    return Ok(());
+                }
+
+                // Map directive to enum entity
+                verifier.host.node_mapping().set(drtv, if enum_entity.is::<EnumType>() { Some(enum_entity.clone()) } else { None });
+
+                // Create enum block scope
+                let block_scope = verifier.host.factory().create_class_scope(&enum_entity);
+                verifier.node_mapping().set(&defn.block, Some(block_scope.clone()));
+
+                // Contribute private namespace to open namespace set
+                block_scope.open_ns_set().push(enum_entity.private_ns().unwrap());
+
+                // Enter enum block scope
+                verifier.inherit_and_enter_scope(&block_scope);
+
+                // Visit enum block but DO NOT defer
+                let _ = DirectiveSubverifier::verify_directives(verifier, &defn.block.directives);
+
+                // Process defining constants and mark them as in the finished phase.
+                let mut counter: f64 = 0.0;
+                for drtv in defn.block.directives.iter() {
+                    if let Directive::VariableDefinition(defn) = drtv.as_ref() {
+                        if Attribute::find_static(&defn.attributes).is_some() {
+                            continue;
+                        }
+                        'b: for binding in defn.bindings.iter() {
+                            if let Expression::QualifiedIdentifier(id) = binding.destructuring.destructuring.as_ref() {
+                                let id = id.to_identifier_name_or_asterisk().unwrap();
+                                let screaming_name = id.0.clone();
+                                let mut string_name: Option<String> = None;
+                                let mut value: Option<f64> = None;
+
+                                if let Some(init) = binding.initializer.as_ref() {
+                                    match init.as_ref() {
+                                        Expression::StringLiteral(StringLiteral { ref value, .. }) => {
+                                            string_name = Some(value.clone());
+                                        },
+                                        Expression::NumericLiteral(literal) => {
+                                            value = Some(literal.parse_double(false).unwrap_or(0.0));
+                                        },
+                                        Expression::Unary(UnaryExpression { operator: op, ref expression, .. }) => {
+                                            if *op == Operator::Negative {
+                                                if let Expression::NumericLiteral(literal) = expression.as_ref() {
+                                                    value = Some(literal.parse_double(true).unwrap_or(0.0));
+                                                }
+                                            } else {
+                                                verifier.add_verify_error(&init.location(), WhackDiagnosticKind::IllegalEnumConstInit, diagarg![]);
+                                                continue;
+                                            }
+                                        },
+                                        Expression::ArrayLiteral(ArrayLiteral { ref elements, .. }) => {
+                                            'elem: for elem in elements.iter() {
+                                                match elem {
+                                                    Element::Expression(ref exp) => {
+                                                        match exp.as_ref() {
+                                                            Expression::StringLiteral(StringLiteral { ref value, .. }) => {
+                                                                string_name = Some(value.clone());
+                                                            },
+                                                            Expression::NumericLiteral(literal) => {
+                                                                value = Some(literal.parse_double(false).unwrap_or(0.0));
+                                                            },
+                                                            Expression::Unary(UnaryExpression { operator: op, ref expression, .. }) => {
+                                                                if *op == Operator::Negative {
+                                                                    if let Expression::NumericLiteral(literal) = expression.as_ref() {
+                                                                        value = Some(literal.parse_double(true).unwrap_or(0.0));
+                                                                    }
+                                                                } else {
+                                                                    verifier.add_verify_error(&init.location(), WhackDiagnosticKind::IllegalEnumConstInit, diagarg![]);
+                                                                    continue 'elem;
+                                                                }
+                                                            },
+                                                            _ => {
+                                                                verifier.add_verify_error(&init.location(), WhackDiagnosticKind::IllegalEnumConstInit, diagarg![]);
+                                                                continue 'elem;
+                                                            },
+                                                        }
+                                                    },
+                                                    _ => {},
+                                                }
+                                            }
+                                        },
+                                        _ => {
+                                            verifier.add_verify_error(&init.location(), WhackDiagnosticKind::IllegalEnumConstInit, diagarg![]);
+                                            continue;
+                                        },
+                                    }
+                                }
+
+                                // Automatically convert screaming snake case
+                                // into lowercase camel case.
+                                if string_name.is_none() {
+                                    let p = screaming_name.split('_').collect::<Vec<_>>();
+                                    let mut new_string = String::new();
+                                    new_string.push_str(&p[0].to_lowercase());
+                                    if p.len() > 1 {
+                                        for p1 in p[1..].iter() {
+                                            if p1.len() == 1 {
+                                                new_string.push_str(&p1.to_uppercase());
+                                            } else if p1.len() > 1 {
+                                                new_string.push_str(&p1.to_uppercase());
+                                                new_string.push_str(&p1[1..].to_lowercase());
+                                            }
+                                        }
+                                    }
+                                    string_name = Some(new_string);
+                                }
+
+                                // Automatically count value.
+                                if value.is_none() {
+                                    value = Some(counter);
+                                    counter += 1.0;
+                                }
+
+                                let string_name = string_name.unwrap();
+                                let value = value.unwrap();
+
+                                // Ensure string is not duplicate
+                                if enum_entity.enum_member_number_mapping().has(&string_name) {
+                                    verifier.add_verify_error(&binding.location(), WhackDiagnosticKind::DuplicateEnumString, diagarg![string_name.clone()]);
+                                    continue;
+                                }
+
+                                // Ensure value is not duplicate
+                                for (_, val1) in enum_entity.enum_member_number_mapping().borrow().iter() {
+                                    if value == val1.force_double() {
+                                        verifier.add_verify_error(&binding.location(), WhackDiagnosticKind::DuplicateEnumValue, diagarg![value.to_string()]);
+                                        continue 'b;
+                                    }
+                                }
+
+                                let name = verifier.host.factory().create_qname(&public_ns, screaming_name.clone());
+
+                                // Ensure constant property is not duplicate
+                                if enum_entity.properties(&verifier.host).has(&name) {
+                                    verifier.add_verify_error(&binding.location(), WhackDiagnosticKind::DuplicateEnumConstant, diagarg![screaming_name.clone()]);
+                                    continue 'b;
+                                }
+
+                                let const_slot = verifier.host.factory().create_variable_slot(&name, true, &enum_entity);
+                                const_slot.set_parent(Some(enum_entity.clone()));
+                                const_slot.set_location(Some(binding.destructuring.location.clone()));
+                                const_slot.set_asdoc(defn.asdoc.clone());
+
+                                // Attach meta-data
+                                let metadata = Attribute::find_metadata(&defn.attributes);
+                                const_slot.metadata().extend(metadata);
+
+                                // Define constant property
+                                enum_entity.properties(&verifier.host).set(name, const_slot.clone());
+
+                                enum_entity.enum_member_number_mapping().set(string_name.clone(), Number::Number(value));
+                                enum_entity.enum_member_slot_mapping().set(string_name, const_slot);
+                            }
+                        }
+                        verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    }
+                }
+
+                // Exit scope
+                verifier.exit_scope();
+
+                // Next phase
+                verifier.set_drtv_phase(drtv, VerifierPhase::Beta);
+                return Err(DeferError(None));
+            },
+            VerifierPhase::Beta => {
+                verifier.set_drtv_phase(drtv, VerifierPhase::Omega);
+                Err(DeferError(None))
+            },
+            VerifierPhase::Omega => {
+                let about_to_defer: bool;
+
+                // Enum block scope
+                let block_scope = verifier.host.node_mapping().get(&defn.block).unwrap();
+
+                // Enter enum block scope, then visit enum block
+                // but DEFER ONLY AT THE FINAL STEP if necessary; then exit scope.
+                verifier.inherit_and_enter_scope(&block_scope);
+                about_to_defer = DirectiveSubverifier::verify_directives(verifier, &defn.block.directives).is_err();
+                verifier.exit_scope();
 
                 if about_to_defer {
                     Err(DeferError(None))

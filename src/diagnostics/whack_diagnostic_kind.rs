@@ -93,11 +93,15 @@ pub enum WhackDiagnosticKind {
     MethodNotImplemented = 2137,
     GetterNotImplemented = 2138,
     SetterNotImplemented = 2139,
-    IncompatibleMethodSignature = 2137,
-    IncompatibleGetterSignature = 2138,
-    IncompatibleSetterSignature = 2139,
-    PropertyMustBeMethod = 2140,
-    PropertyMustBeVirtual = 2141,
+    IncompatibleMethodSignature = 2140,
+    IncompatibleGetterSignature = 2141,
+    IncompatibleSetterSignature = 2142,
+    PropertyMustBeMethod = 2143,
+    PropertyMustBeVirtual = 2144,
+    IllegalEnumConstInit = 2145,
+    DuplicateEnumString = 2146,
+    DuplicateEnumValue = 2147,
+    DuplicateEnumConstant = 2148,
 }
 
 impl WhackDiagnosticKind {

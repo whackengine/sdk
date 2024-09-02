@@ -9,7 +9,7 @@ Tip: use a mapping from directive to phase for certain of the following directiv
 * [x] Class definition
   * [ ] Handle the `[Bindable]` meta-data right after variables are declared
   * [ ] Handle the `[Embed]` meta-data.
-* [ ] Enum definition
+* [x] Enum definition
 * [ ] Interface definition
 * [ ] Type definition
 * [ ] Namespace definition

@@ -54,10 +54,6 @@ Note that statements and static binding initializers within a class or enum bloc
 - [x] Omega
   - [ ] 3. (GUARD: do not double this step) Handle the `[Bindable]` meta-data but DEFER ONLY AT THE FINAL STEP if necessary.
 
-## Enum definitions
-
-- Remember: for alpha, process defining constants and mark them as in the finished phase.
-
 ## Interface definitions
 
 * [ ] Assign ASDoc

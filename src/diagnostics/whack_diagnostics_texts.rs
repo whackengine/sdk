@@ -102,6 +102,10 @@ lazy_static! {
         WhackDiagnosticKind::IncompatibleSetterSignature.id() => "Incompatible setter signature for $1: expected $2.".into(),
         WhackDiagnosticKind::PropertyMustBeMethod.id() => "Property must be method: $1.".into(),
         WhackDiagnosticKind::PropertyMustBeVirtual.id() => "Property must be virtual variable: $1.".into(),
+        WhackDiagnosticKind::IllegalEnumConstInit.id() => "Illegal enum constant initialiser.".into(),
+        WhackDiagnosticKind::DuplicateEnumString.id() => "Duplicate enum string: $1.".into(),
+        WhackDiagnosticKind::DuplicateEnumValue.id() => "Duplicate enum value: $1.".into(),
+        WhackDiagnosticKind::DuplicateEnumConstant.id() => "Duplicate enum constant: $1.".into(),
         // WhackDiagnosticKind::K.id() => ".".into(),
     };
 }
