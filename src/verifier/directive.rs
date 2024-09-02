@@ -101,10 +101,6 @@ impl DirectiveSubverifier {
                                 Ok(_) => {
                                     break;
                                 },
-                                Err(DeferError(Some(VerifierPhase::Beta))) |
-                                Err(DeferError(Some(VerifierPhase::Delta))) |
-                                Err(DeferError(Some(VerifierPhase::Epsilon))) |
-                                Err(DeferError(Some(VerifierPhase::Omega))) => {},
                                 Err(DeferError(_)) => {
                                     return Err(DeferError(None));
                                 },
