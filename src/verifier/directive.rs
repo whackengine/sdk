@@ -29,6 +29,12 @@ impl DirectiveSubverifier {
             Directive::InterfaceDefinition(defn) => {
                 Self::verify_interface_defn(verifier, drtv, defn)
             },
+            Directive::TypeDefinition(defn) => {
+                Self::verify_type_defn(verifier, drtv, defn)
+            },
+            Directive::NamespaceDefinition(defn) => {
+                Self::verify_namespace_defn(verifier, drtv, defn)
+            },
             Directive::Block(block) => {
                 let phase = verifier.lazy_init_drtv_phase(drtv, VerifierPhase::Alpha);
                 if phase == VerifierPhase::Finished {
@@ -1217,6 +1223,159 @@ impl DirectiveSubverifier {
                     verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
                     Ok(())
                 }
+            },
+            _ => panic!(),
+        }
+    }
+
+    fn verify_type_defn(verifier: &mut Subverifier, drtv: &Rc<Directive>, defn: &TypeDefinition) -> Result<(), DeferError> {
+        let phase = verifier.lazy_init_drtv_phase(drtv, VerifierPhase::Alpha);
+        if phase == VerifierPhase::Finished {
+            return Ok(());
+        }
+
+        match phase {
+            // Alpha
+            VerifierPhase::Alpha => {
+                // Determine the type alias's scope, parent, property destination, and namespace.
+                let defn_local = Self::definition_local_never_static(verifier, &defn.attributes)?;
+                if defn_local.is_err() {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    return Ok(());
+                }
+                let (_, t_alias_parent, mut t_alias_out, ns) = defn_local.unwrap();
+
+                let name = verifier.host.factory().create_qname(&ns, defn.left.0.clone());
+                let mut t_alias = verifier.host.factory().create_alias(name.clone(), verifier.host.unresolved_entity());
+                t_alias.set_parent(Some(t_alias_parent.clone()));
+                t_alias.set_location(Some(defn.left.1.clone()));
+
+                // Attempt to define the type alias partially;
+                // or fail if a conflict occurs, therefore ignoring
+                // this type alias definition.
+                if let Some(prev) = t_alias_out.get(&name) {
+                    t_alias = verifier.handle_definition_conflict(&prev, &t_alias);
+                } else {
+                    Unused(&verifier.host).add_nominal(&t_alias);
+                    t_alias_out.set(name, t_alias.clone());
+                }
+                if !t_alias.is::<Alias>() {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    return Ok(());
+                }
+
+                // Map directive to type alias entity
+                verifier.host.node_mapping().set(drtv, if t_alias.is::<Alias>() { Some(t_alias.clone()) } else { None });
+
+                // Next phase
+                verifier.set_drtv_phase(drtv, VerifierPhase::Omega);
+                return Err(DeferError(None));
+            },
+            VerifierPhase::Omega => {
+                // Database
+                let host = verifier.host.clone();
+
+                // Type alias
+                let t_alias = host.node_mapping().get(drtv).unwrap();
+
+                if t_alias.alias_of().is::<UnresolvedEntity>() {
+                    let t = verifier.verify_type_expression(&defn.right)?.unwrap_or(verifier.host.any_type());
+                    t_alias.set_alias_of(&t);
+                }
+
+                verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                Ok(())
+            },
+            _ => panic!(),
+        }
+    }
+
+    fn verify_namespace_defn(verifier: &mut Subverifier, drtv: &Rc<Directive>, defn: &NamespaceDefinition) -> Result<(), DeferError> {
+        let phase = verifier.lazy_init_drtv_phase(drtv, VerifierPhase::Alpha);
+        if phase == VerifierPhase::Finished {
+            return Ok(());
+        }
+
+        match phase {
+            // Alpha
+            VerifierPhase::Alpha => {
+                // Determine the namespace's scope, parent, property destination, and namespace.
+                let defn_local = Self::definition_local_maybe_static(verifier, &defn.attributes)?;
+                if defn_local.is_err() {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    return Ok(());
+                }
+                let (_, ns_alias_parent, mut ns_alias_out, ns) = defn_local.unwrap();
+
+                let name = verifier.host.factory().create_qname(&ns, defn.left.0.clone());
+                let mut ns_alias = verifier.host.factory().create_alias(name.clone(), verifier.host.unresolved_entity());
+                ns_alias.set_parent(Some(ns_alias_parent.clone()));
+                ns_alias.set_location(Some(defn.left.1.clone()));
+
+                // Attempt to define the namespace alias partially;
+                // or fail if a conflict occurs, therefore ignoring
+                // this namespace definition.
+                if let Some(prev) = ns_alias_out.get(&name) {
+                    ns_alias = verifier.handle_definition_conflict(&prev, &ns_alias);
+                } else {
+                    Unused(&verifier.host).add_nominal(&ns_alias);
+                    ns_alias_out.set(name, ns_alias.clone());
+                }
+                if !ns_alias.is::<Alias>() {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    return Ok(());
+                }
+
+                if let Some(r) = defn.right.as_ref() {
+                    if let Expression::StringLiteral(literal) = r.as_ref() {
+                        ns_alias.set_alias_of(&verifier.host.factory().create_user_ns(literal.value.clone()));
+                    }
+                }
+
+                // Map directive to type alias entity
+                verifier.host.node_mapping().set(drtv, if ns_alias.is::<Alias>() { Some(ns_alias.clone()) } else { None });
+
+                // Next phase
+                verifier.set_drtv_phase(drtv, VerifierPhase::Omega);
+                return Err(DeferError(None));
+            },
+            VerifierPhase::Omega => {
+                // Database
+                let host = verifier.host.clone();
+
+                // Type alias
+                let ns_alias = host.node_mapping().get(drtv).unwrap();
+
+                if ns_alias.alias_of().is::<UnresolvedEntity>() {
+                    if let Some(r) = defn.right.as_ref() {
+                        let val = verifier.verify_expression(r, &Default::default())?.unwrap_or(host.invalidation_entity());
+                        if val.is::<StringConstant>() {
+                            ns_alias.set_alias_of(&host.factory().create_user_ns(val.string_value()));
+                        } else if val.is::<NamespaceConstant>() {
+                            ns_alias.set_alias_of(&val.referenced_ns());
+                        } else {
+                            verifier.add_verify_error(&r.location(), WhackDiagnosticKind::NotANamespaceConstant, diagarg![]);
+                            ns_alias.set_alias_of(&host.invalidation_entity());
+                        }
+                    } else {
+                        // Create alias to a new internal namespace
+                        ns_alias.set_alias_of(&host.factory().create_internal_ns(None));
+                    }
+                }
+
+                // Determine the namespace's scope, parent, property destination, and namespace.
+                let defn_local = Self::definition_local_maybe_static(verifier, &defn.attributes)?;
+                if defn_local.is_err() {
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                    return Ok(());
+                }
+                let (_, ns_alias_parent, ns_alias_out, ns) = defn_local.unwrap();
+
+                let name = verifier.host.factory().create_qname(&ns, defn.left.0.clone());
+                verifier.ensure_not_shadowing_definition(&defn.left.1, &ns_alias_out, &ns_alias_parent, &name);
+
+                verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
+                Ok(())
             },
             _ => panic!(),
         }

@@ -11,12 +11,8 @@ Tip: use a mapping from directive to phase for certain of the following directiv
   * [ ] Handle the `[Embed]` meta-data.
 * [x] Enum definition
 * [x] Interface definition
-* [ ] Type definition
-* [ ] Namespace definition
-  * [ ] Declares an alias to a namespace.
-  * [ ] If right-hand side is a string literal, then declare namespace directly in Alpha phase instead of resolving the constant at Beta phase (in which case it is preceded by an UnresolvedEntity).
-  * [ ] In constant resolution, if the constant is a String, then a declaration occurs; otherwise it it should be a Namespace constant.
-  * [ ] Do not allow shadowing properties in base classes (`verifier.ensure_not_shadowing_definition(...)`)
+* [x] Type definition
+* [x] Namespace definition
 * [x] Block
 * [x] Labeled statement
 * [x] If statement
