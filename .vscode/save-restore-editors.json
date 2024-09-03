@@ -5,11 +5,11 @@
       "tabGroups": [
         {
           "files": [
-            "file:///c%3A/Users/Hydro/Downloads/Whack/Repositories/mxmlc/src/diagnostics/whack_diagnostic_kind.rs",
-            "file:///c%3A/Users/Hydro/Downloads/Whack/Repositories/mxmlc/src/diagnostics/whack_diagnostics_texts.rs",
-            "file:///c%3A/Users/Hydro/Downloads/Whack/Repositories/mxmlc/src/verifier/directive.rs",
-            "file:///c%3A/Users/Hydro/Downloads/Whack/Repositories/mxmlc/todo/tree/directives.md",
-            "file:///c%3A/Users/Hydro/Downloads/Whack/Repositories/mxmlc/todo/tree/directives-list.md"
+            "file:///c%3A/Users/Hydro/Downloads/Repositories/Whack/mxmlc/src/diagnostics/whack_diagnostic_kind.rs",
+            "file:///c%3A/Users/Hydro/Downloads/Repositories/Whack/mxmlc/src/diagnostics/whack_diagnostics_texts.rs",
+            "file:///c%3A/Users/Hydro/Downloads/Repositories/Whack/mxmlc/src/verifier/directive.rs",
+            "file:///c%3A/Users/Hydro/Downloads/Repositories/Whack/mxmlc/todo/tree/directives.md",
+            "file:///c%3A/Users/Hydro/Downloads/Repositories/Whack/mxmlc/todo/tree/directives-list.md"
           ],
           "viewColumn": 1
         }
