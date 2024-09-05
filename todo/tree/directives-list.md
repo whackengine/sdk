@@ -22,7 +22,7 @@ Tip: use a mapping from directive to phase for certain of the following directiv
 * [x] Do statement
 * [x] While statement
 * [x] For statement
-  * [ ] Verify variables if any
+  * [x] Verify variables if any
 * [x] For..in statement
   * [ ] Verify variable if any
 * [x] With statement

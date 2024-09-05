@@ -75,43 +75,7 @@ impl DirectiveSubverifier {
             },
             // switch-type
             Directive::SwitchTypeStatement(swstmt) => {
-                let mut any_defer = false;
-                for case in &swstmt.cases {
-                    // declare parameter
-                    if let Some(parameter) = case.parameter.as_ref() {
-                        // scope
-                        let block_scope = verifier.host.lazy_node_mapping(&case.block, || {
-                            verifier.host.factory().create_scope()
-                        });
-                        let internal_ns = verifier.scope().search_system_ns_in_scope_chain(SystemNamespaceKind::Internal).unwrap();
-
-                        // initialiser value
-                        let mut init: Option<Entity> = None;
-
-                        // verify type annotation
-                        if let Some(type_annot) = parameter.type_annotation.as_ref() {
-                            let t = verifier.verify_type_expression(type_annot)?.unwrap_or(verifier.host.any_type());
-                            init = Some(verifier.host.factory().create_value(&t));
-                        }
-
-                        let init = init.unwrap_or(verifier.host.factory().create_value(&verifier.host.any_type()));
-
-                        loop {
-                            match DestructuringDeclarationSubverifier::verify_pattern(verifier, &parameter.destructuring, &init, false, &mut block_scope.properties(&verifier.host), &internal_ns, &block_scope, false) {
-                                Ok(_) => {
-                                    break;
-                                },
-                                Err(DeferError(_)) => {
-                                    return Err(DeferError(None));
-                                },
-                            }
-                        }
-                    }
-
-                    let r = Self::verify_block(verifier, &case.block).is_err();
-                    any_defer = any_defer || r;
-                }
-                if any_defer { Err(DeferError(None)) } else { Ok(()) }
+                Self::verify_switch_type_stmt(verifier, drtv, swstmt)
             },
             Directive::DoStatement(dostmt) => {
                 Self::verify_directive(verifier, &dostmt.body)
@@ -120,13 +84,7 @@ impl DirectiveSubverifier {
                 Self::verify_directive(verifier, &whilestmt.body)
             },
             Directive::ForStatement(forstmt) => {
-                let scope = verifier.host.lazy_node_mapping(drtv, || {
-                    verifier.host.factory().create_scope()
-                });
-                verifier.inherit_and_enter_scope(&scope);
-                let r = Self::verify_directive(verifier, &forstmt.body);
-                verifier.exit_scope();
-                r
+                Self::verify_for_stmt(verifier, drtv, forstmt)
             },
             Directive::ForInStatement(forstmt) => {
                 let scope = verifier.host.lazy_node_mapping(drtv, || {
@@ -206,6 +164,195 @@ impl DirectiveSubverifier {
             },
             _ => Ok(()),
         }
+    }
+
+    fn verify_switch_type_stmt(verifier: &mut Subverifier, _drtv: &Rc<Directive>, swstmt: &SwitchTypeStatement) -> Result<(), DeferError> {
+        let mut any_defer = false;
+        for case in &swstmt.cases {
+            // declare parameter
+            if let Some(parameter) = case.parameter.as_ref() {
+                // scope
+                let block_scope = verifier.host.lazy_node_mapping(&case.block, || {
+                    verifier.host.factory().create_scope()
+                });
+                let internal_ns = verifier.scope().search_system_ns_in_scope_chain(SystemNamespaceKind::Internal).unwrap();
+
+                // initialiser value
+                let mut init: Option<Entity> = None;
+
+                // verify type annotation
+                if let Some(type_annot) = parameter.type_annotation.as_ref() {
+                    let t = verifier.verify_type_expression(type_annot)?.unwrap_or(verifier.host.any_type());
+                    init = Some(verifier.host.factory().create_value(&t));
+                }
+
+                let init = init.unwrap_or(verifier.host.factory().create_value(&verifier.host.any_type()));
+
+                loop {
+                    match DestructuringDeclarationSubverifier::verify_pattern(verifier, &parameter.destructuring, &init, false, &mut block_scope.properties(&verifier.host), &internal_ns, &block_scope, false) {
+                        Ok(_) => {
+                            break;
+                        },
+                        Err(DeferError(_)) => {
+                            return Err(DeferError(None));
+                        },
+                    }
+                }
+            }
+
+            let r = Self::verify_block(verifier, &case.block).is_err();
+            any_defer = any_defer || r;
+        }
+        if any_defer { Err(DeferError(None)) } else { Ok(()) }
+    }
+
+    fn verify_for_stmt(verifier: &mut Subverifier, drtv: &Rc<Directive>, forstmt: &ForStatement) -> Result<(), DeferError> {
+        let host = verifier.host.clone();
+        let phase = verifier.lazy_init_drtv_phase(drtv, VerifierPhase::Alpha);
+        let scope = verifier.host.lazy_node_mapping(drtv, || {
+            verifier.host.factory().create_scope()
+        });
+
+        if let ForInitializer::VariableDefinition(defn) = forstmt.init.as_ref() {
+            let internal_ns = verifier.scope().search_system_ns_in_scope_chain(SystemNamespaceKind::Internal).unwrap();
+
+            match phase {
+                // Alpha
+                VerifierPhase::Alpha => {
+                    for binding in &defn.bindings {
+                        // Verify identifier binding or destructuring pattern (alpha)
+                        let _ = DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &verifier.host.unresolved_entity(), defn.kind.0 == VariableDefinitionKind::Const, &mut scope.properties(&host), &internal_ns, &scope, false);
+                    }
+                    // Next phase
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Beta);
+                    return Err(DeferError(None));
+                },
+                VerifierPhase::Beta => {
+                    for binding in &defn.bindings {
+                        // If a binding is a simple identifier,
+                        // try resolving type annotation if any; if resolved,
+                        // if the binding's slot is not invalidated
+                        // update the binding slot's static type.
+                        let is_simple_id = matches!(binding.destructuring.destructuring.as_ref(), Expression::QualifiedIdentifier(_));
+                        if is_simple_id && binding.destructuring.type_annotation.is_some() {
+                            let t = verifier.verify_type_expression(binding.destructuring.type_annotation.as_ref().unwrap())?;
+                            if let Some(t) = t {
+                                let slot = verifier.node_mapping().get(&binding.destructuring.destructuring);
+                                if let Some(slot) = slot {
+                                    if slot.is::<VariableSlot>() {
+                                        slot.set_static_type(t);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Next phase
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                    return Err(DeferError(None));
+                },
+                // Delta
+                VerifierPhase::Delta => {
+                    for binding in &defn.bindings {
+                        // If a binding is a simple identifier and
+                        // the binding's slot is not invalidated and its static type is unresolved,
+                        // try resolving the type annotation if any; if resolved,
+                        // update the binding slot's static type.
+                        let is_simple_id = matches!(binding.destructuring.destructuring.as_ref(), Expression::QualifiedIdentifier(_));
+                        if is_simple_id {
+                            let slot = verifier.node_mapping().get(&binding.destructuring.destructuring);
+                            if let Some(slot) = slot {
+                                if slot.is::<VariableSlot>() && slot.static_type(&verifier.host).is::<UnresolvedEntity>() {
+                                    if binding.destructuring.type_annotation.is_some() {
+                                        let t = verifier.verify_type_expression(binding.destructuring.type_annotation.as_ref().unwrap())?;
+                                        if let Some(t) = t {
+                                            slot.set_static_type(t);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Next phase
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Epsilon);
+                    return Err(DeferError(None));
+                },
+                // Omega
+                VerifierPhase::Epsilon => {
+                    let is_const = defn.kind.0 == VariableDefinitionKind::Const;
+
+                    for i in 0..defn.bindings.len() {
+                        let binding = &defn.bindings[i];
+
+                        // Let *init* be `None`.
+                        let mut init: Option<Entity> = None;
+
+                        // Try resolving type annotation if any.
+                        let mut annotation_type: Option<Entity> = None;
+                        if let Some(node) = binding.destructuring.type_annotation.as_ref() {
+                            annotation_type = verifier.verify_type_expression(node)?;
+                        }
+
+                        // If there is an initialiser and there is a type annotation,
+                        // then implicitly coerce it to the annotated type and assign the result to *init*;
+                        // otherwise, assign the result of verifying the initialiser into *init*.
+                        if let Some(init_node) = binding.initializer.as_ref() {
+                            if let Some(t) = annotation_type.as_ref() {
+                                init = verifier.imp_coerce_exp(init_node, t)?;
+                            } else {
+                                init = verifier.verify_expression(init_node, &Default::default())?;
+                            }
+                        }
+
+                        let host = verifier.host.clone();
+
+                        // Lazy initialise *init1* (`cached_var_init`)
+                        let init = verifier.cache_var_init(&binding.destructuring.destructuring, || {
+                            // If "init" is Some, return it.
+                            if let Some(init) = init {
+                                init
+                            } else {
+                                // If there is a type annotation, then return a value of that type;
+                                // otherwise return a value of the `*` type.
+                                if let Some(t) = annotation_type {
+                                    host.factory().create_value(&t)
+                                } else {
+                                    host.factory().create_value(&host.any_type())
+                                }
+                            }
+                        });
+
+                        // Verify the identifier binding or destructuring pattern
+                        DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &init, is_const, &mut scope.properties(&host), &internal_ns, &scope, false)?;
+
+                        // Remove *init1* from "cached_var_init"
+                        verifier.cached_var_init.remove(&ByAddress(binding.destructuring.destructuring.clone()));
+
+                        // If there is no type annotation and initialiser is unspecified,
+                        // then report a warning
+                        if binding.destructuring.type_annotation.is_none() && binding.initializer.is_none() {
+                            verifier.add_warning(&binding.destructuring.location, WhackDiagnosticKind::VariableHasNoTypeAnnotation, diagarg![]);
+                        }
+
+                        // If variable is marked constant, is not `[Embed]` and does not contain an initializer,
+                        // then report an error
+                        if is_const {
+                            verifier.add_verify_error(&binding.destructuring.location, WhackDiagnosticKind::ConstantMustContainInitializer, diagarg![]);
+                        }
+                    }
+
+                    // Finish
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Omega);
+                },
+                VerifierPhase::Omega => {},
+                _ => panic!(),
+            }
+        }
+        verifier.inherit_and_enter_scope(&scope);
+        let r = Self::verify_directive(verifier, &forstmt.body);
+        verifier.exit_scope();
+        r
     }
 
     fn verify_class_defn(verifier: &mut Subverifier, drtv: &Rc<Directive>, defn: &ClassDefinition) -> Result<(), DeferError> {
@@ -336,7 +483,7 @@ impl DirectiveSubverifier {
 
                 // Next phase
                 verifier.set_drtv_phase(drtv, VerifierPhase::Beta);
-                return Err(DeferError(None));
+                Err(DeferError(None))
             },
             VerifierPhase::Beta => {
                 // Database
