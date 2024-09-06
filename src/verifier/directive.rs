@@ -93,16 +93,7 @@ impl DirectiveSubverifier {
                 Self::verify_directive(verifier, &withstmt.body)
             },
             Directive::TryStatement(trystmt) => {
-                let mut any_defer = Self::verify_block(verifier, &trystmt.block).is_err();
-                for catch_clause in &trystmt.catch_clauses {
-                    let r = Self::verify_block(verifier, &catch_clause.block).is_err();
-                    any_defer = any_defer || r;
-                }
-                if let Some(finally_clause) = trystmt.finally_clause.as_ref() {
-                    let r = Self::verify_block(verifier, &finally_clause.block).is_err();
-                    any_defer = any_defer || r;
-                }
-                if any_defer { Err(DeferError(None)) } else { Ok(()) }
+                Self::verify_try_stmt(verifier, drtv, trystmt)
             },
             Directive::ImportDirective(impdrtv) => {
                 Self::verify_import_directive(verifier, drtv, impdrtv)
@@ -158,6 +149,49 @@ impl DirectiveSubverifier {
             },
             _ => Ok(()),
         }
+    }
+
+    fn verify_try_stmt(verifier: &mut Subverifier, _drtv: &Rc<Directive>, trystmt: &TryStatement) -> Result<(), DeferError> {
+        let mut any_defer = Self::verify_block(verifier, &trystmt.block).is_err();
+        for catch_clause in &trystmt.catch_clauses {
+            let parameter = &catch_clause.parameter;
+
+            // scope
+            let block_scope = verifier.host.lazy_node_mapping(&catch_clause.block, || {
+                verifier.host.factory().create_scope()
+            });
+            let internal_ns = verifier.scope().search_system_ns_in_scope_chain(SystemNamespaceKind::Internal).unwrap();
+
+            // initialiser value
+            let mut init: Option<Entity> = None;
+
+            // verify type annotation
+            if let Some(type_annot) = parameter.type_annotation.as_ref() {
+                let t = verifier.verify_type_expression(type_annot)?.unwrap_or(verifier.host.any_type());
+                init = Some(verifier.host.factory().create_value(&t));
+            }
+
+            let init = init.unwrap_or(verifier.host.factory().create_value(&verifier.host.any_type()));
+
+            loop {
+                match DestructuringDeclarationSubverifier::verify_pattern(verifier, &parameter.destructuring, &init, false, &mut block_scope.properties(&verifier.host), &internal_ns, &block_scope, false) {
+                    Ok(_) => {
+                        break;
+                    },
+                    Err(DeferError(_)) => {
+                        return Err(DeferError(None));
+                    },
+                }
+            }
+
+            let r = Self::verify_block(verifier, &catch_clause.block).is_err();
+            any_defer = any_defer || r;
+        }
+        if let Some(finally_clause) = trystmt.finally_clause.as_ref() {
+            let r = Self::verify_block(verifier, &finally_clause.block).is_err();
+            any_defer = any_defer || r;
+        }
+        if any_defer { Err(DeferError(None)) } else { Ok(()) }
     }
 
     fn verify_switch_type_stmt(verifier: &mut Subverifier, _drtv: &Rc<Directive>, swstmt: &SwitchTypeStatement) -> Result<(), DeferError> {
@@ -356,7 +390,7 @@ impl DirectiveSubverifier {
         let scope = verifier.host.lazy_node_mapping(drtv, || {
             verifier.host.factory().create_scope()
         });
-        if let ForInBinding::VariableDefinition(ref defn) = forstmt.left.as_ref() {
+        if let ForInBinding::VariableDefinition(ref defn) = &forstmt.left {
             let internal_ns = verifier.scope().search_system_ns_in_scope_chain(SystemNamespaceKind::Internal).unwrap();
 
             match phase {
@@ -394,6 +428,7 @@ impl DirectiveSubverifier {
 
                     // Resolve type annotation
                     let mut illegal_annotated_type = false;
+                    let mut k_exty = expected_type.clone();
                     if let Some(t_node) = binding.destructuring.type_annotation.as_ref() {
                         let t = verifier.verify_type_expression(t_node)?;
                         if let Some(t) = t {
@@ -414,6 +449,7 @@ impl DirectiveSubverifier {
 
                                 if !(eq || any_or_obj || num) {
                                     illegal_annotated_type = true;
+                                    k_exty = exty;
                                 }
                             }
 
@@ -421,26 +457,29 @@ impl DirectiveSubverifier {
                         }
                     }
 
+                    let is_const = defn.kind.0 == VariableDefinitionKind::Const;
+
                     // Resolve destructuring pattern
                     let init = host.factory().create_value(&expected_type);
                     match DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &init, is_const, &mut scope.properties(&host), &internal_ns, &scope, false) {
                         Ok(_) => {},
-                        DeferError(None) => {
+                        Err(DeferError(None)) => {
                             return Err(DeferError(None));
                         },
-                        DeferError(Some(VerifierPhaseVerifierPhase::Beta)) |
-                        DeferError(Some(VerifierPhaseVerifierPhase::Delta)) |
-                        DeferError(Some(VerifierPhaseVerifierPhase::Epsilon)) |
-                        DeferError(Some(VerifierPhaseVerifierPhase::Omega)) => {},
+                        Err(DeferError(Some(VerifierPhase::Beta))) |
+                        Err(DeferError(Some(VerifierPhase::Delta))) |
+                        Err(DeferError(Some(VerifierPhase::Epsilon))) |
+                        Err(DeferError(Some(VerifierPhase::Omega))) => {},
+                        Err(DeferError(Some(_))) => panic!(),
                     }
 
                     if illegal_obj {
-                        verifier.add_verify_error(&forstmt.right.location(), WhackDiagnosticKind::CannotIterateType, diagarg![obj.static_type(&host)]);
+                        verifier.add_verify_error(&forstmt.right.location(), WhackDiagnosticKind::CannotIterateType, diagarg![obj.unwrap().static_type(&host)]);
                     }
 
                     if illegal_annotated_type {
                         let t_node = binding.destructuring.type_annotation.as_ref().unwrap();
-                        verifier.add_verify_error(&t_node.location(), WhackDiagnosticKind::ExpectedToIterateType, diagarg![exty]);
+                        verifier.add_verify_error(&t_node.location(), WhackDiagnosticKind::ExpectedToIterateType, diagarg![k_exty]);
                     }
 
                     // Next phase
