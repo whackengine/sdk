@@ -87,13 +87,7 @@ impl DirectiveSubverifier {
                 Self::verify_for_stmt(verifier, drtv, forstmt)
             },
             Directive::ForInStatement(forstmt) => {
-                let scope = verifier.host.lazy_node_mapping(drtv, || {
-                    verifier.host.factory().create_scope()
-                });
-                verifier.inherit_and_enter_scope(&scope);
-                let r = Self::verify_directive(verifier, &forstmt.body);
-                verifier.exit_scope();
-                r
+                Self::verify_for_in_stmt(verifier, drtv, forstmt)
             },
             Directive::WithStatement(withstmt) => {
                 Self::verify_directive(verifier, &withstmt.body)
@@ -213,7 +207,7 @@ impl DirectiveSubverifier {
             verifier.host.factory().create_scope()
         });
 
-        if let ForInitializer::VariableDefinition(defn) = forstmt.init.as_ref() {
+        if let Some(ForInitializer::VariableDefinition(defn)) = forstmt.init.as_ref() {
             let internal_ns = verifier.scope().search_system_ns_in_scope_chain(SystemNamespaceKind::Internal).unwrap();
 
             match phase {
@@ -349,6 +343,16 @@ impl DirectiveSubverifier {
                 _ => panic!(),
             }
         }
+        verifier.inherit_and_enter_scope(&scope);
+        let r = Self::verify_directive(verifier, &forstmt.body);
+        verifier.exit_scope();
+        r
+    }
+
+    fn verify_for_in_stmt(verifier: &mut Subverifier, drtv: &Rc<Directive>, forstmt: &ForInStatement) -> Result<(), DeferError> {
+        let scope = verifier.host.lazy_node_mapping(drtv, || {
+            verifier.host.factory().create_scope()
+        });
         verifier.inherit_and_enter_scope(&scope);
         let r = Self::verify_directive(verifier, &forstmt.body);
         verifier.exit_scope();
