@@ -103,6 +103,8 @@ pub enum WhackDiagnosticKind {
     DuplicateEnumValue = 2147,
     DuplicateEnumConstant = 2148,
     ExtendingSelfReferentialInterface = 2149,
+    CannotIterateType = 2150,
+    ExpectedToIterateType = 2151,
 }
 
 impl WhackDiagnosticKind {

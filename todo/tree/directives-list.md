@@ -24,7 +24,7 @@ Tip: use a mapping from directive to phase for certain of the following directiv
 * [x] For statement
   * [x] Verify variables if any
 * [x] For..in statement
-  * [ ] Verify variable if any
+  * [x] Verify variable if any
 * [x] With statement
 * [x] Try statement
   * [ ] Verify catch binding

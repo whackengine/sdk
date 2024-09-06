@@ -217,6 +217,7 @@ impl DirectiveSubverifier {
                         // Verify identifier binding or destructuring pattern (alpha)
                         let _ = DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &verifier.host.unresolved_entity(), defn.kind.0 == VariableDefinitionKind::Const, &mut scope.properties(&host), &internal_ns, &scope, false);
                     }
+
                     // Next phase
                     verifier.set_drtv_phase(drtv, VerifierPhase::Beta);
                     return Err(DeferError(None));
@@ -350,10 +351,107 @@ impl DirectiveSubverifier {
     }
 
     fn verify_for_in_stmt(verifier: &mut Subverifier, drtv: &Rc<Directive>, forstmt: &ForInStatement) -> Result<(), DeferError> {
+        let host = verifier.host.clone();
+        let phase = verifier.lazy_init_drtv_phase(drtv, VerifierPhase::Alpha);
         let scope = verifier.host.lazy_node_mapping(drtv, || {
             verifier.host.factory().create_scope()
         });
-        verifier.inherit_and_enter_scope(&scope);
+        if let ForInBinding::VariableDefinition(ref defn) = forstmt.left.as_ref() {
+            let internal_ns = verifier.scope().search_system_ns_in_scope_chain(SystemNamespaceKind::Internal).unwrap();
+
+            match phase {
+                VerifierPhase::Alpha => {
+                    let binding = &defn.bindings[0];
+
+                    // Verify pattern (alpha)
+                    let _ = DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &verifier.host.unresolved_entity(), defn.kind.0 == VariableDefinitionKind::Const, &mut scope.properties(&host), &internal_ns, &scope, false);
+
+                    // Next phase
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Beta);
+                    return Err(DeferError(None));
+                },
+                VerifierPhase::Beta => {
+                    // Next phase
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                    return Err(DeferError(None));
+                },
+                VerifierPhase::Delta => {
+                    // Resolve object key-value types
+                    let obj = verifier.verify_expression(&forstmt.right, &Default::default())?;
+                    let mut kv_types = (host.any_type(), host.any_type());
+                    let mut illegal_obj = false;
+                    if let Some(obj) = obj.as_ref() {
+                        let kv_types_1 = StatementSubverifier::for_in_kv_types(&host, obj)?;
+                        if let Some(kv_types_1) = kv_types_1 {
+                            kv_types = kv_types_1;
+                        } else {
+                            illegal_obj = true;
+                        }
+                    }
+                    let mut expected_type = if forstmt.each { kv_types.1 } else { kv_types.0 };
+
+                    let binding = &defn.bindings[0];
+
+                    // Resolve type annotation
+                    let mut illegal_annotated_type = false;
+                    if let Some(t_node) = binding.destructuring.type_annotation.as_ref() {
+                        let t = verifier.verify_type_expression(t_node)?;
+                        if let Some(t) = t {
+                            // If the expected type is not * or Object, then
+                            // the annotated type must be either:
+                            // - equals to or base type of the expected type (non nullable)
+                            // - the * type
+                            // - the Object type (non nullable)
+                            // - a number type if the expected type is a number type
+                            let obj_t = host.object_type().defer()?;
+                            if ![host.any_type(), obj_t.clone()].contains(&expected_type) {
+                                let anty = t.escape_of_non_nullable();
+                                let exty = expected_type.escape_of_non_nullable();
+
+                                let eq = exty.is_equals_or_subtype_of(&anty, &host)?;
+                                let any_or_obj = anty == host.any_type() || anty == obj_t;
+                                let num = host.numeric_types()?.contains(&anty) && host.numeric_types()?.contains(&exty);
+
+                                if !(eq || any_or_obj || num) {
+                                    illegal_annotated_type = true;
+                                }
+                            }
+
+                            expected_type = t;
+                        }
+                    }
+
+                    // Resolve destructuring pattern
+                    let init = host.factory().create_value(&expected_type);
+                    match DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &init, is_const, &mut scope.properties(&host), &internal_ns, &scope, false) {
+                        Ok(_) => {},
+                        DeferError(None) => {
+                            return Err(DeferError(None));
+                        },
+                        DeferError(Some(VerifierPhaseVerifierPhase::Beta)) |
+                        DeferError(Some(VerifierPhaseVerifierPhase::Delta)) |
+                        DeferError(Some(VerifierPhaseVerifierPhase::Epsilon)) |
+                        DeferError(Some(VerifierPhaseVerifierPhase::Omega)) => {},
+                    }
+
+                    if illegal_obj {
+                        verifier.add_verify_error(&forstmt.right.location(), WhackDiagnosticKind::CannotIterateType, diagarg![obj.static_type(&host)]);
+                    }
+
+                    if illegal_annotated_type {
+                        let t_node = binding.destructuring.type_annotation.as_ref().unwrap();
+                        verifier.add_verify_error(&t_node.location(), WhackDiagnosticKind::ExpectedToIterateType, diagarg![exty]);
+                    }
+
+                    // Next phase
+                    verifier.set_drtv_phase(drtv, VerifierPhase::Omega);
+                    return Err(DeferError(None));
+                },
+                VerifierPhase::Omega => {},
+                _ => panic!(),
+            }
+        }
+    verifier.inherit_and_enter_scope( &scope);
         let r = Self::verify_directive(verifier, &forstmt.body);
         verifier.exit_scope();
         r
