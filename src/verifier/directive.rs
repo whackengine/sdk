@@ -561,6 +561,50 @@ impl DirectiveSubverifier {
                         class_entity.set_is_external(true);
                     }
                 }
+
+                let event_metadata_list = metadata.iter().filter(|m| {
+                    m.name.0 == "Event"
+                }).collect::<Vec<_>>();
+
+                // Pre-declare Event meta-data
+                for m in event_metadata_list.iter() {
+                    let mut name: Option<String> = None;
+                    let mut bubbles: Option<bool> = None;
+
+                    if let Some(entries) = m.entries.as_ref() {
+                        for entry in entries {
+                            if let Some((k, _)) = entry.key.as_ref() {
+                                // Value
+                                let val = match entry.value.as_ref() {
+                                    MetadataValue::String(val) => val.0.clone(),
+                                    MetadataValue::IdentifierString(val) => val.0.clone(),
+                                };
+
+                                // name="eventName" entry
+                                if k == "name" {
+                                    name = Some(val);
+                                // bubbles="boolean" entry
+                                } else if k == "bubbles" {
+                                    bubbles = Some(val == "true");
+                                }
+                            }
+                        }
+                    }
+
+                    if name.is_none() {
+                        continue;
+                    } else {
+                        let name = name.unwrap();
+
+                        // Contribute Event
+                        class_entity.events().set(name.clone(), Event {
+                            data_type: verifier.host.unresolved_entity(),
+                            bubbles,
+                            constant: None,
+                        });
+                    }
+                }
+
                 class_entity.metadata().extend(metadata);
                 class_entity.set_is_static(Attribute::find_static(&defn.attributes).is_some());
                 class_entity.set_is_dynamic(Attribute::find_dynamic(&defn.attributes).is_some());
