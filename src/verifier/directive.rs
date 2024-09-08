@@ -524,6 +524,7 @@ impl DirectiveSubverifier {
                     // [Options] meta-data
                     if m.name.0 == "Options" {
                         class_entity.set_is_options_class(true);
+                        class_entity.set_is_final(true);
                     // [Whack::External] meta-data
                     } else if m.name.0 == "Whack::External" {
                         let mut slots = 0usize;
@@ -910,6 +911,7 @@ impl DirectiveSubverifier {
                         break;
                     }
                     protected_ns_list.push(c1.protected_ns().unwrap());
+                    protected_ns_list.push(c1.static_protected_ns().unwrap());
                     c = c1.extends_class(&verifier.host);
                 }
                 if !cancel_protected_ns {
@@ -1684,6 +1686,16 @@ impl DirectiveSubverifier {
                 } else {
                     Unused(&verifier.host).add_nominal(&ns_alias);
                     ns_alias_out.set(name, ns_alias.clone());
+
+                    // Throw a verify error if the namespace conflicts with a
+                    // configuration namespace.
+                    let prefix = defn.left.0.clone() + "::";
+                    for (name, _) in verifier.host.config_constants().borrow().iter() {
+                        if name.starts_with(&prefix) {
+                            verifier.add_verify_error(&defn.left.1, WhackDiagnosticKind::NamespaceConflictsWithConfigurationNs, diagarg![]);
+                            break;
+                        }
+                    }
                 }
                 if !ns_alias.is::<Alias>() {
                     verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
@@ -3966,39 +3978,6 @@ impl DirectiveSubverifier {
 
                 verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
                 Ok(())
-            },
-            _ => panic!(),
-        }
-    }
-
-    fn verify_config_subdirective(verifier: &mut Subverifier, drtv: &Rc<Directive>) -> Result<(), DeferError> {
-        match drtv.as_ref() {
-            Directive::Block(block) => {
-                Self::verify_directives(verifier, &block.directives)
-            },
-            Directive::IfStatement(ifstmt) => {
-                let Ok(cval) = verifier.verify_expression(&ifstmt.test, &default()) else {
-                    verifier.add_verify_error(&ifstmt.test.location(), WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
-                    return Ok(());
-                };
-                let Some(cval) = cval else {
-                    return Ok(());
-                };
-                if !cval.is::<BooleanConstant>() {
-                    verifier.host.node_mapping().set(&ifstmt.test, None);
-                    verifier.add_verify_error(&ifstmt.test.location(), WhackDiagnosticKind::NotABooleanConstant, diagarg![]);
-                    return Ok(());
-                }
-                let bv = cval.boolean_value();
-                if bv {
-                    Self::verify_config_subdirective(verifier, &ifstmt.consequent)
-                } else {
-                    if let Some(alt) = &ifstmt.alternative {
-                        Self::verify_config_subdirective(verifier, alt)
-                    } else {
-                        Ok(())
-                    }
-                }
             },
             _ => panic!(),
         }

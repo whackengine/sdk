@@ -192,8 +192,4 @@ impl FunctionCommonSubverifier {
 
         Ok(())
     }
-
-    fn deduce_result_type(_verifier: &mut Subverifier, _first_result_type: Option<Entity>) -> Entity {
-        todo!();
-    }
 }

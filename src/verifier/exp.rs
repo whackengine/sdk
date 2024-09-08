@@ -1107,7 +1107,7 @@ impl ExpSubverifier {
 
     pub fn verify_binary_exp(verifier: &mut Subverifier, exp: &BinaryExpression) -> Result<Option<Entity>, DeferError> {
         let Some(left) = verifier.verify_expression(&exp.left, &default())? else {
-            verifier.verify_expression(&exp.right, &default());
+            verifier.verify_expression(&exp.right, &default())?;
             return Ok(None);
         };
 

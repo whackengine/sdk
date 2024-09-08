@@ -114,6 +114,7 @@ lazy_static! {
         WhackDiagnosticKind::DxnsStatementIsNotSupported.id() => "Default XML namespace statement is not supported in HTML5 environment.".into(),
         WhackDiagnosticKind::ReturnNotAllowedInPackageInit.id() => "The return statement cannot be used in package initialization code.".into(),
         WhackDiagnosticKind::ReturnNotAllowedInGlobalInit.id() => "The return statement cannot be used in global initialization code.".into(),
+        WhackDiagnosticKind::NamespaceConflictsWithConfigurationNs.id() => "Namespace conflicts with a configuration namespace.".into(),
         // WhackDiagnosticKind::K.id() => ".".into(),
     };
 }

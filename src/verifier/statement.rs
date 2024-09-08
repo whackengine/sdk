@@ -259,7 +259,7 @@ impl StatementSubverifier {
                     verifier.add_verify_error(&forstmt.right.location(), WhackDiagnosticKind::CannotIterateType, diagarg![obj.static_type(&host)]);
                 }
             }
-            let mut expected_type = if forstmt.each { kv_types.1 } else { kv_types.0 };
+            let expected_type = if forstmt.each { kv_types.1 } else { kv_types.0 };
 
             // Resolve destination
             let dest = verifier.verify_expression_or_max_cycles_error(dest_exp, &VerifierExpressionContext {

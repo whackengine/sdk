@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use crate::ns::*;
 
 thread_local! {

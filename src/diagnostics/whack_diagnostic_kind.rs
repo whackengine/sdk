@@ -110,6 +110,7 @@ pub enum WhackDiagnosticKind {
     DxnsStatementIsNotSupported = 2154,
     ReturnNotAllowedInPackageInit = 2155,
     ReturnNotAllowedInGlobalInit = 2156,
+    NamespaceConflictsWithConfigurationNs = 2157,
 }
 
 impl WhackDiagnosticKind {

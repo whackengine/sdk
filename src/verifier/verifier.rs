@@ -82,7 +82,7 @@ impl Verifier {
     /// # Panics
     ///
     /// Panics if the verifier is already invalidated before verifying.
-    pub fn verify_programs(&mut self, programs: Vec<Rc<Program>>, mxml_list: Vec<Rc<Mxml>>) {
+    pub fn verify_programs(&mut self, programs: Vec<Rc<Program>>, _mxml_list: Vec<Rc<Mxml>>) {
         if self.verifier.invalidated {
             panic!("Verifier already invalidated.");
         }
@@ -93,6 +93,8 @@ impl Verifier {
         let top_m = host.factory().create_method_slot(&host.empty_empty_qname(), &host.factory().create_function_type(vec![], host.void_type()));
         let top_act = host.factory().create_activation(&top_m);
         top_act.set_is_package_initialization(true);
+        top_act.open_ns_set().push(host.as3_ns());
+        top_act.import_list().push(host.factory().create_package_wildcard_import(&host.top_level_package(), None));
         self.inherit_and_enter_scope(&top_act);
 
         // Collect package definitions, including these from top-level include directives.
@@ -106,7 +108,7 @@ impl Verifier {
         // Declare block scope opening public and internal.
         for pckgdef in packages.iter() {
             let namestr = pckgdef.name.iter().map(|name| name.0.as_str()).collect::<Vec<_>>();
-            let pckg = host.factory().create_package(&namestr);
+            let pckg = host.factory().create_package(namestr);
 
             // ASDoc
             pckg.set_asdoc(pckg.asdoc().or(pckgdef.asdoc.clone()));
@@ -157,7 +159,34 @@ impl Verifier {
         // Verify directives and then statements in the top-level of all programs.
         // Assign activation to program, which includes public and internal
         // namespaces, which will also be opened.
-        todo_here();
+        for program in programs.iter() {
+            // Skip empty program
+            if program.directives.len() == 0 {
+                continue;
+            }
+
+            // Create activation
+            let top_m = host.factory().create_method_slot(&host.empty_empty_qname(), &host.factory().create_function_type(vec![], host.void_type()));
+            let top_act = host.factory().create_activation(&top_m);
+            top_act.set_is_global_initialization(true);
+            top_act.set_public_ns(Some(host.factory().create_public_ns(None)));
+            top_act.set_internal_ns(Some(host.factory().create_internal_ns(None)));
+            top_act.open_ns_set().push(host.as3_ns());
+            top_act.open_ns_set().push(top_act.public_ns().unwrap());
+            top_act.open_ns_set().push(top_act.internal_ns().unwrap());
+            top_act.import_list().push(host.factory().create_package_wildcard_import(&host.top_level_package(), None));
+            host.node_mapping().set(program, Some(top_act.clone()));
+
+            // Enter scope
+            self.inherit_and_enter_scope(&top_act);
+
+            if DirectiveSubverifier::verify_directives(&mut self.verifier, &program.directives).is_err() {
+                self.verifier.add_verify_error(&program.location, WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+            }
+            StatementSubverifier::verify_statements(&mut self.verifier, &program.directives);
+
+            self.exit_scope();
+        }
 
         // * [ ] Handle deferred function commons for lambdas.
         for _ in 0..Verifier::MAX_CYCLES {
@@ -292,12 +321,6 @@ impl Subverifier {
     #[inline(always)]
     pub fn node_mapping(&self) -> &NodeAssignment<Entity> {
         &self.host.node_mapping()
-    }
-
-    /// Indicates whether an error was found in the program while
-    /// verifying.
-    pub fn invalidated(&self) -> bool {
-        self.invalidated
     }
 
     pub fn reset_state(&mut self) {
