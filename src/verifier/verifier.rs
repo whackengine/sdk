@@ -368,6 +368,17 @@ impl Subverifier {
         self.scope.as_ref().unwrap().clone()
     }
 
+    pub fn verify_expression_or_max_cycles_error(&mut self, exp: &Rc<Expression>, context: &VerifierExpressionContext) -> Option<Entity> {
+        let val = self.verify_expression(exp, context);
+        if let Ok(val) = val {
+            val
+        } else {
+            self.add_verify_error(&exp.location(), WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+            self.host.node_mapping().set(exp, None);
+            None
+        }
+    }
+
     pub fn verify_expression(&mut self, exp: &Rc<Expression>, context: &VerifierExpressionContext) -> Result<Option<Entity>, DeferError> {
         // Cache-result - prevents diagnostic duplication
         if self.host.node_mapping().has(exp) {
