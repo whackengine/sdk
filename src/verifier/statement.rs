@@ -146,7 +146,7 @@ impl StatementSubverifier {
         }
     }
 
-    fn verify_block(verifier: &mut Subverifier, block: &Rc<Block>) {
+    pub fn verify_block(verifier: &mut Subverifier, block: &Rc<Block>) {
         let scope = verifier.host.lazy_node_mapping(block, || {
             verifier.host.factory().create_scope()
         });
@@ -163,6 +163,14 @@ impl StatementSubverifier {
             return;
         }
         let act = act.unwrap();
+        if act.is_package_initialization() {
+            verifier.add_verify_error(&retstmt.location, WhackDiagnosticKind::ReturnNotAllowedInPackageInit, diagarg![]);
+            return;
+        }
+        if act.is_global_initialization() {
+            verifier.add_verify_error(&retstmt.location, WhackDiagnosticKind::ReturnNotAllowedInGlobalInit, diagarg![]);
+            return;
+        }
         let sig = act.of_method().signature(&host);
 
         if sig.is::<UnresolvedEntity>() {

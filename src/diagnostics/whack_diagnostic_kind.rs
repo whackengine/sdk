@@ -108,6 +108,8 @@ pub enum WhackDiagnosticKind {
     IllegalReturnStatement = 2152,
     ReturnValueMustBeSpecified = 2153,
     DxnsStatementIsNotSupported = 2154,
+    ReturnNotAllowedInPackageInit = 2155,
+    ReturnNotAllowedInGlobalInit = 2156,
 }
 
 impl WhackDiagnosticKind {

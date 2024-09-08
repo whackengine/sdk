@@ -87,6 +87,14 @@ impl Verifier {
             panic!("Verifier already invalidated.");
         }
 
+        let host = self.verifier.host.clone();
+
+        // Topmost activation before a package
+        let top_m = host.factory().create_method_slot(&host.empty_empty_qname(), &host.factory().create_function_type(vec![], host.void_type()));
+        let top_act = host.factory().create_activation(&top_m);
+        top_act.set_is_package_initialization(true);
+        self.inherit_and_enter_scope(&top_act);
+
         // Collect package definitions, including these from top-level include directives.
         let mut packages: Vec<Rc<PackageDefinition>> = vec![];
         for program in programs.iter() {
@@ -96,16 +104,55 @@ impl Verifier {
 
         // Do a first pass in every package to declare them.
         // Declare block scope opening public and internal.
-        todo_here();
+        for pckgdef in packages.iter() {
+            let namestr = pckgdef.name.iter().map(|name| name.0.as_str()).collect::<Vec<_>>();
+            let pckg = host.factory().create_package(&namestr);
+
+            // ASDoc
+            pckg.set_asdoc(pckg.asdoc().or(pckgdef.asdoc.clone()));
+
+            // Block scope
+            let scope = host.factory().create_package_scope(&pckg);
+            scope.open_ns_set().push(pckg.public_ns().unwrap());
+            scope.open_ns_set().push(pckg.internal_ns().unwrap());
+            host.node_mapping().set(&pckgdef.block, Some(scope));
+        }
+
+        // @todo Declare packages based in MXML source tree.
 
         // Verify directives across packages ("rem_pckg_list")
         //
-        // * [ ] Eliminate packages from "rem_pckg_list" that were fully solved from directive verification,
-        //       but still visit them later for statement verification.
-        todo_here();
+        // Eliminate packages from "rem_pckg_list" that were fully solved from directive verification,
+        // but still visit them later for statement verification.
+        loop {
+            if rem_pckg_list.is_empty() {
+                break;
+            }
+            let mut done_pckgs = Vec::<Rc<PackageDefinition>>::new();
+            for pckg in rem_pckg_list.iter() {
+                if DirectiveSubverifier::verify_block(&mut self.verifier, &pckg.block).is_ok() {
+                    done_pckgs.push(pckg.clone());
+                }
+            }
+            for pckg in done_pckgs.iter() {
+                let mut i = 0;
+                while i < rem_pckg_list.len() {
+                    if Rc::ptr_eq(pckg, &rem_pckg_list[i]) {
+                        break;
+                    }
+                    i += 1;
+                }
+                rem_pckg_list.remove(i);
+            }
+        }
 
         // Verify statements across packages
-        todo_here();
+        for pckg in packages.iter() {
+            StatementSubverifier::verify_block(&mut self.verifier, &pckg.block);
+        }
+
+        // Exit the activation before a package
+        self.exit_scope();
 
         // Verify directives and then statements in the top-level of all programs.
         // Assign activation to program, which includes public and internal

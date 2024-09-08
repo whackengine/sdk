@@ -112,6 +112,8 @@ lazy_static! {
         WhackDiagnosticKind::IllegalReturnStatement.id() => "Illegal return statement.".into(),
         WhackDiagnosticKind::ReturnValueMustBeSpecified.id() => "Return value must be specified.".into(),
         WhackDiagnosticKind::DxnsStatementIsNotSupported.id() => "Default XML namespace statement is not supported in HTML5 environment.".into(),
+        WhackDiagnosticKind::ReturnNotAllowedInPackageInit.id() => "The return statement cannot be used in package initialization code.".into(),
+        WhackDiagnosticKind::ReturnNotAllowedInGlobalInit.id() => "The return statement cannot be used in global initialization code.".into(),
         // WhackDiagnosticKind::K.id() => ".".into(),
     };
 }
