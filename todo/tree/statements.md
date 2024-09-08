@@ -1,8 +1,5 @@
 # Statements
 
-- [x] Expression statement
-- [x] Super statement
-- [ ] Block statement
 - [ ] Labeled statement
 - [ ] If statement
 - [ ] Switch statement

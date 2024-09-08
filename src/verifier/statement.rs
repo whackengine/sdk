@@ -17,6 +17,12 @@ impl StatementSubverifier {
             Directive::SuperStatement(supstmt) => {
                 Self::verify_super_stmt(verifier, stmt, supstmt)
             },
+            Directive::Block(block) => {
+                let scope = verifier.host.node_mapping().get(stmt).unwrap();
+                verifier.inherit_and_enter_scope(&scope);
+                Self::verify_statements(verifier, &block.directives);
+                verifier.exit_scope();
+            },
             _ => {},
         }
     }
