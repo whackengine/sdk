@@ -4,7 +4,18 @@ pub(crate) struct StatementSubverifier;
 
 impl StatementSubverifier {
     pub fn verify_statements(verifier: &mut Subverifier, list: &[Rc<Directive>]) {
-        todo_here();
+        for stmt in list.iter() {
+            Self::verify_statement(verifier, stmt);
+        }
+    }
+
+    pub fn verify_statement(verifier: &mut Subverifier, stmt: &Rc<Directive>) {
+        match stmt.as_ref() {
+            Directive::ExpressionStatement(estmt) => {
+                verifier.verify_expression_or_max_cycles_error(&estmt.expression, &Default::default());
+            },
+            _ => {},
+        }
     }
 
     pub fn for_in_kv_types(host: &Database, obj: &Entity) -> Result<Option<(Entity, Entity)>, DeferError> {

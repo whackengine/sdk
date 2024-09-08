@@ -1,6 +1,6 @@
 # Statements
 
-- [ ] Expression statement
+- [x] Expression statement
 - [ ] Super statement
 - [ ] Block statement
 - [ ] Labeled statement
