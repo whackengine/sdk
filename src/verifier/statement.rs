@@ -234,7 +234,7 @@ impl StatementSubverifier {
         let host = verifier.host.clone();
         let scope = host.node_mapping().get(&stmt).unwrap();
 
-        if let ForInBinding::Expression(dest) = &forstmt.left {
+        if let ForInBinding::Expression(dest_exp) = &forstmt.left {
             // Resolve object key-values
             let obj = verifier.verify_expression_or_max_cycles_error(&forstmt.right, &Default::default());
             let mut kv_types = (host.any_type(), host.any_type());
@@ -248,13 +248,13 @@ impl StatementSubverifier {
                 if let Some(kv_types_1) = kv_types_1 {
                     kv_types = kv_types_1;
                 } else {
-                    verifier.add_verify_error(&forstmt.right.location(), WhackDiagnosticKind::CannotIterateType, diagarg![obj.unwrap().static_type(&host)]);
+                    verifier.add_verify_error(&forstmt.right.location(), WhackDiagnosticKind::CannotIterateType, diagarg![obj.static_type(&host)]);
                 }
             }
             let mut expected_type = if forstmt.each { kv_types.1 } else { kv_types.0 };
 
             // Resolve destination
-            let dest = verifier.verify_expression_or_max_cycles_error(dest, &VerifierExpressionContext {
+            let dest = verifier.verify_expression_or_max_cycles_error(dest_exp, &VerifierExpressionContext {
                 mode: VerifyMode::Write,
                 ..default()
             });
@@ -267,17 +267,36 @@ impl StatementSubverifier {
                 // - the * type
                 // - the Object type (non nullable)
                 // - a number type if the expected type is a number type
-                let obj_t = host.object_type().defer()?;
+                let obj_t = host.object_type();
+                if obj_t.is::<UnresolvedEntity>() {
+                    verifier.add_verify_error(&forstmt.right.location(), WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+                    return;
+                }
                 if ![host.any_type(), obj_t.clone()].contains(&expected_type) {
                     let anty = dest_t.escape_of_non_nullable();
                     let exty = expected_type.escape_of_non_nullable();
 
-                    let eq = exty.is_equals_or_subtype_of(&anty, &host)?;
+                    // Equals or subtype of
+                    let eq = exty.is_equals_or_subtype_of(&anty, &host);
+                    if eq.is_err() {
+                        verifier.add_verify_error(&forstmt.right.location(), WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+                        return;
+                    }
+                    let eq = eq.unwrap();
+
+                    // Numeric types
+                    let numeric_types = host.numeric_types();
+                    if numeric_types.is_err() {
+                        verifier.add_verify_error(&forstmt.right.location(), WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+                        return;
+                    }
+                    let numeric_types = numeric_types.unwrap();
+                    let num = numeric_types.contains(&anty) && numeric_types.contains(&exty);
+
                     let any_or_obj = anty == host.any_type() || anty == obj_t;
-                    let num = host.numeric_types()?.contains(&anty) && host.numeric_types()?.contains(&exty);
 
                     if !(eq || any_or_obj || num) {
-                        verifier.add_verify_error(&dest.location(), WhackDiagnosticKind::ExpectedToIterateType, diagarg![exty]);
+                        verifier.add_verify_error(&dest_exp.location(), WhackDiagnosticKind::ExpectedToIterateType, diagarg![exty]);
                     }
                 }
 
