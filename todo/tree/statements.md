@@ -1,12 +1,5 @@
 # Statements
 
-- [ ] Labeled statement
-- [ ] If statement
-- [ ] Switch statement
-- [ ] Switch type statement
-- [ ] Do statement
-- [ ] While statement
-- [ ] For statement
 - [ ] For..in statement
 - [ ] With statement
 - [ ] Return statement

@@ -23,8 +23,74 @@ impl StatementSubverifier {
                 Self::verify_statements(verifier, &block.directives);
                 verifier.exit_scope();
             },
+            Directive::LabeledStatement(labstmt) => {
+                Self::verify_statement(verifier, &labstmt.substatement);
+            },
+            Directive::IfStatement(ifstmt) => {
+                verifier.verify_expression_or_max_cycles_error(&ifstmt.test, &Default::default());
+                Self::verify_statement(verifier, &ifstmt.consequent);
+                if let Some(alt) = ifstmt.alternative.as_ref() {
+                    Self::verify_statement(verifier, alt);
+                }
+            },
+            Directive::SwitchStatement(swstmt) => {
+                let host = verifier.host.clone();
+                let discriminant = verifier.verify_expression_or_max_cycles_error(&swstmt.discriminant, &Default::default());
+                for case in swstmt.cases.iter() {
+                    for label in case.labels.iter() {
+                        match label {
+                            CaseLabel::Case((exp, _)) => {
+                                if let Some(discriminant) = discriminant.as_ref() {
+                                    verifier.imp_coerce_exp_or_max_cycles_error(exp, &discriminant.static_type(&host));
+                                } else {
+                                    verifier.verify_expression_or_max_cycles_error(exp, &Default::default());
+                                }
+                            },
+                            CaseLabel::Default(_) => {},
+                        }
+                    }
+                    Self::verify_statements(verifier, &case.directives);
+                }
+            },
+            Directive::SwitchTypeStatement(swstmt) => {
+                verifier.verify_expression_or_max_cycles_error(&swstmt.discriminant, &Default::default());
+                for case in swstmt.cases.iter() {
+                    Self::verify_block(verifier, &case.block);
+                }
+            },
+            Directive::DoStatement(dostmt) => {
+                Self::verify_statement(verifier, &dostmt.body);
+                verifier.verify_expression_or_max_cycles_error(&dostmt.test, &Default::default());
+            },
+            Directive::WhileStatement(wstmt) => {
+                verifier.verify_expression_or_max_cycles_error(&wstmt.test, &Default::default());
+                Self::verify_statement(verifier, &wstmt.body);
+            },
+            Directive::ForStatement(forstmt) => {
+                let host = verifier.host.clone();
+                let scope = host.node_mapping().get(&stmt).unwrap();
+                verifier.inherit_and_enter_scope(&scope);
+                if let Some(ForInitializer::Expression(init)) = forstmt.init.as_ref() {
+                    verifier.verify_expression_or_max_cycles_error(&init, &Default::default());
+                }
+                if let Some(test) = forstmt.test.as_ref() {
+                    verifier.verify_expression_or_max_cycles_error(&test, &Default::default());
+                }
+                if let Some(update) = forstmt.update.as_ref() {
+                    verifier.verify_expression_or_max_cycles_error(&update, &Default::default());
+                }
+                Self::verify_statement(verifier, &forstmt.body);
+                verifier.exit_scope();
+            },
             _ => {},
         }
+    }
+
+    fn verify_block(verifier: &mut Subverifier, block: &Rc<Block>) {
+        let scope = verifier.host.node_mapping().get(block).unwrap();
+        verifier.inherit_and_enter_scope(&scope);
+        Self::verify_statements(verifier, &block.directives);
+        verifier.exit_scope();
     }
 
     fn verify_super_stmt(verifier: &mut Subverifier, _stmt: &Rc<Directive>, supstmt: &SuperStatement) {

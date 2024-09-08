@@ -25,7 +25,7 @@ use crate::ns::*;
 /// Such methods may alter the `parent()` field of the scope to use the enclosing
 /// scope as the parent.
 ///
-/// ```
+/// ```ignore
 /// verifier.enter_scope(&scope);
 /// verifier.exit_scope();
 /// ```
@@ -570,6 +570,17 @@ impl Subverifier {
         let v = v.unwrap();
         self.host.node_mapping().set(exp, Some(v.clone()));
         Ok(Some(v))
+    }
+
+    pub fn imp_coerce_exp_or_max_cycles_error(&mut self, exp: &Rc<Expression>, target_type: &Entity) -> Option<Entity> {
+        let val = self.imp_coerce_exp(exp, target_type);
+        if let Ok(val) = val {
+            val
+        } else {
+            self.add_verify_error(&exp.location(), WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+            self.host.node_mapping().set(exp, None);
+            None
+        }
     }
 
     /// Implicitly coerce expression to a type.
