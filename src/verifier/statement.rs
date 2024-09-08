@@ -82,6 +82,9 @@ impl StatementSubverifier {
                 Self::verify_statement(verifier, &forstmt.body);
                 verifier.exit_scope();
             },
+            Directive::ForInStatement(forstmt) => {
+                Self::verify_for_in_stmt(verifier, stmt, forstmt)
+            },
             _ => {},
         }
     }
@@ -129,6 +132,65 @@ impl StatementSubverifier {
                 verifier.add_verify_error(&supstmt.location, WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
             },
         }
+    }
+
+    fn verify_for_in_stmt(verifier: &mut Subverifier, stmt: &Rc<Directive>, forstmt: &ForInStatement) {
+        let host = verifier.host.clone();
+        let scope = host.node_mapping().get(&stmt).unwrap();
+
+        if let ForInBinding::Expression(dest) = &forstmt.left {
+            // Resolve object key-values
+            let obj = verifier.verify_expression_or_max_cycles_error(&forstmt.right, &Default::default());
+            let mut kv_types = (host.any_type(), host.any_type());
+            if let Some(obj) = obj.as_ref() {
+                let kv_types_1 = StatementSubverifier::for_in_kv_types(&host, obj);
+                if kv_types_1.is_err() {
+                    verifier.add_verify_error(&forstmt.right.location(), WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+                    return;
+                }
+                let kv_types_1 = kv_types_1.unwrap();
+                if let Some(kv_types_1) = kv_types_1 {
+                    kv_types = kv_types_1;
+                } else {
+                    verifier.add_verify_error(&forstmt.right.location(), WhackDiagnosticKind::CannotIterateType, diagarg![obj.unwrap().static_type(&host)]);
+                }
+            }
+            let mut expected_type = if forstmt.each { kv_types.1 } else { kv_types.0 };
+
+            // Resolve destination
+            let dest = verifier.verify_expression_or_max_cycles_error(dest, &VerifierExpressionContext {
+                mode: VerifyMode::Write,
+                ..default()
+            });
+            if let Some(dest) = dest {
+                let dest_t = dest.static_type(&host);
+
+                // If the expected type is not * or Object, then
+                // the destination type must be either:
+                // - equals to or base type of the expected type (non nullable)
+                // - the * type
+                // - the Object type (non nullable)
+                // - a number type if the expected type is a number type
+                let obj_t = host.object_type().defer()?;
+                if ![host.any_type(), obj_t.clone()].contains(&expected_type) {
+                    let anty = dest_t.escape_of_non_nullable();
+                    let exty = expected_type.escape_of_non_nullable();
+
+                    let eq = exty.is_equals_or_subtype_of(&anty, &host)?;
+                    let any_or_obj = anty == host.any_type() || anty == obj_t;
+                    let num = host.numeric_types()?.contains(&anty) && host.numeric_types()?.contains(&exty);
+
+                    if !(eq || any_or_obj || num) {
+                        verifier.add_verify_error(&dest.location(), WhackDiagnosticKind::ExpectedToIterateType, diagarg![exty]);
+                    }
+                }
+
+                expected_type = dest_t;
+            }
+        }
+        verifier.inherit_and_enter_scope(&scope);
+        Self::verify_statement(verifier, &forstmt.body);
+        verifier.exit_scope();
     }
 
     pub fn for_in_kv_types(host: &Database, obj: &Entity) -> Result<Option<(Entity, Entity)>, DeferError> {

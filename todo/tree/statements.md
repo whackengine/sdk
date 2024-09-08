@@ -1,6 +1,5 @@
 # Statements
 
-- [ ] For..in statement
 - [ ] With statement
 - [ ] Return statement
 - [ ] Throw statement
