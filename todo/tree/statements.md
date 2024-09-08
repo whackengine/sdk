@@ -1,5 +1,27 @@
 # Statements
 
+- [ ] Expression statement
+- [ ] Super statement
+- [ ] Block statement
+- [ ] Labeled statement
+- [ ] If statement
+- [ ] Switch statement
+- [ ] Switch type statement
+- [ ] Do statement
+- [ ] While statement
+- [ ] For statement
+- [ ] For..in statement
+- [ ] With statement
+- [ ] Return statement
+- [ ] Throw statement
+- [ ] Default XML namespace statement (report unsupported error)
+- [ ] Try statement
+- [ ] Configuration directive
+- [ ] Include directive
+- [ ] Directive injection
+- [ ] Class definition
+- [ ] Enum definition
+
 ## Return statement
 
 * [ ] If the surrounding method's signature is unresolved, let the return statement be able to return anything, as it will be handled later in the FunctionCommon control flow analysis.
