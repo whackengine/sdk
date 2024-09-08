@@ -1,0 +1,16 @@
+[package]
+name = "whackengine-whack"
+version = "1.0.0"
+edition = "2021"
+authors = ["Matheus Dias de Souza <hydroperfox@gmail.com>"]
+repository = "https://github.com/whackengine/mxmlc"
+keywords = ["actionscript", "as3", "compiler", "mxml", "css3"]
+description = "MXML compiler for Whack"
+license = "Apache-2.0"
+
+[dependencies]
+mxmlextrema-as3parser = "1"
+mxmlextrema-mxmlcaot = "0.3"
+late_format = "1"
+lazy_static = "1.4.0"
+maplit = "1.0.2"
