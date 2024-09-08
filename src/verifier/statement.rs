@@ -85,6 +85,20 @@ impl StatementSubverifier {
             Directive::ForInStatement(forstmt) => {
                 Self::verify_for_in_stmt(verifier, stmt, forstmt)
             },
+            Directive::WithStatement(wstmt) => {
+                let host = verifier.host.clone();
+                let obj = verifier.verify_expression_or_max_cycles_error(&wstmt.object, &Default::default());
+                let scope = host.lazy_node_mapping(stmt, || {
+                    if let Some(obj) = obj {
+                        host.factory().create_with_scope(&obj)
+                    } else {
+                        host.factory().create_scope()
+                    }
+                });
+                verifier.inherit_and_enter_scope(&scope);
+                Self::verify_statement(verifier, &wstmt.body);
+                verifier.exit_scope();
+            },
             _ => {},
         }
     }
