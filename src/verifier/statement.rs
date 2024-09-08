@@ -300,7 +300,7 @@ impl StatementSubverifier {
                     }
                 }
 
-                expected_type = dest_t;
+                // expected_type = dest_t;
             }
         }
         verifier.inherit_and_enter_scope(&scope);
