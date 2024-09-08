@@ -105,6 +105,9 @@ pub enum WhackDiagnosticKind {
     ExtendingSelfReferentialInterface = 2149,
     CannotIterateType = 2150,
     ExpectedToIterateType = 2151,
+    IllegalReturnStatement = 2152,
+    ReturnValueMustBeSpecified = 2153,
+    DxnsStatementIsNotSupported = 2154,
 }
 
 impl WhackDiagnosticKind {

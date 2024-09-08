@@ -109,6 +109,9 @@ lazy_static! {
         WhackDiagnosticKind::ExtendingSelfReferentialInterface.id() => "Extending self-referential interface.".into(),
         WhackDiagnosticKind::CannotIterateType.id() => "Cannot iterate data type $1.".into(),
         WhackDiagnosticKind::ExpectedToIterateType.id() => "Expected to iterate item of data type $1.".into(),
+        WhackDiagnosticKind::IllegalReturnStatement.id() => "Illegal return statement.".into(),
+        WhackDiagnosticKind::ReturnValueMustBeSpecified.id() => "Return value must be specified.".into(),
+        WhackDiagnosticKind::DxnsStatementIsNotSupported.id() => "Default XML namespace statement is not supported in HTML5 environment.".into(),
         // WhackDiagnosticKind::K.id() => ".".into(),
     };
 }

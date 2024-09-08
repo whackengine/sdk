@@ -2342,7 +2342,11 @@ impl DirectiveSubverifier {
                 // Result type
                 if let Some(result_annot) = common.signature.result_type.as_ref() {
                     if partials.result_type().is_none() {
-                        let result_type = verifier.verify_type_expression(result_annot)?.unwrap_or(host.invalidation_entity());
+                        let mut result_type = verifier.verify_type_expression(result_annot)?.unwrap_or(host.invalidation_entity());
+                        if common.contains_await && result_type.promise_result_type(&host)?.is_none() {
+                            let prom_t = host.promise_type().defer();
+                            result_type = host.factory().create_type_after_substitution(&prom_t?, &shared_array![result_type]);
+                        }
                         partials.set_result_type(Some(result_type));
                     }
                 } else if partials.result_type().is_none() {

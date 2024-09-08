@@ -99,15 +99,97 @@ impl StatementSubverifier {
                 Self::verify_statement(verifier, &wstmt.body);
                 verifier.exit_scope();
             },
+            Directive::ReturnStatement(retstmt) => {
+                Self::verify_return_stmt(verifier, stmt, retstmt);
+            },
+            Directive::ThrowStatement(tstmt) => {
+                verifier.verify_expression_or_max_cycles_error(&tstmt.expression, &Default::default());
+            },
+            Directive::DefaultXmlNamespaceStatement(dxns) => {
+                verifier.add_verify_error(&dxns.location, WhackDiagnosticKind::DxnsStatementIsNotSupported, diagarg![]);
+                verifier.verify_expression_or_max_cycles_error(&dxns.right, &Default::default());
+            },
+            Directive::TryStatement(trystmt) => {
+                Self::verify_block(verifier, &trystmt.block);
+                for catch_clause in trystmt.catch_clauses.iter() {
+                    Self::verify_block(verifier, &catch_clause.block);
+                }
+                if let Some(finally_clause) = trystmt.finally_clause.as_ref() {
+                    Self::verify_block(verifier, &finally_clause.block);
+                }
+            },
+            Directive::ConfigurationDirective(cfgdrtv) => {
+                let cval = verifier.host.node_mapping().get(stmt).unwrap();
+                if cval.is::<BooleanConstant>() && cval.boolean_value() {
+                    // Do not just resolve the directive; if it is a block,
+                    // resolve it without creating a block scope for it.
+                    if let Directive::Block(block) = cfgdrtv.directive.as_ref() {
+                        Self::verify_statements(verifier, &block.directives)
+                    } else {
+                        Self::verify_statement(verifier, &cfgdrtv.directive)
+                    }
+                }
+            },
+            Directive::IncludeDirective(incdrtv) => {
+                Self::verify_statements(verifier, &incdrtv.nested_directives);
+            },
+            Directive::DirectiveInjection(inj) => {
+                Self::verify_statements(verifier, inj.directives.borrow().as_ref());
+            },
+            Directive::ClassDefinition(defn) => {
+                Self::verify_block(verifier, &defn.block);
+            },
+            Directive::EnumDefinition(defn) => {
+                Self::verify_block(verifier, &defn.block);
+            },
             _ => {},
         }
     }
 
     fn verify_block(verifier: &mut Subverifier, block: &Rc<Block>) {
-        let scope = verifier.host.node_mapping().get(block).unwrap();
+        let scope = verifier.host.lazy_node_mapping(block, || {
+            verifier.host.factory().create_scope()
+        });
         verifier.inherit_and_enter_scope(&scope);
         Self::verify_statements(verifier, &block.directives);
         verifier.exit_scope();
+    }
+
+    fn verify_return_stmt(verifier: &mut Subverifier, _stmt: &Rc<Directive>, retstmt: &ReturnStatement) {
+        let host = verifier.host.clone();
+        let act = verifier.scope().search_activation();
+        if act.is_none() {
+            verifier.add_verify_error(&retstmt.location, WhackDiagnosticKind::IllegalReturnStatement, diagarg![]);
+            return;
+        }
+        let act = act.unwrap();
+        let sig = act.of_method().signature(&host);
+
+        if sig.is::<UnresolvedEntity>() {
+            if let Some(exp) = retstmt.expression.as_ref() {
+                verifier.verify_expression_or_max_cycles_error(&exp, &Default::default());
+            }
+            return;
+        }
+
+        let mut r_t = sig.result_type();
+
+        match r_t.promise_result_type(&host) {
+            Ok(Some(prom_r_t)) => {
+                r_t = prom_r_t;
+            },
+            Ok(None) => {},
+            Err(_) => {
+                verifier.add_verify_error(&retstmt.location, WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+                return;
+            },
+        }
+
+        if let Some(exp) = retstmt.expression.as_ref() {
+            verifier.imp_coerce_exp_or_max_cycles_error(exp, &r_t);
+        } else if ![host.any_type(), host.void_type()].contains(&r_t) {
+            verifier.add_verify_error(&retstmt.location, WhackDiagnosticKind::ReturnValueMustBeSpecified, diagarg![]);
+        }
     }
 
     fn verify_super_stmt(verifier: &mut Subverifier, _stmt: &Rc<Directive>, supstmt: &SuperStatement) {
