@@ -14,7 +14,48 @@ impl StatementSubverifier {
             Directive::ExpressionStatement(estmt) => {
                 verifier.verify_expression_or_max_cycles_error(&estmt.expression, &Default::default());
             },
+            Directive::SuperStatement(supstmt) => {
+                Self::verify_super_stmt(verifier, stmt, supstmt)
+            },
             _ => {},
+        }
+    }
+
+    fn verify_super_stmt(verifier: &mut Subverifier, _stmt: &Rc<Directive>, supstmt: &SuperStatement) {
+        let host = verifier.host.clone();
+        let mut scope = Some(verifier.scope());
+        while let Some(scope1) = scope.as_ref() {
+            if scope1.is::<ClassScope>() {
+                break;
+            }
+            scope = scope1.parent();
+        }
+        if scope.is_none() {
+            return;
+        }
+        let scope = scope.unwrap();
+        let class_t = scope.class().extends_class(&host);
+        if class_t.is_none() {
+            return;
+        }
+        let class_t = class_t.unwrap();
+        let signature;
+        if let Some(ctor) = class_t.constructor_method(&host) {
+            signature = ctor.signature(&host);
+        } else {
+            signature = host.factory().create_function_type(vec![], host.void_type());
+        }
+        match ArgumentsSubverifier::verify(verifier, &supstmt.arguments, &signature) {
+            Ok(_) => {},
+            Err(VerifierArgumentsError::Expected(n)) => {
+                verifier.add_verify_error(&supstmt.location, WhackDiagnosticKind::IncorrectNumArguments, diagarg![n.to_string()]);
+            },
+            Err(VerifierArgumentsError::ExpectedNoMoreThan(n)) => {
+                verifier.add_verify_error(&supstmt.location, WhackDiagnosticKind::IncorrectNumArgumentsNoMoreThan, diagarg![n.to_string()]);
+            },
+            Err(VerifierArgumentsError::Defer) => {
+                verifier.add_verify_error(&supstmt.location, WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+            },
         }
     }
 
