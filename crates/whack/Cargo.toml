@@ -7,3 +7,4 @@ repository = "https://github.com/whackengine/rustwhack"
 license = "Apache-2.0"
 
 [dependencies]
+whackengine-verifier = { path = "../verifier", version = "1" }
