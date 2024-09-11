@@ -3,7 +3,7 @@ name = "whackengine-whack"
 version = "1.0.0"
 edition = "2021"
 authors = ["Matheus Dias de Souza <hydroperfox@gmail.com>"]
-repository = "https://github.com/whackengine/rustwhack"
+repository = "https://github.com/whackengine/sdk"
 license = "Apache-2.0"
 
 [dependencies]
