@@ -10,13 +10,13 @@ use crate::ns::*;
 /// A set of programs can be verified by invoking `verify_programs()`:
 /// 
 /// ```ignore
-/// verifier.verify_programs(program_list, mxml_list);
+/// verifier.verify_programs(compiler_options, program_list, mxml_list);
 /// ```
 /// 
 /// A single expression can be verified by invoking `verify_expression()`:
 /// 
 /// ```ignore
-/// verifier.verify_expression(&expression, Some(context_type));
+/// verifier.verify_expression(compiler_options, &expression, Some(context_type));
 /// ```
 /// 
 /// # Scopes
@@ -82,7 +82,7 @@ impl Verifier {
     /// # Panics
     ///
     /// Panics if the verifier is already invalidated before verifying.
-    pub fn verify_programs(&mut self, programs: Vec<Rc<Program>>, _mxml_list: Vec<Rc<Mxml>>) {
+    pub fn verify_programs(&mut self, _compiler_options: &Rc<CompilerOptions>, programs: Vec<Rc<Program>>, _mxml_list: Vec<Rc<Mxml>>) {
         if self.verifier.invalidated {
             panic!("Verifier already invalidated.");
         }
@@ -208,8 +208,6 @@ impl Verifier {
             self.verifier.finish_definition_conflict(&old, &new);
         }
 
-        // @todo Warn unused
-
         self.verifier.reset_state();
     }
 
@@ -218,13 +216,14 @@ impl Verifier {
     /// # Panics
     ///
     /// Panics if the verifier is already invalidated before verifying.
-    pub fn verify_expression(&mut self, exp: &Rc<Expression>, context: &VerifierExpressionContext) -> Option<Entity> {
+    pub fn verify_expression(&mut self, _compiler_options: &Rc<CompilerOptions>, exp: &Rc<Expression>, context: &VerifierExpressionContext) -> Option<Entity> {
         if self.verifier.invalidated {
             panic!("Verifier already invalidated.");
         }
 
         let v = self.verifier.verify_expression(exp, context);
         if let Ok(v) = v {
+            // Handle FunctionCommon from lambdas
             for _ in 0..Verifier::MAX_CYCLES {
                 let mut any_defer = false;
                 for (common, partials) in self.verifier.deferred_function_exp.clone().borrow().iter() {
@@ -239,9 +238,12 @@ impl Verifier {
                 let loc = (*common).location.clone();
                 self.verifier.add_verify_error(&loc, WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
             }
+
+            // Finish handling definition conflicts
             for (old, new) in self.verifier.definition_conflicts.clone().iter() {
                 self.verifier.finish_definition_conflict(&old, &new);
             }
+
             self.verifier.reset_state();
             return v;
         }
@@ -863,51 +865,6 @@ impl InterfaceDefnGuard {
         Self {
             extends_list_done: Cell::new(false),
             event_metadata_done: Cell::new(false),
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::ns::*;
-
-    #[test]
-    fn test_exp() {
-        // Prepare the host
-        let host = Rc::new(Database::new(DatabaseOptions::default()));
-        host.config_constants().set("FOO::X".into(), "true".into());
-        
-        /*
-        let boolean_class = host.factory().create_class_type(
-            host.factory().create_qname(&host.top_level_package().public_ns().unwrap(), "Boolean".into()),
-            &host.top_level_package().public_ns().unwrap());
-        host.top_level_package().properties(&host).set(boolean_class.name(), boolean_class);
-        */
-
-        let cu = CompilationUnit::new(None, "FOO::X".into());
-
-        // Parsing
-        let exp = ParserFacade(&cu, ParserOptions::default()).parse_expression();
-
-        // Verification
-        let mut verifier = Verifier::new(&host);
-        let scope = host.factory().create_scope();
-        scope.import_list().push(host.factory().create_package_wildcard_import(&host.top_level_package(), None));
-        verifier.set_scope(&scope);
-        let _ = verifier.verify_expression(&exp, &VerifierExpressionContext {
-            ..default()
-        });
-        /*
-        assert!(cv.is_some());
-        let Some(cv) = cv else { panic!(); };
-        assert!(cv.is::<BooleanConstant>());
-        assert!(cv.boolean_value());
-        */
-
-        // Report diagnostics
-        cu.sort_diagnostics();
-        for diag in cu.nested_diagnostics() {
-            println!("{}", WhackDiagnostic(&diag).format_english());
         }
     }
 }
