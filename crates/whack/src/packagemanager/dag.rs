@@ -3,6 +3,7 @@ use crate::packagemanager::WhackPackage;
 
 /// Directed acyclic graph of the dependency tree.
 pub struct Dag {
+    pub vertices: Vec<Rc<WhackPackage>>,
     pub edges: Vec<DagEdge>,
 }
 

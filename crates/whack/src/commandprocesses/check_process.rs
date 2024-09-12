@@ -21,7 +21,7 @@ pub fn check_process(matches: &clap::ArgMatches) {
         },
     };
 
-    // Check for the built-ins first
+    // Check the built-ins first
     fixme();
 
     // Check each dependency in ascending order for AS3 and MXML errors,
