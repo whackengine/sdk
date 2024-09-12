@@ -8,3 +8,5 @@ license = "Apache-2.0"
 
 [dependencies]
 whackengine-verifier = { path = "../verifier", version = "1" }
+clap = { version = "4.5.17", features = ["cargo"] }
+toml_edit = "0.22.20"

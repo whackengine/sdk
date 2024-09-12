@@ -188,7 +188,7 @@ impl Verifier {
             self.exit_scope();
         }
 
-        // * [ ] Handle deferred function commons for lambdas.
+        // Handle deferred function commons for lambdas.
         for _ in 0..Verifier::MAX_CYCLES {
             let mut any_defer = false;
             for (common, partials) in self.verifier.deferred_function_exp.clone().borrow().iter() {
@@ -207,6 +207,8 @@ impl Verifier {
         for (old, new) in self.verifier.definition_conflicts.clone().iter() {
             self.verifier.finish_definition_conflict(&old, &new);
         }
+
+        // @todo Warn unused
 
         self.verifier.reset_state();
     }
