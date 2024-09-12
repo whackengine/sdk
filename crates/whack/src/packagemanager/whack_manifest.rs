@@ -14,6 +14,8 @@ pub struct WhackManifest {
     pub dependencies: Option<HashMap<String, ManifestDependency>>,
     pub build_script: Option<ManifestBuildScript>,
     pub js: Option<Vec<ManifestJscript>>,
+    /// Configuration constants.
+    pub define: Option<HashMap<String, String>>,
 }
 
 #[derive(Serialize, Deserialize)]
