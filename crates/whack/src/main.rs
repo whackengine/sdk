@@ -4,8 +4,21 @@ fn main() {
         .subcommand_required(true)
         .subcommand(
             clap::command!("check")
+                .about("Verifies ActionScript sources for errors and warnings.")
                 .arg(clap::arg!(--"builtins" <PATH>)
+                    .help("Path to the Whack package defining the ActionScript built-ins.")
                     .value_parser(clap::value_parser!(std::path::PathBuf)))
+                .arg(clap::arg!(--"package" <NAME>)
+                    .help("For a workspace, specifies the Whack package to operate on.")
+                    .alias("p"))
         );
+
     let matches = cmd.get_matches();
+
+    match matches.subcommand() {
+        Some(("check", matches)) => {
+            whackengine_whack::commandprocesses::check_process(matches);
+        },
+        _ => unreachable!(),
+    }
 }
