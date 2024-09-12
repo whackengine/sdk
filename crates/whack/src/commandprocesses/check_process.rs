@@ -2,6 +2,9 @@ pub fn check_process(matches: &clap::ArgMatches) {
     let builtins = matches.get_one::<std::path::PathBuf>("builtins");
     let package = matches.get_one::<String>("package");
 
+    // Read the Whack manifest
+    fixme();
+
     // If current project is a workspace, then require a package name
     // to be specified, at which the check process executes.
     fixme();
