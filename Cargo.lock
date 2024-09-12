@@ -588,6 +588,7 @@ dependencies = [
 name = "whackengine-whack"
 version = "1.0.0"
 dependencies = [
+ "by_address",
  "clap",
  "semver",
  "serde",
