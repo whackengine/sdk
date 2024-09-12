@@ -10,6 +10,7 @@ license = "Apache-2.0"
 whackengine-verifier = { path = "../verifier", version = "1" }
 by_address = "1.2.1"
 clap = { version = "4.5.17", features = ["cargo"] }
+colored = "2"
 semver = { version = "1.0", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8.19"
