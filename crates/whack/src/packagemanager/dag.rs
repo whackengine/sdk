@@ -1,15 +1,18 @@
 use std::rc::Rc;
+use std::path::PathBuf;
 use crate::packagemanager::WhackPackage;
 
 /// Directed acyclic graph of the dependency tree.
 pub struct Dag {
     pub vertices: Vec<Rc<WhackPackage>>,
     pub edges: Vec<DagEdge>,
+    pub first: Rc<WhackPackage>,
+    pub last: Rc<WhackPackage>,
 }
 
 impl Dag {
     /// Retrieves the directed acyclic graph of the dependency tree.
-    pub fn retrieve(package: Option<String>) -> Result<Dag, DagError> {
+    pub fn retrieve(dir: &PathBuf, package: Option<String>) -> Result<Dag, DagError> {
         // Read the Whack manifest
         fixme();
 

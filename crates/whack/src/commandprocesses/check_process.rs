@@ -5,7 +5,7 @@ pub fn check_process(matches: &clap::ArgMatches) {
     let builtins = matches.get_one::<std::path::PathBuf>("builtins");
     let package = matches.get_one::<String>("package");
 
-    let dag = match Dag::retrieve(package.cloned()) {
+    let dag = match Dag::retrieve(&std::env::current_dir().unwrap(), package.cloned()) {
         Ok(dag) => dag,
         Err(error) => {
             match error {
