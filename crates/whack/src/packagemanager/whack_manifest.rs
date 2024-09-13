@@ -12,6 +12,7 @@ pub struct WhackManifest {
     #[serde(rename = "server-side")]
     pub server_side: Option<ManifestServerSide>,
     pub dependencies: Option<HashMap<String, ManifestDependency>>,
+    #[serde(rename = "build-script")]
     pub build_script: Option<ManifestBuildScript>,
     pub js: Option<Vec<ManifestJscript>>,
     /// Configuration constants.
