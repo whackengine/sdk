@@ -18,7 +18,7 @@ async fn main() {
 
     match matches.subcommand() {
         Some(("check", matches)) => {
-            whackengine_whack::commandprocesses::check_process(matches);
+            whackengine_whack::commandprocesses::check_process(matches).await;
         },
         _ => unreachable!(),
     }
