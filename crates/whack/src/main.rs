@@ -1,4 +1,5 @@
-fn main() {
+#[tokio::main]
+async fn main() {
     let cmd = clap::Command::new("whack")
         .bin_name("whack")
         .subcommand_required(true)
