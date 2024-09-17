@@ -23,8 +23,9 @@ impl Dag {
         // Check for manifest updates.
         fixme();
 
-        // If the manifest has been updated, update dependencies
-        // and clear up the build script's artifacts.
+        // If the manifest has been updated,
+        // either in the entry package or in another local package,
+        // update dependencies and clear up the build script's artifacts.
         // Remember that the lock file must be considered for the
         // exact versions of registry dependencies.
         fixme();
