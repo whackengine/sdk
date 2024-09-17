@@ -126,7 +126,7 @@ impl Verifier {
         //
         // Eliminate packages from "rem_pckg_list" that were fully solved from directive verification,
         // but still visit them later for statement verification.
-        loop {
+        for _ in 0..Verifier::MAX_CYCLES {
             if rem_pckg_list.is_empty() {
                 break;
             }
@@ -147,10 +147,15 @@ impl Verifier {
                 rem_pckg_list.remove(i);
             }
         }
-
-        // Verify statements across packages
-        for pckg in packages.iter() {
-            StatementSubverifier::verify_block(&mut self.verifier, &pckg.block);
+        if rem_pckg_list.is_empty() {
+            // Verify statements across packages
+            for pckg in packages.iter() {
+                StatementSubverifier::verify_block(&mut self.verifier, &pckg.block);
+            }
+        } else {
+            for pckg in rem_pckg_list.iter() {
+                self.verifier.add_verify_error(&pckg.location, WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+            }
         }
 
         // Exit the activation before a package
@@ -180,7 +185,14 @@ impl Verifier {
             // Enter scope
             self.inherit_and_enter_scope(&top_act);
 
-            if DirectiveSubverifier::verify_directives(&mut self.verifier, &program.directives).is_err() {
+            let mut any_defer = false;
+            for _ in 0..Verifier::MAX_CYCLES {
+                any_defer = DirectiveSubverifier::verify_directives(&mut self.verifier, &program.directives).is_err();
+                if !any_defer {
+                    break;
+                }
+            }
+            if any_defer {
                 self.verifier.add_verify_error(&program.location, WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
             }
             StatementSubverifier::verify_statements(&mut self.verifier, &program.directives);
