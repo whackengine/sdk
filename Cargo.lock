@@ -805,6 +805,7 @@ dependencies = [
  "by_address",
  "clap",
  "colored",
+ "hydroperfox-filepaths",
  "semver",
  "serde",
  "tokio",
