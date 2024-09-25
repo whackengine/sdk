@@ -14,7 +14,7 @@ pub struct WhackManifest {
     pub dependencies: Option<HashMap<String, ManifestDependency>>,
     #[serde(rename = "build-script")]
     pub build_script: Option<ManifestBuildScript>,
-    pub js: Option<Vec<ManifestJscript>>,
+    pub javascript: Option<Vec<ManifestJscript>>,
     /// Configuration constants.
     pub define: Option<HashMap<String, String>>,
 }
@@ -75,4 +75,8 @@ pub struct ManifestJscript {
     path: String,
     #[serde(rename = "import-declaration")]
     import_declaration: String,
+    #[serde(rename = "client-side")]
+    client_side: Option<bool>,
+    #[serde(rename = "server-side")]
+    server_side: Option<bool>,
 }
