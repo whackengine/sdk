@@ -25,13 +25,13 @@ verifier.verify_programs(&compiler_options, as3_programs, mxml_list);
 // Unused(&db).all().borrow().iter() = yields unused (nominal and located) entities
 // which you can report a warning over.
 
+// Each compilation unit will now have diagnostics.
+let example_diagnostics = as3_programs[i].location.compilation_unit().nested_diagnostics(); 
+
 if !verifier.invalidated() {
     // Database::node_mapping() yields a mapping (a "NodeAssignment" object)
     // from a node to an "Entity", where the node is one that is behind a "Rc" pointer.
     let entity = db.node_mapping().get(&any_node); // Option<Entity>
-
-    // Each compilation unit will now have diagnostics.
-    let example_diagnostics = as3_programs[i].location.compilation_unit().nested_diagnostics(); 
 }
 ```
 
