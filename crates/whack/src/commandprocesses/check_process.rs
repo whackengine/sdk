@@ -15,7 +15,7 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     }
 
     // Process directed acyclic graph
-    let dag = match Dag::retrieve(&dir, &dir, package.cloned(), lockfile.as_ref()).await {
+    let dag = match Dag::retrieve(&dir, &dir, package.cloned(), lockfile.as_mut()).await {
         Ok(dag) => dag,
         Err(error) => {
             match error {

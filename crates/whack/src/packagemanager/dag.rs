@@ -12,7 +12,7 @@ pub struct Dag {
 
 impl Dag {
     /// Retrieves the directed acyclic graph of the dependency tree.
-    pub async fn retrieve(dir: &PathBuf, entry_dir: &PathBuf, package: Option<String>, mut lockfile: Option<&WhackLockfile>) -> Result<Dag, DagError> {
+    pub async fn retrieve(dir: &PathBuf, entry_dir: &PathBuf, package: Option<String>, mut lockfile: Option<&mut WhackLockfile>) -> Result<Dag, DagError> {
         // Read the Whack manifest
         fixme();
 
