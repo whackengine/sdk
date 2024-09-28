@@ -6,7 +6,16 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     let package = matches.get_one::<String>("package");
 
     let dir = std::env::current_dir().unwrap();
-    let dag = match Dag::retrieve(&dir, &dir, package.cloned()).await {
+
+    // Read lockfile
+    let lockfile_path = dir.join("whack.lock");
+    let mut lockfile: Option<WhackLockfile> = None;
+    if std::fs::exists(&lockfile_path).unwrap() && std::fs::metadata(&lockfile_path).unwrap().is_file() {
+        lockfile = toml::from_str::<WhackLockfile>(&std::fs::read_to_string(&lockfile_path).unwrap()).ok();
+    }
+
+    // Process directed acyclic graph
+    let dag = match Dag::retrieve(&dir, &dir, package.cloned(), lockfile.as_ref()).await {
         Ok(dag) => dag,
         Err(error) => {
             match error {
