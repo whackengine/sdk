@@ -12,8 +12,10 @@ pub struct WhackManifest {
     #[serde(rename = "server-side")]
     pub server_side: Option<ManifestServerSide>,
     pub dependencies: Option<HashMap<String, ManifestDependency>>,
-    #[serde(rename = "build-script")]
-    pub build_script: Option<ManifestBuildScript>,
+    #[serde(rename = "build-dependencies")]
+    pub build_dependencies: Option<HashMap<String, ManifestDependency>>,
+    #[serde(rename = "build-source")]
+    pub build_source: Option<Vec<ManifestSource>>,
     pub javascript: Option<Vec<ManifestJscript>>,
     /// Configuration constants.
     pub define: Option<HashMap<String, String>>,
@@ -63,11 +65,6 @@ pub enum ManifestDependency {
         path: Option<String>,
         git: Option<String>,
     },
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct ManifestBuildScript {
-    pub source: Option<Vec<ManifestSource>>,
 }
 
 #[derive(Serialize, Deserialize)]
