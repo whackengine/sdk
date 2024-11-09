@@ -114,8 +114,8 @@ smodel! {
             panic!();
         }
 
-        /// Variable slot order for a specific class
-        /// (excludes variable slots from base classes).
+        /// Variable slot order for a specific (non external) class,
+        /// excluding variable slots from base classes.
         pub fn codegen_slot_vars(&self) -> SharedArray<Entity> {
             panic!();
         }
@@ -1672,10 +1672,14 @@ smodel! {
             self.set_m_flags(v);
         }
 
+        /// For external classes, indicates the total number of slots
+        /// used in the instance underlying array representation.
         pub override fn codegen_slots(&self) -> usize {
             self.m_codegen_slots()
         }
 
+        /// For external classes, indicates the total number of slots
+        /// used in the instance underlying array representation.
         pub override fn set_codegen_slots(&self, value: usize) {
             self.set_m_codegen_slots(value);
         }
