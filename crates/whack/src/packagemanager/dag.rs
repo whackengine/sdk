@@ -30,7 +30,9 @@ impl Dag {
         // exact versions of registry dependencies.
         fixme();
 
-        // Build a directed acyclic graph (DAG) of the dependencies.
+        // Build a directed acyclic graph (DAG) of the dependencies:
+        // one for the project's dependencies and one for the
+        // build script's dependencies.
         fixme();
     }
 }
