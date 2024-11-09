@@ -411,7 +411,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mxmlextrema-mxmlcaot"
+name = "whackengine-mxmlsemantics"
 version = "0.3.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "888a73e8c41df4ba3e1d19bf1b95778b93544188b5a1fe70cdc2355351d91e36"
@@ -795,7 +795,7 @@ dependencies = [
  "lazy_static",
  "maplit",
  "mxmlextrema-as3parser",
- "mxmlextrema-mxmlcaot",
+ "whackengine-mxmlsemantics",
 ]
 
 [[package]]

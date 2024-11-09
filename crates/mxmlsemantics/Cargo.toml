@@ -1,0 +1,30 @@
+[package]
+name = "whackengine-mxmlsemantics"
+version = "1.0.0"
+edition = "2021"
+authors = ["Matheus Dias de Souza <hydroperfox@gmail.com>"]
+repository = "https://github.com/whackengine/sdk"
+keywords = ["actionscript", "as3", "actionscript3"]
+description = "ActionScript 3 language semantic data model."
+license = "Apache-2.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "whackengine_mxmlsemantics"
+path = "src/lib.rs"
+
+[dependencies]
+bitflags = { version = "2.4.1", features = ["serde"] }
+by_address = "1.2.1"
+bytes = "1"
+conv = "0.3.3"
+dotenvy = "0.15.7"
+lazy_static = "1.4.0"
+maplit = "1.0.2"
+num-derive = "0.4.1"
+num-traits = "0.2.17"
+hydroperfox-filepaths = "1"
+hydroperfox-lateformat = "1"
+hydroperfox-smodel = "1"
+mxmlextrema-as3parser = "1"

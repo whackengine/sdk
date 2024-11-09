@@ -59,7 +59,6 @@ impl Verifier {
                 definition_conflicts: SharedArray::new(),
                 class_defn_guard: HashMap::new(),
                 itrfc_defn_guard: HashMap::new(),
-                codegen_class_info: SharedMap::new(),
                 invalidated: false,
                 external: false,
                 // deferred_counter: 0,
@@ -71,12 +70,6 @@ impl Verifier {
     /// Indicates whether an error was found while verifying the program.
     pub fn invalidated(&self) -> bool {
         self.verifier.invalidated
-    }
-
-    /// Class information used in code generation, such as
-    /// number of slots and variable slot order.
-    pub fn codegen_class_info_mapping(&self) -> SharedMap<Entity, Rc<CodegenClassInfo>> {
-        self.verifier.codegen_class_info.clone()
     }
 
     /// # Panics
@@ -325,8 +318,6 @@ pub(crate) struct Subverifier {
     pub class_defn_guard: HashMap<NodeAsKey<Rc<Directive>>, Rc<ClassDefnGuard>>,
     pub itrfc_defn_guard: HashMap<NodeAsKey<Rc<Directive>>, Rc<InterfaceDefnGuard>>,
 
-    pub codegen_class_info: SharedMap<Entity, Rc<CodegenClassInfo>>,
-
     invalidated: bool,
     // pub deferred_counter: usize,
     pub scope: Option<Entity>,
@@ -387,16 +378,6 @@ impl Subverifier {
             let g = Rc::new(InterfaceDefnGuard::new());
             self.itrfc_defn_guard.insert(k, g.clone());
             g
-        }
-    }
-
-    pub fn codegen_class_info(&mut self, class_entity: &Entity) -> Rc<CodegenClassInfo> {
-        if let Some(info) = self.codegen_class_info.get(class_entity) {
-            info
-        } else {
-            let info = Rc::new(CodegenClassInfo::new());
-            self.codegen_class_info.set(class_entity.clone(), info.clone());
-            info
         }
     }
 

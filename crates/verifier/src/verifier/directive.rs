@@ -525,8 +525,8 @@ impl DirectiveSubverifier {
                     if m.name.0 == "Options" {
                         class_entity.set_is_options_class(true);
                         class_entity.set_is_final(true);
-                    // [Whack::External] meta-data
-                    } else if m.name.0 == "Whack::External" {
+                    // [whack_external] meta-data
+                    } else if m.name.0 == "whack_external" {
                         let mut slots = 0usize;
 
                         // Require the `slots="NUMBER"` pair,
@@ -556,7 +556,7 @@ impl DirectiveSubverifier {
                         }
 
                         // Set slots number
-                        verifier.codegen_class_info(&class_entity).slots.set(slots);
+                        class_entity.set_codegen_slots(slots);
 
                         // Mark as external
                         class_entity.set_is_external(true);
@@ -1317,8 +1317,8 @@ impl DirectiveSubverifier {
                 itrfc_entity.set_location(Some(defn.name.1.clone()));
                 let metadata = Attribute::find_metadata(&defn.attributes);
                 for m in metadata.iter() {
-                    // [Whack::External] meta-data
-                    if m.name.0 == "Whack::External" {
+                    // [whack_external] meta-data
+                    if m.name.0 == "whack_external" {
                         // Mark as external
                         itrfc_entity.set_is_external(true);
                     }
@@ -1775,9 +1775,9 @@ impl DirectiveSubverifier {
         let is_external = if var_parent.is::<Type>() && var_parent.is_external() {
             true
         } else {
-            // [Whack::External]
+            // [whack_external]
             defn.attributes.iter().find(|a| {
-                if let Attribute::Metadata(m) = a { m.name.0 == "Whack::External" } else { false }
+                if let Attribute::Metadata(m) = a { m.name.0 == "whack_external" } else { false }
             }).is_some()
         };
 
@@ -2110,9 +2110,9 @@ impl DirectiveSubverifier {
                 let is_external = if fn_parent.is::<Type>() && fn_parent.is_external() {
                     true
                 } else {
-                    // [Whack::External]
+                    // [whack_external]
                     defn.attributes.iter().find(|a| {
-                        if let Attribute::Metadata(m) = a { m.name.0 == "Whack::External" } else { false }
+                        if let Attribute::Metadata(m) = a { m.name.0 == "whack_external" } else { false }
                     }).is_some()
                 };
 
@@ -2818,9 +2818,9 @@ impl DirectiveSubverifier {
                 let is_external = if fn_parent.is::<Type>() && fn_parent.is_external() {
                     true
                 } else {
-                    // [Whack::External]
+                    // [whack_external]
                     defn.attributes.iter().find(|a| {
-                        if let Attribute::Metadata(m) = a { m.name.0 == "Whack::External" } else { false }
+                        if let Attribute::Metadata(m) = a { m.name.0 == "whack_external" } else { false }
                     }).is_some()
                 };
 
@@ -3210,9 +3210,9 @@ impl DirectiveSubverifier {
                 let is_external = if fn_parent.is::<Type>() && fn_parent.is_external() {
                     true
                 } else {
-                    // [Whack::External]
+                    // [whack_external]
                     defn.attributes.iter().find(|a| {
-                        if let Attribute::Metadata(m) = a { m.name.0 == "Whack::External" } else { false }
+                        if let Attribute::Metadata(m) = a { m.name.0 == "whack_external" } else { false }
                     }).is_some()
                 };
 

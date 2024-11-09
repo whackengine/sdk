@@ -10,7 +10,7 @@ license = "Apache-2.0"
 
 [dependencies]
 mxmlextrema-as3parser = "1"
-mxmlextrema-mxmlcaot = "0.3"
+whackengine-mxmlsemantics = { path = "../mxmlsemantics", version = "1" }
 late_format = "1"
 lazy_static = "1.4.0"
 maplit = "1.0.2"

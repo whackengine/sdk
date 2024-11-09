@@ -2,7 +2,7 @@
 
 ## External definitions
 
-Definitions accompanied by `[Whack::External]` meta-data are only verified, and not compiled.
+Definitions accompanied by `[whack_external]` meta-data are only verified, and not compiled.
 
 ## Vector Data Type
 
