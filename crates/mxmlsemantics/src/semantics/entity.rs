@@ -69,8 +69,8 @@ smodel! {
         }
 
         /// Indicates whether a variable slot is optional for an object initializer
-        /// applied to an `[Options]` class.
-        pub fn is_opt_variable_for_options_class(&self, host: &Database) -> Result<bool, DeferError> {
+        /// applied to an `[RecordLike]` class.
+        pub fn is_opt_variable_for_record_like_class(&self, host: &Database) -> Result<bool, DeferError> {
             let st = self.static_type(host).defer()?;
             Ok(st.includes_null(host)? || st.includes_undefined(host)?)
         }
@@ -437,11 +437,11 @@ smodel! {
         pub fn set_is_dynamic(&self, value: bool) {
         }
 
-        pub fn is_options_class(&self) -> bool {
+        pub fn is_record_like_class(&self) -> bool {
             false
         }
 
-        pub fn set_is_options_class(&self, value: bool) {
+        pub fn set_is_record_like_class(&self, value: bool) {
         }
 
         pub fn is_static(&self) -> bool {
@@ -1553,14 +1553,14 @@ smodel! {
             }
         }
 
-        /// Whether the class is an `[Options]` class.
-        pub override fn is_options_class(&self) -> bool {
-            self.m_flags().contains(ClassTypeFlags::IS_OPTIONS_CLASS)
+        /// Whether the class is an `[RecordLike]` class.
+        pub override fn is_record_like_class(&self) -> bool {
+            self.m_flags().contains(ClassTypeFlags::IS_RECORD_LIKE_CLASS)
         }
 
-        pub override fn set_is_options_class(&self, value: bool) {
+        pub override fn set_is_record_like_class(&self, value: bool) {
             let mut v = self.m_flags();
-            v.set(ClassTypeFlags::IS_OPTIONS_CLASS, value);
+            v.set(ClassTypeFlags::IS_RECORD_LIKE_CLASS, value);
             self.set_m_flags(v);
         }
 
@@ -1760,7 +1760,7 @@ smodel! {
             false
         }
 
-        pub override fn is_options_class(&self) -> bool {
+        pub override fn is_record_like_class(&self) -> bool {
             false
         }
 
@@ -2029,8 +2029,8 @@ smodel! {
             self.origin().is_dynamic_or_inherits_dynamic(host)
         }
 
-        pub override fn is_options_class(&self) -> bool {
-            self.origin().is_options_class()
+        pub override fn is_record_like_class(&self) -> bool {
+            self.origin().is_record_like_class()
         }
 
         #[inheritdoc]
@@ -2228,7 +2228,7 @@ smodel! {
             Ok(self.is_dynamic())
         }
 
-        pub override fn is_options_class(&self) -> bool {
+        pub override fn is_record_like_class(&self) -> bool {
             false
         }
 
@@ -2294,7 +2294,7 @@ smodel! {
             Ok(self.is_dynamic())
         }
 
-        pub override fn is_options_class(&self) -> bool {
+        pub override fn is_record_like_class(&self) -> bool {
             false
         }
 
@@ -4309,7 +4309,7 @@ bitflags! {
         const IS_STATIC        = 0b00000010;
         const IS_ABSTRACT      = 0b00000100;
         const IS_DYNAMIC       = 0b00001000;
-        const IS_OPTIONS_CLASS = 0b00010000;
+        const IS_RECORD_LIKE_CLASS = 0b00010000;
         const IS_EXTERNAL      = 0b00100000;
     }
 }

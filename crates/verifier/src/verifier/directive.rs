@@ -521,9 +521,9 @@ impl DirectiveSubverifier {
                 class_entity.set_location(Some(defn.name.1.clone()));
                 let metadata = Attribute::find_metadata(&defn.attributes);
                 for m in metadata.iter() {
-                    // [Options] meta-data
-                    if m.name.0 == "Options" {
-                        class_entity.set_is_options_class(true);
+                    // [RecordLike] meta-data
+                    if m.name.0 == "RecordLike" {
+                        class_entity.set_is_record_like_class(true);
                         class_entity.set_is_final(true);
                     // [whack_external] meta-data
                     } else if m.name.0 == "whack_external" {
@@ -752,11 +752,11 @@ impl DirectiveSubverifier {
 
                 let mut about_to_defer = host.object_type().is::<UnresolvedEntity>();
 
-                // If `is_options_class()` is true and the class is not a direct subclass
-                // of `Object`, report a verify error and call `set_is_options_class(false)`.
-                if !about_to_defer && class_entity.is_options_class() && class_entity.extends_class(&host).map(|b| b == host.object_type()).unwrap_or(true) {
-                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::OptionsClassMustExtendObject, diagarg![]);
-                    class_entity.set_is_options_class(false);
+                // If `is_record_like_class()` is true and the class is not a direct subclass
+                // of `Object`, report a verify error and call `set_is_record_like_class(false)`.
+                if !about_to_defer && class_entity.is_record_like_class() && class_entity.extends_class(&host).map(|b| b == host.object_type()).unwrap_or(true) {
+                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::RecordLikeClassMustExtendObject, diagarg![]);
+                    class_entity.set_is_record_like_class(false);
                 }
 
                 // Given all present `[Event]` meta-data

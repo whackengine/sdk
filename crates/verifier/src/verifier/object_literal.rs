@@ -17,8 +17,8 @@ impl ObjectLiteralSubverifier {
 
         if [verifier.host.any_type(), object_type].contains(&context_type_esc) {
             Self::verify_object_initializer_for_ecma_object(verifier, initializer)?;
-        } else if context_type_esc.is_options_class() {
-            Self::verify_object_initializer_for_options_class(verifier, initializer, &context_type_esc)?;
+        } else if context_type_esc.is_record_like_class() {
+            Self::verify_object_initializer_for_record_like_class(verifier, initializer, &context_type_esc)?;
         } else {
             if !context_type_esc.is::<InvalidationEntity>() {
                 verifier.add_verify_error(&initializer.location, WhackDiagnosticKind::UnexpectedObject, diagarg![]);
@@ -56,10 +56,10 @@ impl ObjectLiteralSubverifier {
         Ok(())
     }
 
-    fn verify_object_initializer_for_options_class(verifier: &mut Subverifier, initializer: &ObjectInitializer, options_class: &Entity) -> Result<(), DeferError> {
+    fn verify_object_initializer_for_record_like_class(verifier: &mut Subverifier, initializer: &ObjectInitializer, record_like_class: &Entity) -> Result<(), DeferError> {
         let mut missing = HashSet::<Entity>::new();
-        for (_, entity) in options_class.prototype(&verifier.host).borrow().iter() {
-            if entity.is::<VariableSlot>() && !entity.is_opt_variable_for_options_class(&verifier.host)? {
+        for (_, entity) in record_like_class.prototype(&verifier.host).borrow().iter() {
+            if entity.is::<VariableSlot>() && !entity.is_opt_variable_for_record_like_class(&verifier.host)? {
                 entity.static_type(&verifier.host).defer()?;
                 missing.insert(entity.clone());
             }
@@ -68,12 +68,12 @@ impl ObjectLiteralSubverifier {
         for field in &initializer.fields {
             match field.as_ref() {
                 InitializerField::Rest((exp, _)) => {
-                    verifier.imp_coerce_exp(exp, &options_class)?;
+                    verifier.imp_coerce_exp(exp, &record_like_class)?;
                     missing.clear();
                 },
                 InitializerField::Field { .. } => {
                     if let Some(name) = field.shorthand() {
-                        let variable = Self::resolve_instance_variable(verifier, &options_class, &name)?;
+                        let variable = Self::resolve_instance_variable(verifier, &record_like_class, &name)?;
                         if let Some(variable) = variable.clone() {
                             missing.remove(&variable);
                         }
@@ -97,7 +97,7 @@ impl ObjectLiteralSubverifier {
                         fr.set_field_slot(variable);
                         fr.set_shorthand_resolution(short_ref);
                     } else {
-                        Self::verify_non_shorthand_notation_for_options_class(field, verifier, &options_class, &mut missing)?;
+                        Self::verify_non_shorthand_notation_for_record_like_class(field, verifier, &record_like_class, &mut missing)?;
                     }
                 },
             }
@@ -110,7 +110,7 @@ impl ObjectLiteralSubverifier {
         Ok(())
     }
 
-    fn verify_non_shorthand_notation_for_options_class(field: &Rc<InitializerField>, verifier: &mut Subverifier, options_class: &Entity, missing: &mut HashSet<Entity>) -> Result<(), DeferError> {
+    fn verify_non_shorthand_notation_for_record_like_class(field: &Rc<InitializerField>, verifier: &mut Subverifier, record_like_class: &Entity, missing: &mut HashSet<Entity>) -> Result<(), DeferError> {
         let InitializerField::Field { name, value, .. } = field.as_ref() else {
             panic!();
         };
@@ -122,7 +122,7 @@ impl ObjectLiteralSubverifier {
                 missing.clear();
             },
             FieldName::Identifier(name_1) => {
-                let variable = Self::resolve_instance_variable(verifier, options_class, name_1)?;
+                let variable = Self::resolve_instance_variable(verifier, record_like_class, name_1)?;
                 if let Some(variable) = variable.clone() {
                     missing.remove(&variable);
                 }
@@ -135,7 +135,7 @@ impl ObjectLiteralSubverifier {
             },
             FieldName::StringLiteral(sl) => {
                 let name_1 = verifier.verify_expression(sl, &default())?.unwrap().string_value();
-                let variable = Self::resolve_instance_variable(verifier, options_class, &QualifiedIdentifier {
+                let variable = Self::resolve_instance_variable(verifier, record_like_class, &QualifiedIdentifier {
                     location: sl.location(),
                     attribute: false,
                     qualifier: None,
