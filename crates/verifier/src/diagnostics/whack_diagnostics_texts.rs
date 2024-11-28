@@ -88,7 +88,7 @@ lazy_static! {
         WhackDiagnosticKind::CannotExtendFinalClass.id() => "Cannot extend final class $1.".into(),
         WhackDiagnosticKind::ExtendingSelfReferentialClass.id() => "Extending self-referential class.".into(),
         WhackDiagnosticKind::NotAnInterface.id() => "Not an interface.".into(),
-        WhackDiagnosticKind::OptionsClassMustExtendObject.id() => "Options class must extend Object.".into(),
+        WhackDiagnosticKind::OptionsClassMustExtendObject.id() => "RecordLike class must extend Object.".into(),
         WhackDiagnosticKind::MalformedEventMetadata.id() => "Malformed Event meta-data.".into(),
         WhackDiagnosticKind::AbstractMethodMustBeOverriden.id() => "Abstract method must be overriden: $1.".into(),
         WhackDiagnosticKind::AbstractGetterMustBeOverriden.id() => "Abstract getter must be overriden: $1.".into(),
