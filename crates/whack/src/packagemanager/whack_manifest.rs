@@ -35,6 +35,9 @@ pub struct PackageManifest {
     pub description: Option<String>,
     pub keywords: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
+    pub include: Option<Vec<String>>,
+    pub exclude: Option<Vec<String>>,
+    pub metadata: Option<toml::Value>,
 }
 
 #[derive(Serialize, Deserialize)]
