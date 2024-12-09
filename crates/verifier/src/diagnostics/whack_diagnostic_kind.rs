@@ -112,6 +112,7 @@ pub enum WhackDiagnosticKind {
     ReturnNotAllowedInGlobalInit = 2156,
     NamespaceConflictsWithConfigurationNs = 2157,
     Unused = 2158,
+    RecordLikeClassMustHaveEmptyConstructor = 2159,
 }
 
 impl WhackDiagnosticKind {

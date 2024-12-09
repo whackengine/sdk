@@ -116,6 +116,7 @@ lazy_static! {
         WhackDiagnosticKind::ReturnNotAllowedInGlobalInit.id() => "The return statement cannot be used in global initialization code.".into(),
         WhackDiagnosticKind::NamespaceConflictsWithConfigurationNs.id() => "Namespace conflicts with a configuration namespace.".into(),
         WhackDiagnosticKind::Unused.id() => "$1 is unused.".into(),
+        WhackDiagnosticKind::RecordLikeClassMustHaveEmptyConstructor.id() => "RecordLike class must have empty constructor.".into(),
         // WhackDiagnosticKind::K.id() => ".".into(),
     };
 }

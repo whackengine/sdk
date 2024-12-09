@@ -1004,6 +1004,23 @@ impl DirectiveSubverifier {
                     }
                 }
 
+                // Ensure RecordLike classes have an empty constructor.
+                if !guard.record_like_ctor_done.get() {
+                    if let Some(ctor) = class_entity.constructor_method(&host) {
+                        let ctorsig = ctor.signature(&host);
+                        if ctorsig.is::<UnresolvedEntity>() {
+                            about_to_defer = true;
+                        } else {
+                            if ctorsig.params().length() != 0 {
+                                verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::RecordLikeClassMustHaveEmptyConstructor, diagarg![]);
+                            }
+                            guard.record_like_ctor_done.set(true);
+                        }
+                    } else {
+                        guard.record_like_ctor_done.set(true);
+                    }
+                }
+
                 // Verify interface implementations but DEFER ONLY AT THE FINAL STEP if necessary.
                 if !guard.interface_impl_done.get() {
                     let mut cancel_impl = false;

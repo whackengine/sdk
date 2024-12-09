@@ -834,6 +834,7 @@ pub(crate) struct ClassDefnGuard {
     pub abstract_overrides_done: Cell<bool>,
     pub default_constructor_done: Cell<bool>,
     pub interface_impl_done: Cell<bool>,
+    pub record_like_ctor_done: Cell<bool>,
 }
 
 impl ClassDefnGuard {
@@ -844,6 +845,7 @@ impl ClassDefnGuard {
             abstract_overrides_done: Cell::new(false),
             default_constructor_done: Cell::new(false),
             interface_impl_done: Cell::new(false),
+            record_like_ctor_done: Cell::new(false),
         }
     }
 }
