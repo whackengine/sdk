@@ -32,6 +32,8 @@ pub struct PackageManifest {
     pub version: Version,
     pub author: Option<String>,
     pub license: Option<String>,
+    #[serde(rename = "license-file")]
+    pub license_file: Option<String>,
     pub description: Option<String>,
     pub keywords: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
