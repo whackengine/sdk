@@ -6,7 +6,6 @@ use serde::{Serialize, Deserialize};
 pub struct WhackManifest {
     pub workspace: Option<WorkspaceManifest>,
     pub package: Option<PackageManifest>,
-    pub source: Option<Vec<ManifestSource>>,
     #[serde(rename = "client-side")]
     pub client_side: Option<ManifestClientSide>,
     #[serde(rename = "server-side")]
@@ -14,8 +13,6 @@ pub struct WhackManifest {
     pub dependencies: Option<HashMap<String, ManifestDependency>>,
     #[serde(rename = "build-dependencies")]
     pub build_dependencies: Option<HashMap<String, ManifestDependency>>,
-    #[serde(rename = "build-source")]
-    pub build_source: Option<Vec<ManifestSource>>,
     pub javascript: Option<Vec<ManifestJscript>>,
     /// Configuration constants.
     pub define: Option<HashMap<String, toml::Value>>,
@@ -37,15 +34,13 @@ pub struct PackageManifest {
     pub description: Option<String>,
     pub keywords: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
+    #[serde(rename = "source-path")]
+    pub source_path: Option<Vec<String>>,
+    #[serde(rename = "build-script")]
+    pub build_script: Option<Vec<String>>,
     pub include: Option<Vec<String>>,
     pub exclude: Option<Vec<String>>,
     pub metadata: Option<toml::Value>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct ManifestSource {
-    pub path: String,
-    pub include: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -68,6 +63,8 @@ pub enum ManifestDependency {
         version: Option<Version>,
         path: Option<String>,
         git: Option<String>,
+        rev: Option<String>,
+        branch: Option<String>,
     },
 }
 

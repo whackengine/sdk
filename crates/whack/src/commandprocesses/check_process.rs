@@ -36,5 +36,6 @@ pub async fn check_process(matches: &clap::ArgMatches) {
 
     // Check each dependency in ascending order for AS3 and MXML errors,
     // running the build script if required.
+    // (REMEMBER to ignore .include.as files)
     fixme();
 }
