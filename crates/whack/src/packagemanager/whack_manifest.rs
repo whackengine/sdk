@@ -18,7 +18,7 @@ pub struct WhackManifest {
     pub build_source: Option<Vec<ManifestSource>>,
     pub javascript: Option<Vec<ManifestJscript>>,
     /// Configuration constants.
-    pub define: Option<HashMap<String, String>>,
+    pub define: Option<HashMap<String, toml::Value>>,
 }
 
 #[derive(Serialize, Deserialize)]
