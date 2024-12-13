@@ -50,14 +50,13 @@ pub struct ManifestSource {
 
 #[derive(Serialize, Deserialize)]
 pub struct ManifestClientSide {
-    pub enable: bool,
     #[serde(rename = "main-class")]
     pub main_class: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct ManifestServerSide {
-    pub enable: bool,
+    #[serde(rename = "executable-name")]
     pub executable_name: Option<String>,
 }
 
