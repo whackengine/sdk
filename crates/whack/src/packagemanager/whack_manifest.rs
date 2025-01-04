@@ -51,8 +51,8 @@ pub struct ManifestClientSide {
 
 #[derive(Serialize, Deserialize)]
 pub struct ManifestServerSide {
-    #[serde(rename = "executable-name")]
-    pub executable_name: Option<String>,
+    #[serde(rename = "command-name")]
+    pub command_name: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
