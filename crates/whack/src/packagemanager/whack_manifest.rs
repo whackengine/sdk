@@ -38,8 +38,6 @@ pub struct PackageManifest {
     pub source_path: Option<Vec<String>>,
     #[serde(rename = "build-script")]
     pub build_script: Option<Vec<String>>,
-    pub include: Option<Vec<String>>,
-    pub exclude: Option<Vec<String>>,
     pub metadata: Option<toml::Value>,
 }
 
