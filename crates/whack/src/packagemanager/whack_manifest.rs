@@ -28,6 +28,7 @@ pub struct PackageManifest {
     pub name: String,
     pub version: Version,
     pub author: Option<String>,
+    pub repository: Option<String>,
     pub license: Option<String>,
     #[serde(rename = "license-file")]
     pub license_file: Option<String>,
