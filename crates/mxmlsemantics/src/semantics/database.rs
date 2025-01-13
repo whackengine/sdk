@@ -40,8 +40,8 @@ pub struct Database {
     date_type: RefCell<Option<Entity>>,
     promise_type: RefCell<Option<Entity>>,
     vector_type: RefCell<Option<Entity>>,
+    map_type: RefCell<Option<Entity>>,
     proxy_type: RefCell<Option<Entity>>,
-    dictionary_type: RefCell<Option<Entity>>,
     byte_array_type: RefCell<Option<Entity>>,
     mxmlextrema_proxy_ns_uri: String,
     mxmlextrema_proxy_ns: RefCell<Option<Entity>>,
@@ -124,8 +124,8 @@ impl Database {
             date_type: RefCell::new(None),
             promise_type: RefCell::new(None),
             vector_type: RefCell::new(None),
+            map_type: RefCell::new(None),
             proxy_type: RefCell::new(None),
-            dictionary_type: RefCell::new(None),
             byte_array_type: RefCell::new(None),
             mxmlextrema_proxy_ns_uri: options.mxmlextrema_proxy_ns_uri,
             mxmlextrema_proxy_ns: RefCell::new(None),
@@ -305,6 +305,8 @@ impl Database {
     global_lookup!(reg_exp_type, "RegExp");
     global_lookup!(date_type, "Date");
     global_lookup!(promise_type, "Promise");
+    global_lookup!(vector_type, "Vector");
+    global_lookup!(map_type, "Map");
 
     pub fn array_type_of_any(&self) -> Result<Entity, DeferError> {
         let origin = self.array_type().defer()?;
@@ -321,20 +323,6 @@ impl Database {
         Ok(self.factory().create_type_after_substitution(&origin, &shared_array![self.any_type()]))
     }
 
-    /// Retrieves `__AS3__.vec.Vector`, a possibly unresolved thing.
-    pub fn vector_type(&self) -> Entity {
-        if let Some(r) = self.vector_type.borrow().as_ref() {
-            return r.clone();
-        }
-        let pckg = self.as3_vec_package();
-        if let Some(r) = pckg.properties(self).get(&self.factory().create_qname(&pckg.public_ns().unwrap().into(), "Vector".to_owned())) {
-            self.vector_type.replace(Some(r.clone()));
-            r
-        } else {
-            self.unresolved_entity()
-        }
-    }
-
     /// Retrieves `mxmlextrema.utils.Proxy`, a possibly unresolved thing.
     pub fn proxy_type(&self) -> Entity {
         if let Some(r) = self.proxy_type.borrow().as_ref() {
@@ -343,20 +331,6 @@ impl Database {
         let pckg = self.mxmlextrema_utils_package();
         if let Some(r) = pckg.properties(self).get(&self.factory().create_qname(&pckg.public_ns().unwrap().into(), "Proxy".to_owned())) {
             self.proxy_type.replace(Some(r.clone()));
-            r
-        } else {
-            self.unresolved_entity()
-        }
-    }
-
-    /// Retrieves `mxmlextrema.utils.Dictionary`, a possibly unresolved thing.
-    pub fn dictionary_type(&self) -> Entity {
-        if let Some(r) = self.dictionary_type.borrow().as_ref() {
-            return r.clone();
-        }
-        let pckg = self.mxmlextrema_utils_package();
-        if let Some(r) = pckg.properties(self).get(&self.factory().create_qname(&pckg.public_ns().unwrap().into(), "Dictionary".to_owned())) {
-            self.dictionary_type.replace(Some(r.clone()));
             r
         } else {
             self.unresolved_entity()

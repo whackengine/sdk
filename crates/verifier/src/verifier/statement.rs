@@ -336,8 +336,8 @@ impl StatementSubverifier {
             let num_t = host.number_type().defer()?;
             return Ok(Some((num_t.clone(), num_t)));
         }
-        // Dictionary
-        if t == host.dictionary_type().defer()? {
+        // Map
+        if t == host.map_type().defer()? {
             return Ok(Some((host.any_type(), host.any_type())));
         }
         let proxy_t = host.proxy_type().defer()?;

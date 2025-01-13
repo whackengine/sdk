@@ -37,9 +37,9 @@ The minimum requisites for the framework globals so that the `whackengine::mxmls
 - Date
 - Promise.\<T\>
 - Vector.\<T\> (in the top-level package)
-- frameworkName.util.ByteArray
-- frameworkName.util.Dictionary
-- frameworkName.util.Proxy
+- Map.\<K, V>
+- framework.util.ByteArray
+- framework.util.Proxy
 
 ## License
 

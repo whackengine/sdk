@@ -129,13 +129,13 @@ impl<'a> PropertyLookup<'a> {
             // If not calling the property and base is a value whose type is one of
             // { XML, XML!, XMLList, XMLList! }, return a XML reference value.
             //
-            // If not calling the property and base is a Dictionary, then return a dynamic reference value.
+            // If not calling the property and base is a Map, then return a dynamic reference value.
             if !calling {
                 if [defer(&self.0.xml_type())?, defer(&self.0.xml_list_type())?].contains(&base_esc_type) {
                     let k = map_defer_error(key.computed_or_local_name(self.0))?;
                     return Ok(Some(self.0.factory().create_xml_reference_value(base, qual, &k)));
                 }
-                if base_type.escape_of_non_nullable() == map_defer_error(self.0.dictionary_type().defer())? {
+                if base_type.escape_of_non_nullable() == map_defer_error(self.0.map_type().defer())? {
                     let k = map_defer_error(key.computed_or_local_name(self.0))?;
                     return Ok(Some(self.0.factory().create_dynamic_reference_value(base, qual, &k)));
                 }
