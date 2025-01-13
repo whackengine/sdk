@@ -2198,8 +2198,7 @@ smodel! {
         }
     }
 
-    /// Tuple type. The tuple type is equivalent to
-    /// `Array` with type safety for its element types.
+    /// Tuple type.
     pub struct TupleType: Type {
         let ref m_elements: SharedArray<Entity> = SharedArray::new();
 
@@ -2234,7 +2233,7 @@ smodel! {
 
         #[inheritdoc]
         pub override fn extends_class(&self, host: &Database) -> Option<Entity> {
-            Some(host.array_type_of_any().unwrap_or(host.unresolved_entity()))
+            Some(host.object_type())
         }
 
         pub override fn includes_undefined(&self, host: &Database) -> Result<bool, DeferError> {
