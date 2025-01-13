@@ -295,7 +295,7 @@ impl<'a> PropertyLookup<'a> {
                 defer(&prop.property_static_type(self.0))?;
 
                 r = Some(map_defer_error(prop.wrap_property_reference(self.0))?);
-            // Detect Vector from __AS3__.vec.Vector
+            // Detect Vector
             } else if base == &self.0.top_level_package && local_name == "Vector" && qual.as_ref().map(|q| q.is_public_ns()).unwrap_or(true) {
                 r = Some(defer(&self.0.vector_type())?);
             }

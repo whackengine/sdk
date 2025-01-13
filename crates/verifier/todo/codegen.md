@@ -4,16 +4,6 @@
 
 Definitions accompanied by `[whack_external]` meta-data are only verified, and not compiled.
 
-## Vector Data Type
-
-The `Vector.<T>` data type translates to one of:
-
-- [ ] `__AS3__.vec::Vector`
-- [ ] `__AS3__.vec::Vector$double` for `T=Number`
-- [ ] `__AS3__.vec::Vector$float` for `T=float`
-- [ ] `__AS3__.vec::Vector$int` for `T=int`
-- [ ] `__AS3__.vec::Vector$uint` for `T=uint`
-
 ## Bindable
 
 See the [To Do List](whack.md) for Whack for the `[Bindable]` meta-data.

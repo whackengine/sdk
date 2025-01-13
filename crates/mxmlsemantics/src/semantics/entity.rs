@@ -691,7 +691,7 @@ smodel! {
         }
 
         pub fn fully_qualified_name(&self) -> String {
-            self.fully_qualified_name_list().join(".").replace("__AS3__.vec.Vector", "Vector")
+            self.fully_qualified_name_list().join(".")
         }
     
         pub fn fully_qualified_name_list(&self) -> Vec<String> {
