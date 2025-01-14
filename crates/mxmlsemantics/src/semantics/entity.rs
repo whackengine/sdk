@@ -512,7 +512,7 @@ smodel! {
             let map_type = host.map_type().defer()?;
             if self == &map_type {
                 Ok(Some((map_type.type_params().unwrap().get(0).unwrap(), map_type.type_params().unwrap().get(1).unwrap())))
-            } else if self.type_after_sub_has_origin(&vec_type) {
+            } else if self.type_after_sub_has_origin(&map_type) {
                 Ok(Some((self.substitute_types().get(0).unwrap(), self.substitute_types().get(1).unwrap())))
             } else {
                 Ok(None)
