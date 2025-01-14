@@ -23,16 +23,6 @@ impl<'a> Factory<'a> {
         SystemNamespace::new(&self.0.arena, SystemNamespaceKind::Internal, parent).into()
     }
 
-    pub fn create_explicit_ns(&self, uri: String) -> Entity {
-        let mut mappings = self.0.explicit_namespaces.borrow_mut();
-        if let Some(ns) = mappings.get(&uri) {
-            return ns.clone();
-        }
-        let ns: Entity = ExplicitNamespace::new(&self.0.arena, uri.clone()).into();
-        mappings.insert(uri, ns.clone());
-        ns
-    }
-
     pub fn create_user_ns(&self, uri: String) -> Entity {
         let mut mappings = self.0.user_namespaces.borrow_mut();
         if let Some(ns) = mappings.get(&uri) {

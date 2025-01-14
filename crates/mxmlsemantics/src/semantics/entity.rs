@@ -1190,30 +1190,10 @@ smodel! {
     }
 
     /// In the AVM2, this is equivalent to a `CONSTANT_Namespace` namespace.
-    /// In terms of functionality, this is redundant to `ExplicitNamespace`.
     pub struct UserNamespace: Namespace {
         let ref m_uri: String = "".into();
 
         pub(crate) fn UserNamespace(uri: String) {
-            super();
-            self.set_m_uri(uri);
-        }
-
-        pub override fn uri(&self) -> String {
-            self.m_uri()
-        }
-
-        override fn to_string_1(&self) -> String {
-            self.m_uri()
-        }
-    }
-
-    /// In the AVM2, this is equivalent to a `CONSTANT_ExplicitNamespace` namespace.
-    /// In terms of functionality, this is redundant to `UserNamespace`.
-    pub struct ExplicitNamespace: Namespace {
-        let ref m_uri: String = "".into();
-
-        pub(crate) fn ExplicitNamespace(uri: String) {
             super();
             self.set_m_uri(uri);
         }

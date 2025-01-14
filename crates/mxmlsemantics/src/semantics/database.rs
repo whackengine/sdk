@@ -11,7 +11,6 @@ pub struct Database {
 
     unused_things: Rc<RefCell<Vec<Entity>>>,
 
-    pub(crate) explicit_namespaces: RefCell<HashMap<String, Entity>>,
     pub(crate) user_namespaces: RefCell<HashMap<String, Entity>>,
     pub(crate) qnames: RefCell<HashMap<Entity, HashMap<String, QName>>>,
 
@@ -71,7 +70,6 @@ pub struct Database {
 impl Database {
     pub fn new(options: DatabaseOptions) -> Self {
         let arena = EntityArena::new();
-        let explicit_namespaces = RefCell::new(HashMap::new());
         let user_namespaces = RefCell::new(HashMap::new());
         let qnames = RefCell::new(HashMap::new());
         let any_type: Entity = AnyType::new(&arena).into();
@@ -90,7 +88,6 @@ impl Database {
             config_constants_result: SharedMap::new(),
             env_cache: RefCell::new(None),
 
-            explicit_namespaces,
             user_namespaces,
             qnames,
             top_level_package: top_level_package.clone().into(),
@@ -221,14 +218,6 @@ impl Database {
     pub fn list_user_namespaces(&self) -> Vec<Entity> {
         let mut r: Vec<Entity> = vec![];
         for (_, ns) in self.user_namespaces.borrow().iter() {
-            r.push(ns.clone());
-        }
-        r
-    }
-
-    pub fn list_explicit_namespaces(&self) -> Vec<Entity> {
-        let mut r: Vec<Entity> = vec![];
-        for (_, ns) in self.explicit_namespaces.borrow().iter() {
             r.push(ns.clone());
         }
         r

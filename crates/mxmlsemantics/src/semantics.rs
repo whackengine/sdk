@@ -67,7 +67,6 @@
 //!   - `AssignmentFieldDestructuringResolution`
 //!   - `DeclarativeFieldDestructuringResolution`
 //!   - `Namespace`
-//!     - `ExplicitNamespace`
 //!     - `SystemNamespace`
 //!     - `UserNamespace`
 //!   - `InvalidationEntity`
