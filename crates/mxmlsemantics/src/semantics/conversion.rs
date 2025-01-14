@@ -52,6 +52,14 @@ pub enum ConversionKind {
     /// 
     /// * Involved types either both include null or both do not include null.
     /// * Involved element types either both include null or both do not include null.
+    ToCovariantArray,
+
+    /// Explicit conversion.
+    /// 
+    /// Restrictions:
+    /// 
+    /// * Involved types either both include null or both do not include null.
+    /// * Involved element types either both include null or both do not include null.
     ToCovariantVector,
 
     /// Explicit conversion.
@@ -319,6 +327,25 @@ impl<'a> ConversionMethods<'a> {
                     // ToCovariantVector
                     if both_include_null || both_dont_include_null {
                         return Ok(Some(self.0.factory().create_conversion_value(value, ConversionKind::ToCovariantVector, optional, target_type)?));
+                    }
+                }
+            }
+        }
+
+        if let Some(el_subtype) = from_type_esc.array_element_type(self.0)? {
+            if let Some(el_basetype) = target_type_esc.array_element_type(self.0)? {
+                let asc = el_basetype.escape_of_nullable_or_non_nullable().is_ascending_type_of(&el_subtype.escape_of_nullable_or_non_nullable(), self.0)?;
+
+                let both_el_include_null = el_basetype.includes_null(self.0)? && el_subtype.includes_null(self.0)?;
+                let both_el_dont_include_null = !el_basetype.includes_null(self.0)? && !el_subtype.includes_null(self.0)?;
+
+                if asc && (both_el_include_null || both_el_dont_include_null) {
+                    let both_include_null = from_type.includes_null(self.0)? && target_type.includes_null(self.0)?;
+                    let both_dont_include_null = !from_type.includes_null(self.0)? && !target_type.includes_null(self.0)?;
+
+                    // ToCovariantArray
+                    if both_include_null || both_dont_include_null {
+                        return Ok(Some(self.0.factory().create_conversion_value(value, ConversionKind::ToCovariantArray, optional, target_type)?));
                     }
                 }
             }
