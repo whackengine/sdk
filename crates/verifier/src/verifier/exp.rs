@@ -405,7 +405,7 @@ impl ExpSubverifier {
         let base_st = base.static_type(&verifier.host);
         let base_st_esc = base_st.escape_of_non_nullable();
 
-        if ![verifier.host.any_type(), verifier.host.class_type().defer()?].contains(&base_st_esc) {
+        if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.class_type().defer()?].contains(&base_st_esc) {
             verifier.add_verify_error(&exp.base.location(), WhackDiagnosticKind::UnexpectedNewBase, diagarg![]);
         }
 
