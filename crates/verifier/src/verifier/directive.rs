@@ -545,6 +545,13 @@ impl DirectiveSubverifier {
                                         };
                                         slots = usize::from_str(&val).unwrap_or(0);
                                         found_slots = true;
+                                    // Handle the local option for reusing a local
+                                    } else if k.0 == "local" {
+                                        let val = match entry.value.as_ref() {
+                                            MetadataValue::String(v) => v.0.clone(),
+                                            MetadataValue::IdentifierString(v) => v.0.clone(),
+                                        };
+                                        class_entity.set_codegen_local(Some(val));
                                     }
                                 }
                             }
@@ -1342,6 +1349,21 @@ impl DirectiveSubverifier {
                     if m.name.0 == "whack_external" {
                         // Mark as external
                         itrfc_entity.set_is_external(true);
+
+                        // Detect local option
+                        if let Some(entries) = m.entries.as_ref() {
+                            for entry in entries {
+                                if let Some(k) = entry.key.as_ref() {
+                                    if k.0 == "local" {
+                                        let val = match entry.value.as_ref() {
+                                            MetadataValue::String(v) => v.0.clone(),
+                                            MetadataValue::IdentifierString(v) => v.0.clone(),
+                                        };
+                                        itrfc_entity.set_codegen_local(Some(val));
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 itrfc_entity.metadata().extend(metadata);

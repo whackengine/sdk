@@ -120,6 +120,14 @@ smodel! {
             panic!();
         }
 
+        pub fn codegen_local(&self) -> Option<String> {
+            panic!();
+        }
+
+        pub fn set_codegen_local(&self, value: Option<String>) {
+            panic!();
+        }
+
         pub fn is_class_or_equivalent(&self) -> bool {
             self.is_class_type_possibly_after_sub()
             || self.is::<EnumType>()
@@ -1434,6 +1442,8 @@ smodel! {
         let ref m_metadata: SharedArray<Rc<Metadata>> = SharedArray::new();
         let ref m_location: Option<Location> = None;
 
+        // Codegen
+        let ref m_codegen_local: Option<String> = None;
         let m_codegen_slots: usize = 0;
         let ref m_codegen_slot_vars: SharedArray<Entity> = SharedArray::new();
 
@@ -1682,6 +1692,14 @@ smodel! {
             self.m_codegen_slot_vars()
         }
 
+        pub override fn codegen_local(&self) -> Option<String> {
+            self.m_codegen_local()
+        }
+
+        pub override fn set_codegen_local(&self, value: Option<String>) {
+            self.set_m_codegen_local(value);
+        }
+
         override fn to_string_1(&self) -> String {
             let name_1 = self.fully_qualified_name();
             let mut p = String::new();
@@ -1853,6 +1871,9 @@ smodel! {
         let ref m_location: Option<Location> = None;
         let m_external: bool = false;
 
+        // Codegen
+        let ref m_codegen_local: Option<String> = None;
+
         pub(crate) fn InterfaceType(name: QName) {
             super();
             self.set_m_name(Some(name));
@@ -1946,6 +1967,14 @@ smodel! {
 
         pub override fn set_is_external(&self, value: bool) {
             self.set_m_external(value);
+        }
+
+        pub override fn codegen_local(&self) -> Option<String> {
+            self.m_codegen_local()
+        }
+
+        pub override fn set_codegen_local(&self, value: Option<String>) {
+            self.set_m_codegen_local(value);
         }
 
         override fn to_string_1(&self) -> String {
