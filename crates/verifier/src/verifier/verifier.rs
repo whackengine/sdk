@@ -115,6 +115,14 @@ impl Verifier {
 
         // @todo Declare packages based in MXML source tree.
 
+        // Verify namespace definitions across packages a first time, as they may be used
+        // as attributes.
+        for pckg in rem_pckg_list.iter() {
+            if DirectiveSubverifier::verify_block_for_ns_defn(&mut self.verifier, &pckg.block).is_ok() {
+                done_pckgs.push(pckg.clone());
+            }
+        }
+
         // Verify directives across packages ("rem_pckg_list")
         //
         // Eliminate packages from "rem_pckg_list" that were fully solved from directive verification,
