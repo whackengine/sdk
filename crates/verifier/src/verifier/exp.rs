@@ -405,7 +405,7 @@ impl ExpSubverifier {
         let base_st = base.static_type(&verifier.host);
         let base_st_esc = base_st.escape_of_non_nullable();
 
-        if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.class_type().defer()?].contains(&base_st_esc) {
+        if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.class_type().defer()?, verifier.host.jsval_type().defer()?].contains(&base_st_esc) {
             verifier.add_verify_error(&exp.base.location(), WhackDiagnosticKind::UnexpectedNewBase, diagarg![]);
         }
 
@@ -415,7 +415,7 @@ impl ExpSubverifier {
             }
         }
 
-        return Ok(Some(verifier.host.factory().create_value(&verifier.host.any_type())));
+        return Ok(Some(verifier.host.factory().create_value(if base_st_esc == verifier.host.jsval_type() { &base_st_esc } else { &verifier.host.any_type() })));
     }
 
     pub fn verify_member_exp(verifier: &mut Subverifier, exp: &Rc<Expression>, member_exp: &MemberExpression, context: &VerifierExpressionContext) -> Result<Option<Entity>, DeferError> {
@@ -874,7 +874,7 @@ impl ExpSubverifier {
             return Ok(None);
         }
 
-        Ok(Some(verifier.host.factory().create_value(&verifier.host.any_type())))
+        Ok(Some(verifier.host.factory().create_value(if base_st_esc == verifier.host.jsval_type() { &base_st_esc } else { &verifier.host.any_type() })))
     }
 
     pub fn verify_apply_types_exp(verifier: &mut Subverifier, exp: &ApplyTypeExpression) -> Result<Option<Entity>, DeferError> {
