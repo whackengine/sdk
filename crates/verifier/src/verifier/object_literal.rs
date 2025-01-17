@@ -15,7 +15,11 @@ impl ObjectLiteralSubverifier {
         verifier.host.boolean_type().defer()?;
         verifier.host.namespace_type().defer()?;
 
-        if [verifier.host.any_type(), object_type].contains(&context_type_esc) {
+        let map_kv_types = context_type_esc.map_key_value_types(&verifier.host)?;
+
+        if let Some((k_type, v_type)) = map_kv_types {
+            Self::verify_object_initializer_for_map(verifier, initializer, &context_type_esc, k_type, v_type)?;
+        } else if [verifier.host.any_type(), object_type].contains(&context_type_esc) {
             Self::verify_object_initializer_for_ecma_object(verifier, initializer)?;
         } else if context_type_esc.is_record_like_class() {
             Self::verify_object_initializer_for_record_like_class(verifier, initializer, &context_type_esc)?;
@@ -32,6 +36,10 @@ impl ObjectLiteralSubverifier {
         }
 
         Ok(Some(verifier.host.factory().create_value(&context_type)))
+    }
+
+    fn verify_object_initializer_for_map(verifier: &mut Subverifier, initializer: &ObjectInitializer, map_type: &Entity, k_type: Entity, v_type: Entity) -> Result<(), DeferError> {
+        todo_fixme();
     }
 
     fn verify_object_initializer_for_ecma_object(verifier: &mut Subverifier, initializer: &ObjectInitializer) -> Result<(), DeferError> {
