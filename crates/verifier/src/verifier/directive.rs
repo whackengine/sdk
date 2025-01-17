@@ -15,7 +15,7 @@ impl DirectiveSubverifier {
     pub fn verify_directives_for_ns_defn(verifier: &mut Subverifier, list: &[Rc<Directive>]) -> Result<(), DeferError> {
         let mut any_defer = false;
         for drtv in list {
-            let r = match drtv {
+            let r = match drtv.as_ref() {
                 Directive::NamespaceDefinition(defn) => {
                     Self::verify_namespace_defn(verifier, drtv, defn)
                 },
@@ -55,7 +55,7 @@ impl DirectiveSubverifier {
                 },
                 _ => Ok(()),
             };
-            any_defer = any_defer || r;
+            any_defer = any_defer || r.is_err();
         }
         if any_defer { Err(DeferError(None)) } else { Ok(()) }
     }
@@ -727,9 +727,6 @@ impl DirectiveSubverifier {
                 Err(DeferError(None))
             },
             VerifierPhase::Beta => {
-                // Database
-                let host = verifier.host.clone();
-
                 // Class block scope
                 let block_scope = verifier.host.node_mapping().get(&defn.block).unwrap();
 
@@ -1358,9 +1355,6 @@ impl DirectiveSubverifier {
                 return Err(DeferError(None));
             },
             VerifierPhase::Beta => {
-                // Database
-                let host = verifier.host.clone();
-
                 // Enum block scope
                 let block_scope = verifier.host.node_mapping().get(&defn.block).unwrap();
 
