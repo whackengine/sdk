@@ -719,7 +719,7 @@ impl DirectiveSubverifier {
 
                 // Enter class block scope and visit class block but DO NOT defer; then exit scope
                 verifier.inherit_and_enter_scope(&block_scope);
-                let _ = DirectiveSubverifier::verify_directives(verifier, &defn.block.directives);
+                let _ = DirectiveSubverifier::verify_directives_for_ns_defn(verifier, &defn.block.directives);
                 verifier.exit_scope();
 
                 // Next phase
@@ -727,6 +727,21 @@ impl DirectiveSubverifier {
                 Err(DeferError(None))
             },
             VerifierPhase::Beta => {
+                // Database
+                let host = verifier.host.clone();
+
+                // Class block scope
+                let block_scope = verifier.host.node_mapping().get(&defn.block).unwrap();
+
+                // Enter class block scope and visit class block but DO NOT defer; then exit scope
+                verifier.inherit_and_enter_scope(&block_scope);
+                let _ = DirectiveSubverifier::verify_directives(verifier, &defn.block.directives).is_err();
+                verifier.exit_scope();
+
+                verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                Err(DeferError(None))
+            },
+            VerifierPhase::Delta => {
                 // Database
                 let host = verifier.host.clone();
 
@@ -1333,7 +1348,7 @@ impl DirectiveSubverifier {
                 }
 
                 // Visit enum block but DO NOT defer
-                let _ = DirectiveSubverifier::verify_directives(verifier, &defn.block.directives);
+                let _ = DirectiveSubverifier::verify_directives_for_ns_defn(verifier, &defn.block.directives);
 
                 // Exit scope
                 verifier.exit_scope();
@@ -1343,6 +1358,21 @@ impl DirectiveSubverifier {
                 return Err(DeferError(None));
             },
             VerifierPhase::Beta => {
+                // Database
+                let host = verifier.host.clone();
+
+                // Enum block scope
+                let block_scope = verifier.host.node_mapping().get(&defn.block).unwrap();
+
+                // Enter class block scope and visit class block but DO NOT defer; then exit scope
+                verifier.inherit_and_enter_scope(&block_scope);
+                let _ = DirectiveSubverifier::verify_directives(verifier, &defn.block.directives).is_err();
+                verifier.exit_scope();
+
+                verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                Err(DeferError(None))
+            },
+            VerifierPhase::Delta => {
                 verifier.set_drtv_phase(drtv, VerifierPhase::Omega);
                 Err(DeferError(None))
             },
@@ -1961,6 +1991,13 @@ impl DirectiveSubverifier {
                 // - Handle the `[Embed]` meta-data for simple identifier patterns
 
                 // Next phase
+                verifier.set_drtv_phase(drtv, VerifierPhase::Eta);
+                Err(DeferError(None))
+            },
+            VerifierPhase::Eta => {
+                // Reserved phase
+
+                // Next phase
                 verifier.set_drtv_phase(drtv, VerifierPhase::Omega);
                 Err(DeferError(None))
             },
@@ -2258,6 +2295,13 @@ impl DirectiveSubverifier {
                 Err(DeferError(None))
             },
             VerifierPhase::Beta => {
+                // Reserved phase
+
+                // Next phase
+                verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                Err(DeferError(None))
+            },
+            VerifierPhase::Delta => {
                 // Retrieve method slot
                 let slot = verifier.host.node_mapping().get(drtv).unwrap();
 
@@ -2488,10 +2532,10 @@ impl DirectiveSubverifier {
                 verifier.set_scope(&kscope);
 
                 // Next phase
-                verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                verifier.set_drtv_phase(drtv, VerifierPhase::Epsilon);
                 Err(DeferError(None))
             },
-            VerifierPhase::Delta => {
+            VerifierPhase::Epsilon => {
                 // Retrieve method slot
                 let slot = verifier.host.node_mapping().get(drtv).unwrap();
 
@@ -2980,6 +3024,13 @@ impl DirectiveSubverifier {
                 Err(DeferError(None))
             },
             VerifierPhase::Beta => {
+                // Reserved phase
+
+                // Next phase
+                verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                Err(DeferError(None))
+            },
+            VerifierPhase::Delta => {
                 // Retrieve method slot
                 let slot = verifier.host.node_mapping().get(drtv).unwrap();
 
@@ -3205,10 +3256,10 @@ impl DirectiveSubverifier {
                 verifier.set_scope(&kscope);
 
                 // Next phase
-                verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                verifier.set_drtv_phase(drtv, VerifierPhase::Epsilon);
                 Err(DeferError(None))
             },
-            VerifierPhase::Delta => {
+            VerifierPhase::Epsilon => {
                 // Retrieve method slot
                 let slot = verifier.host.node_mapping().get(drtv).unwrap();
 
@@ -3372,6 +3423,13 @@ impl DirectiveSubverifier {
                 Err(DeferError(None))
             },
             VerifierPhase::Beta => {
+                // Reserved phase
+
+                // Next phase
+                verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                Err(DeferError(None))
+            },
+            VerifierPhase::Delta => {
                 // Retrieve method slot
                 let slot = verifier.host.node_mapping().get(drtv).unwrap();
 
@@ -3604,10 +3662,10 @@ impl DirectiveSubverifier {
                 verifier.set_scope(&kscope);
 
                 // Next phase
-                verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                verifier.set_drtv_phase(drtv, VerifierPhase::Epsilon);
                 Err(DeferError(None))
             },
-            VerifierPhase::Delta => {
+            VerifierPhase::Epsilon => {
                 // Retrieve method slot
                 let slot = verifier.host.node_mapping().get(drtv).unwrap();
 
