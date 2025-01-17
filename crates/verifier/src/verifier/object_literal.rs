@@ -39,6 +39,12 @@ impl ObjectLiteralSubverifier {
     }
 
     fn verify_object_initializer_for_map(verifier: &mut Subverifier, initializer: &ObjectInitializer, map_type: &Entity, k_type: Entity, v_type: Entity) -> Result<(), DeferError> {
+        let host = verifier.host.clone();
+        let object_type = host.object_type().defer()?;
+        let string_type = host.string_type().defer()?;
+
+        let k_type_without_nullability = k_type.escape_of_nullable_or_non_nullable();
+
         for field in &initializer.fields {
             match field.as_ref() {
                 InitializerField::Rest((exp, _)) => {
@@ -48,7 +54,10 @@ impl ObjectLiteralSubverifier {
                     if let Some(name) = field.shorthand() {
                         // Ensure that the key type is *, Object(?|!) or String(?|!)
                         // and that no qualifier appears.
-                        todo_fixme();
+                        if name.qualifier.is_some() || ![&host.any_type(), &object_type, &string_type].contains(&&k_type_without_nullability) {
+                            verifier.add_verify_error(&name.location, WhackDiagnosticKind::IllegalMapKey, diagarg![]);
+                            continue;
+                        }
 
                         let mut short_ref = Self::verify_initializer_shorthand(verifier, &name)?;
                         if let Some(short_ref_1) = short_ref.as_ref() {
@@ -98,6 +107,9 @@ impl ObjectLiteralSubverifier {
     }
 
     fn verify_object_initializer_for_record_like_class(verifier: &mut Subverifier, initializer: &ObjectInitializer, record_like_class: &Entity) -> Result<(), DeferError> {
+        verifier.host.object_type().defer()?;
+        verifier.host.string_type().defer()?;
+
         let mut missing = HashSet::<Entity>::new();
         for (_, entity) in record_like_class.prototype(&verifier.host).borrow().iter() {
             if entity.is::<VariableSlot>() && !entity.is_opt_variable_for_record_like_class(&verifier.host)? {
@@ -195,6 +207,61 @@ impl ObjectLiteralSubverifier {
             FieldName::NumericLiteral(_) => {
                 verifier.verify_expression(value_exp, &default())?;
                 verifier.add_verify_error(&name.1, WhackDiagnosticKind::UnexpectedFieldName, diagarg![]);
+            },
+        }
+        Ok(())
+    }
+
+    fn verify_non_shorthand_notation_for_map(field: &Rc<InitializerField>, verifier: &mut Subverifier, map_type: &Entity, k_type: &Entity, v_type: &Entity) -> Result<(), DeferError> {
+        let InitializerField::Field { name, value, .. } = field.as_ref() else {
+            panic!();
+        };
+
+        let k_type_without_nullability = k_type.escape_of_nullable_or_non_nullable();
+        let host = verifier.host.clone();
+        let object_type = host.object_type();
+        let string_type = host.string_type();
+
+        let value_exp = value.as_ref().unwrap();
+        match &name.0 {
+            FieldName::Brackets(exp) => {
+                // fix all this code
+                todo_fixme();
+
+                verifier.imp_coerce_exp(exp, &verifier.host.string_type())?;
+                verifier.verify_expression(value_exp, &default())?;
+            },
+            FieldName::Identifier(name_1) => {
+                // fix all this code
+                todo_fixme();
+                
+                if let Some(variable) = variable {
+                    let variable_data_type = variable.static_type(&verifier.host).defer()?;
+                    verifier.imp_coerce_exp(value_exp, &variable_data_type)?;
+                } else {
+                    verifier.verify_expression(value_exp, &default())?;
+                }
+            },
+            FieldName::StringLiteral(sl) => {
+                // fix all this code
+                todo_fixme();
+
+                let name_1 = verifier.verify_expression(sl, &default())?.unwrap().string_value();
+                let variable: Option<Entity> = Self::resolve_instance_variable(verifier, record_like_class, &QualifiedIdentifier {
+                    location: sl.location(),
+                    attribute: false,
+                    qualifier: None,
+                    id: QualifiedIdentifierIdentifier::Id((name_1, sl.location())),
+                })?;
+                if let Some(variable) = variable {
+                    let variable_data_type = variable.static_type(&verifier.host).defer()?;
+                    verifier.imp_coerce_exp(value_exp, &variable_data_type)?;
+                } else {
+                    verifier.verify_expression(value_exp, &default())?;
+                }
+            },
+            FieldName::NumericLiteral(_) => {
+                todo_fixme();
             },
         }
         Ok(())

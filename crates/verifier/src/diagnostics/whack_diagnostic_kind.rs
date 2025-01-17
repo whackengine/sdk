@@ -113,6 +113,7 @@ pub enum WhackDiagnosticKind {
     NamespaceConflictsWithConfigurationNs = 2157,
     Unused = 2158,
     RecordLikeClassMustHaveEmptyConstructor = 2159,
+    IllegalMapKey = 2160,
 }
 
 impl WhackDiagnosticKind {

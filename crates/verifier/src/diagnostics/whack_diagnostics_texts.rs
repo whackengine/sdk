@@ -117,6 +117,7 @@ lazy_static! {
         WhackDiagnosticKind::NamespaceConflictsWithConfigurationNs.id() => "Namespace conflicts with a configuration namespace.".into(),
         WhackDiagnosticKind::Unused.id() => "$1 is unused.".into(),
         WhackDiagnosticKind::RecordLikeClassMustHaveEmptyConstructor.id() => "RecordLike class must have empty constructor.".into(),
+        WhackDiagnosticKind::IllegalMapKey.id() => "Illegal map key.".into(),
         // WhackDiagnosticKind::K.id() => ".".into(),
     };
 }
