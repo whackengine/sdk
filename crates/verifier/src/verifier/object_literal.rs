@@ -39,7 +39,40 @@ impl ObjectLiteralSubverifier {
     }
 
     fn verify_object_initializer_for_map(verifier: &mut Subverifier, initializer: &ObjectInitializer, map_type: &Entity, k_type: Entity, v_type: Entity) -> Result<(), DeferError> {
-        todo_fixme();
+        for field in &initializer.fields {
+            match field.as_ref() {
+                InitializerField::Rest((exp, _)) => {
+                    verifier.imp_coerce_exp(exp, map_type)?;
+                },
+                InitializerField::Field { .. } => {
+                    if let Some(name) = field.shorthand() {
+                        // Ensure that the key type is *, Object(?|!) or String(?|!)
+                        // and that no qualifier appears.
+                        todo_fixme();
+
+                        let mut short_ref = Self::verify_initializer_shorthand(verifier, &name)?;
+                        if let Some(short_ref_1) = short_ref.as_ref() {
+                            let coercion = ConversionMethods(&verifier.host).implicit(short_ref_1, &v_type, false)?;
+                            let Some(coercion) = coercion else {
+                                verifier.add_verify_error(&name.location, WhackDiagnosticKind::ImplicitCoercionToUnrelatedType, diagarg![short_ref_1.static_type(&verifier.host), v_type.clone()]);
+                                #[allow(unused_assignments)] {
+                                    short_ref = None;
+                                }
+                                continue;
+                            };
+                            short_ref = Some(coercion);
+                        }
+                        let fr = verifier.host.lazy_node_mapping(field, || verifier.host.factory().create_field_resolution());
+                        fr.set_field_slot(None);
+                        fr.set_shorthand_resolution(short_ref);
+                    } else {
+                        Self::verify_non_shorthand_notation_for_map(field, verifier, map_type, &k_type, &v_type)?;
+                    }
+                },
+            }
+        }
+
+        Ok(())
     }
 
     fn verify_object_initializer_for_ecma_object(verifier: &mut Subverifier, initializer: &ObjectInitializer) -> Result<(), DeferError> {
