@@ -234,7 +234,7 @@ impl ExpSubverifier {
             verifier.add_verify_error(&literal.location, WhackDiagnosticKind::CouldNotParseNumber, diagarg![t]);
             return Ok(None);
         }
-        return Ok(Some(verifier.host.factory().create_number_constant(n.unwrap(), &t)));
+        Ok(Some(verifier.host.factory().create_number_constant(n.unwrap(), &t)))
     }
 
     pub fn parse_number_as_data_type(host: &Database, literal: &NumericLiteral, data_type: &Entity, context: &VerifierExpressionContext) -> Result<Number, ParserError> {
@@ -869,7 +869,7 @@ impl ExpSubverifier {
             verifier.verify_expression(arg, &default())?;
         }
 
-        if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.function_type().defer()?].contains(&base_st_esc) {
+        if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.function_type().defer()?, verifier.host.jsval_type().defer()?].contains(&base_st_esc) {
             verifier.add_verify_error(&exp.base.location(), WhackDiagnosticKind::CallOnNonFunction, diagarg![]);
             return Ok(None);
         }
@@ -967,13 +967,14 @@ impl ExpSubverifier {
         };
 
         let val_st = val.static_type(&verifier.host);
-        
+
         match exp.operator {
             Operator::PreIncrement |
             Operator::PreDecrement |
             Operator::PostIncrement |
             Operator::PostDecrement => {
-                if !verifier.host.numeric_types()?.contains(&val_st) {
+                let val_st_esc = val_st.escape_of_non_nullable();
+                if !([verifier.host.any_type(), verifier.host.jsval_type().defer()?].contains(&val_st_esc) || verifier.host.numeric_types()?.contains(&val_st)) {
                     verifier.add_verify_error(&exp.expression.location(), WhackDiagnosticKind::OperandMustBeNumber, diagarg![]);
                 } else if val.write_only(&verifier.host) {
                     verifier.add_verify_error(&exp.expression.location(), WhackDiagnosticKind::EntityIsWriteOnly, diagarg![]);
@@ -1004,7 +1005,7 @@ impl ExpSubverifier {
             },
             Operator::Positive => {
                 let val_st_esc = val_st.escape_of_non_nullable();
-                if !([verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&val_st_esc) || verifier.host.numeric_types()?.contains(&val_st)) {
+                if !([verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&val_st_esc) || verifier.host.numeric_types()?.contains(&val_st)) {
                     verifier.add_verify_error(&exp.expression.location(), WhackDiagnosticKind::OperandMustBeNumber, diagarg![]);
                     return Ok(None);
                 }
@@ -1015,7 +1016,7 @@ impl ExpSubverifier {
             },
             Operator::Negative => {
                 let val_st_esc = val_st.escape_of_non_nullable();
-                if !([verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&val_st_esc) || verifier.host.numeric_types()?.contains(&val_st)) {
+                if !([verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&val_st_esc) || verifier.host.numeric_types()?.contains(&val_st)) {
                     verifier.add_verify_error(&exp.expression.location(), WhackDiagnosticKind::OperandMustBeNumber, diagarg![]);
                     return Ok(None);
                 }
@@ -1030,7 +1031,7 @@ impl ExpSubverifier {
             },
             Operator::BitwiseNot => {
                 let val_st_esc = val_st.escape_of_non_nullable();
-                if !([verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&val_st_esc) || verifier.host.numeric_types()?.contains(&val_st)) {
+                if !([verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&val_st_esc) || verifier.host.numeric_types()?.contains(&val_st)) {
                     verifier.add_verify_error(&exp.expression.location(), WhackDiagnosticKind::OperandMustBeNumber, diagarg![]);
                     return Ok(None);
                 }
@@ -1091,7 +1092,7 @@ impl ExpSubverifier {
         };
 
         let expval_st = expval.static_type(&verifier.host);
-        let nullable_result_type = if expval_st == verifier.host.object_type().defer()? {
+        let nullable_result_type = if expval_st == verifier.host.object_type().defer()? || expval_st == verifier.host.jsval_type().defer()? {
             expval_st.clone()
         } else {
             verifier.host.factory().create_nullable_type(&expval_st)
@@ -1140,7 +1141,7 @@ impl ExpSubverifier {
                 let Some(right) = verifier.imp_coerce_exp(&exp.right, &left_st)? else {
                     return Ok(None);
                 };
-                if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
+                if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
                     verifier.add_verify_error(&exp.location, WhackDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
@@ -1155,7 +1156,7 @@ impl ExpSubverifier {
                 let Some(right) = verifier.imp_coerce_exp(&exp.right, &left_st)? else {
                     return Ok(None);
                 };
-                if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
+                if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
                     verifier.add_verify_error(&exp.location, WhackDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
@@ -1170,7 +1171,7 @@ impl ExpSubverifier {
                 let Some(right) = verifier.imp_coerce_exp(&exp.right, &left_st)? else {
                     return Ok(None);
                 };
-                if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
+                if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
                     verifier.add_verify_error(&exp.location, WhackDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
@@ -1185,7 +1186,7 @@ impl ExpSubverifier {
                 let Some(right) = verifier.imp_coerce_exp(&exp.right, &left_st)? else {
                     return Ok(None);
                 };
-                if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
+                if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
                     verifier.add_verify_error(&exp.location, WhackDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
@@ -1200,7 +1201,7 @@ impl ExpSubverifier {
                 let Some(_) = verifier.imp_coerce_exp(&exp.right, &left_st)? else {
                     return Ok(None);
                 };
-                if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
+                if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
                     verifier.add_verify_error(&exp.location, WhackDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
@@ -1212,7 +1213,7 @@ impl ExpSubverifier {
                 let Some(right) = verifier.imp_coerce_exp(&exp.right, &left_st)? else {
                     return Ok(None);
                 };
-                if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
+                if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
                     verifier.add_verify_error(&exp.location, WhackDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
@@ -1227,7 +1228,7 @@ impl ExpSubverifier {
                 let Some(right) = verifier.imp_coerce_exp(&exp.right, &left_st)? else {
                     return Ok(None);
                 };
-                if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
+                if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
                     verifier.add_verify_error(&exp.location, WhackDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
@@ -1242,7 +1243,7 @@ impl ExpSubverifier {
                 let Some(right) = verifier.imp_coerce_exp(&exp.right, &left_st)? else {
                     return Ok(None);
                 };
-                if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
+                if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
                     verifier.add_verify_error(&exp.location, WhackDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
@@ -1257,7 +1258,7 @@ impl ExpSubverifier {
                 let Some(right) = verifier.imp_coerce_exp(&exp.right, &left_st)? else {
                     return Ok(None);
                 };
-                if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
+                if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
                     verifier.add_verify_error(&exp.location, WhackDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
@@ -1272,7 +1273,7 @@ impl ExpSubverifier {
                 let Some(right) = verifier.imp_coerce_exp(&exp.right, &left_st)? else {
                     return Ok(None);
                 };
-                if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
+                if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
                     verifier.add_verify_error(&exp.location, WhackDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);
@@ -1287,7 +1288,7 @@ impl ExpSubverifier {
                 let Some(right) = verifier.imp_coerce_exp(&exp.right, &left_st)? else {
                     return Ok(None);
                 };
-                if ![verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&left_st_esc)
+                if ![verifier.host.any_type(), verifier.host.object_type().defer()?, verifier.host.jsval_type().defer()?].contains(&left_st_esc)
                 && !verifier.host.numeric_types()?.contains(&left_st_esc)
                 {
                     verifier.add_verify_error(&exp.location, WhackDiagnosticKind::UnrelatedMathOperation, diagarg![left_st]);

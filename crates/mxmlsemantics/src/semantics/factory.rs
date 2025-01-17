@@ -512,6 +512,10 @@ impl<'a> Factory<'a> {
         DynamicReferenceValue::new(&self.0.arena, base, qualifier, key, &self.0.any_type()).into()
     }
 
+    pub fn create_jsval_reference_value(&self, base: &Entity, qualifier: Option<Entity>, key: &Entity) -> Result<Entity, DeferError> {
+        Ok(DynamicReferenceValue::new(&self.0.arena, base, qualifier, key, &self.0.jsval_type().defer()?).into())
+    }
+
     pub fn create_array_element_reference_value(&self, base: &Entity, key: &Entity) -> Result<Entity, DeferError> {
         let st = base.static_type(self.0).defer()?.escape_of_non_nullable().array_element_type(self.0)?.unwrap();
         Ok(ArrayElementReferenceValue::new(&self.0.arena, base, key, &st).into())

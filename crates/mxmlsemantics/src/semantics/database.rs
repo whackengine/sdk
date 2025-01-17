@@ -40,6 +40,7 @@ pub struct Database {
     promise_type: RefCell<Option<Entity>>,
     vector_type: RefCell<Option<Entity>>,
     map_type: RefCell<Option<Entity>>,
+    jsval_type: RefCell<Option<Entity>>,
     proxy_type: RefCell<Option<Entity>>,
     byte_array_type: RefCell<Option<Entity>>,
     mxmlextrema_proxy_ns_uri: String,
@@ -122,6 +123,7 @@ impl Database {
             promise_type: RefCell::new(None),
             vector_type: RefCell::new(None),
             map_type: RefCell::new(None),
+            jsval_type: RefCell::new(None),
             proxy_type: RefCell::new(None),
             byte_array_type: RefCell::new(None),
             mxmlextrema_proxy_ns_uri: options.mxmlextrema_proxy_ns_uri,
@@ -296,6 +298,7 @@ impl Database {
     global_lookup!(promise_type, "Promise");
     global_lookup!(vector_type, "Vector");
     global_lookup!(map_type, "Map");
+    global_lookup!(jsval_type, "JSVal");
 
     pub fn array_type_of_any(&self) -> Result<Entity, DeferError> {
         let origin = self.array_type().defer()?;

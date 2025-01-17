@@ -126,6 +126,13 @@ impl<'a> PropertyLookup<'a> {
                 return Ok(Some(base_esc_type.clone()));
             }
 
+            let jsval_type = map_defer_error(self.0.jsval_type().defer())?;
+
+            if base_esc_type == jsval_type {
+                let k = map_defer_error(key.computed_or_local_name(self.0))?;
+                return Ok(Some(map_defer_error(self.0.factory().create_jsval_reference_value(base, qual, &k))?));
+            }
+
             // If not calling the property and base is a value whose type is one of
             // { XML, XML!, XMLList, XMLList! }, return a XML reference value.
             //

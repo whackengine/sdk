@@ -1622,7 +1622,7 @@ smodel! {
         }
 
         pub override fn includes_undefined(&self, host: &Database) -> Result<bool, DeferError> {
-            Ok(false)
+            Ok(host.jsval_type().defer()? == self.clone().into())
         }
 
         pub override fn includes_null(&self, host: &Database) -> Result<bool, DeferError> {

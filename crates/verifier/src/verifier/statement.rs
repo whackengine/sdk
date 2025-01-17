@@ -317,7 +317,7 @@ impl StatementSubverifier {
     }
 
     pub fn for_in_kv_types(host: &Database, obj: &Entity) -> Result<Option<(Entity, Entity)>, DeferError> {
-        let t = obj.static_type(host).escape_of_non_nullable();
+        let t = obj.static_type(host).escape_of_nullable_or_non_nullable();
         let obj_t = host.object_type().defer()?;
         // * or Object
         if [host.any_type(), obj_t].contains(&t) {
@@ -335,6 +335,11 @@ impl StatementSubverifier {
         if t == host.byte_array_type().defer()? {
             let num_t = host.number_type().defer()?;
             return Ok(Some((num_t.clone(), num_t)));
+        }
+        // JSVal
+        let jsval_type = host.jsval_type().defer()?;
+        if t == jsval_type {
+            return Ok(Some((jsval_type.clone(), jsval_type)));
         }
         // Map
         if t == host.map_type().defer()? {
