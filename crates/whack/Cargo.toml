@@ -13,6 +13,7 @@ clap = { version = "4.5.17", features = ["cargo"] }
 colored = "3.0.0"
 hard-xml = "1.36.0"
 hydroperfox-filepaths = "1"
+lazy-regex = "3.4.1"
 semver = { version = "1.0", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }

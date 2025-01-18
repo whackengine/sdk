@@ -12,9 +12,10 @@ pub async fn check_process(matches: &clap::ArgMatches) {
 
     let dir = std::env::current_dir().unwrap();
 
-    // Read lockfile
-    let mut lockfile: Option<WhackLockfile> = None;
+    // Detect entry point directory and read lockfile
     let mut dir = FlexPath::new_native(dir.to_str().unwrap());
+    let mut lockfile: Option<WhackLockfile> = None;
+    let lockfile_path = PathBuf::from_str(&dir.resolve("whack.lock").to_string_with_flex_separator()).unwrap();
     let mut found_base_manifest = false;
     loop {
         let manifest_path = PathBuf::from_str(&dir.resolve("whack.toml").to_string_with_flex_separator()).unwrap();
@@ -22,7 +23,6 @@ pub async fn check_process(matches: &clap::ArgMatches) {
         if std::fs::exists(&manifest_path).unwrap() && std::fs::metadata(&manifest_path).unwrap().is_file() {
             found_base_manifest = true;
 
-            let lockfile_path = PathBuf::from_str(&dir.resolve("whack.lock").to_string_with_flex_separator()).unwrap();
             if std::fs::exists(&lockfile_path).unwrap() && std::fs::metadata(&lockfile_path).unwrap().is_file() {
                 lockfile = toml::from_str::<WhackLockfile>(&std::fs::read_to_string(&lockfile_path).unwrap()).ok();
             }
@@ -58,6 +58,14 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     }
     let mut run_cache_file = run_cache_file.unwrap();
 
+    // Initial lockfile
+    if lockfile.is_none() {
+        lockfile = Some(WhackLockfile {
+            package: vec![]
+        });
+    }
+    let mut lockfile = lockfile.unwrap();
+
     // Entry point directory
     let dir = PathBuf::from_str(&dir.to_string_with_flex_separator()).unwrap();
 
@@ -71,7 +79,7 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     let mut cycle_prevention_list = Vec::<PathBuf>::new();
 
     // Process directed acyclic graph
-    let (dag, build_script_dag) = match Dag::retrieve(&dir, &dir, package.cloned(), lockfile.as_mut(), &mut run_cache_file, &mut conflicting_dependencies_tracker, &mut package_internator, cycle_prevention_list).await {
+    let (dag, build_script_dag) = match Dag::retrieve(dir.clone(), &dir, package.cloned(), &mut lockfile, &mut run_cache_file, &mut conflicting_dependencies_tracker, &mut package_internator, cycle_prevention_list).await {
         Ok(dag) => dag,
         Err(error) => {
             match error {
@@ -93,6 +101,9 @@ pub async fn check_process(matches: &clap::ArgMatches) {
                 WhackPackageProcessingError::ManifestIsNotAPackage { manifest_path } => {
                     println!("{} Whack manifest at {} does not describe a package.", "Error:".red(), manifest_path);
                 },
+                WhackPackageProcessingError::IllegalPackageName { name } => {
+                    println!("{} Found illegal package name: {}", "Error:".red(), name);
+                },
             }
 
             return;
@@ -110,4 +121,7 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     // Write to the run cache file
     std::fs::create_dir_all(&target_path).unwrap();
     std::fs::write(&run_cache_path, toml::to_string::<RunCacheFile>(&run_cache_file).unwrap()).unwrap();
+
+    // Write to the lock file
+    std::fs::write(&lockfile_path, toml::to_string::<WhackLockfile>(&lockfile).unwrap()).unwrap();
 }

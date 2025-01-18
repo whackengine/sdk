@@ -9,6 +9,7 @@ use colored::Colorize;
 use semver::Version;
 
 /// Directed acyclic graph of the dependency tree.
+#[derive(Clone)]
 pub struct Dag {
     pub vertices: Vec<Rc<WhackPackage>>,
     pub edges: Vec<DagEdge>,
@@ -23,7 +24,7 @@ impl Dag {
     /// 
     /// - `entry_dir` - The directory where the entry point "whack.toml" file lies and where
     ///   the "target" directory is stored.
-    pub async fn retrieve(mut dir: &PathBuf, entry_dir: &PathBuf, mut package: Option<String>, mut lockfile: Option<&mut WhackLockfile>, run_cache_file: &mut RunCacheFile, conflicting_dependencies_tracker: &mut HashMap<String, HashMap<String, Version>>, package_internator: &mut WhackPackageInternator, cycle_prevention_list: Vec<PathBuf>) -> Result<(Dag, Dag), WhackPackageProcessingError> {
+    pub async fn retrieve(mut dir: PathBuf, entry_dir: &PathBuf, package: Option<String>, lockfile: &mut WhackLockfile, run_cache_file: &mut RunCacheFile, conflicting_dependencies_tracker: &mut HashMap<String, HashMap<String, Version>>, package_internator: &mut WhackPackageInternator, cycle_prevention_list: Vec<PathBuf>) -> Result<(Dag, Dag), WhackPackageProcessingError> {
         if cycle_prevention_list.contains(&dir.canonicalize().unwrap()) {
             return Err(WhackPackageProcessingError::CircularDependency { directory: dir.to_str().unwrap().to_owned() });
         }
@@ -62,12 +63,12 @@ impl Dag {
                 if !package_ok {
                     // Read the specified package's manifest and move into its directory
                     let (new_dir, new_manifest_path, new_manifest) = Dag::move_into_workspace_member(&flexdir, p, &workspace.members);
-                    dir = &new_dir;
+                    dir = new_dir;
                     flexdir = FlexPath::new_native(&dir.to_str().unwrap());
                     manifest_path = new_manifest_path;
                     manifest = new_manifest;
                 }
-            } else if let Some(workspace_default_package) = manifest.package.as_ref() {
+            } else if manifest.package.is_some() {
                 package_ok = true;
             }
 
@@ -83,16 +84,16 @@ impl Dag {
 
         // Check for manifest updates (check the RunCacheFile). Mutate the
         // RunCacheFile, as well; writing new content to it.
-        let mut manifest_last_modified = std::fs::metadata(&manifest_path).unwrap().modified().unwrap();
+        let manifest_last_modified = std::fs::metadata(&manifest_path).unwrap().modified().unwrap();
         let cur_relative_path = FlexPath::new_native(&entry_dir.to_str().unwrap()).relative(&dir.to_str().unwrap());
-        let manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path, run_cache_file, manifest.dependencies.as_ref(), manifest.build_dependencies.as_ref(), &flexdir, entry_dir);
+        let manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path.clone(), run_cache_file, manifest.dependencies.as_ref(), manifest.build_dependencies.as_ref(), &flexdir, entry_dir);
 
         // Contribute dependencies to the `conflicting_dependencies_tracker` table.
         let package_name: &String = &manifest.package.as_ref().unwrap().name;
         if conflicting_dependencies_tracker.get(package_name).is_none() {
             conflicting_dependencies_tracker.insert(package_name.clone(), HashMap::new());
         }
-        let mut tracker1 = conflicting_dependencies_tracker.get_mut(package_name).unwrap();
+        let tracker1 = conflicting_dependencies_tracker.get_mut(package_name).unwrap();
         let mut deps = HashMap::<String, ManifestDependency>::new();
         if let Some(deps1) = manifest.dependencies.as_ref() {
             deps.extend(deps1.iter().map(|(k, v)| (k.clone(), v.clone())));
@@ -119,14 +120,12 @@ impl Dag {
         // Remember that the lock file must be considered for the
         // exact versions of registry dependencies.
         if manifest_updated {
-            DependencyUpdate::update_dependencies(entry_dir, &manifest, run_cache_file, conflicting_dependencies_tracker).await?;
+            DependencyUpdate::update_dependencies(entry_dir, &manifest, run_cache_file, conflicting_dependencies_tracker, lockfile).await?;
         }
 
         // Build a directed acyclic graph (DAG) of the dependencies:
         // one for the project's dependencies and one for the
         // build script's dependencies.
-        //
-        // TODO on next cycle_prevention_list clone, push the actual `dir`.
         let mut dags: Vec<Dag> = vec![];
         for deps in [manifest.dependencies.as_ref(), manifest.build_dependencies.as_ref()] {
             let mut vertices: Vec<Rc<WhackPackage>> = vec![];
@@ -134,10 +133,41 @@ impl Dag {
             let mut first: Option<Rc<WhackPackage>> = None;
             let mut last: Option<Rc<WhackPackage>> = None;
 
-            last = Some(package_internator.intern(&dir, &cur_relative_path, &manifest));
+            let mut next_cycle_prevention_list = cycle_prevention_list.clone();
+            next_cycle_prevention_list.push(dir.clone());
 
             if let Some(deps) = deps {
-                fixme();
+                for (dep_name, dep) in deps.iter() {
+                    match dep {
+                        ManifestDependency::Version(version) => {
+                            let next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
+                            let prepend_dag = Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list).await?;
+                            fixme();
+                        },
+                        ManifestDependency::Advanced { path, git, .. } => {
+                            fixme();
+                        },
+                    }
+                }
+            }
+
+            let this_pckg = package_internator.intern(&dir, &cur_relative_path, &manifest);
+            vertices.push(this_pckg.clone());
+            if let Some(semilast) = last {
+                edges.push(DagEdge {
+                    from: semilast,
+                    to: this_pckg.clone(),
+                });
+            }
+            if first.is_none() {
+                first = Some(this_pckg.clone());
+            }
+            last = Some(this_pckg.clone());
+            if edges.is_empty() {
+                edges.push(DagEdge {
+                    from: this_pckg.clone(),
+                    to: this_pckg,
+                });
             }
 
             dags.push(Dag {
@@ -149,7 +179,7 @@ impl Dag {
         }
 
         // Return result
-        Ok((dags[0], dags[1]))
+        Ok((dags[0].clone(), dags[1].clone()))
     }
 
     fn move_into_workspace_member(flexdir: &FlexPath, package: &str, members: &Vec<String>) -> (PathBuf, PathBuf, WhackManifest) {
@@ -202,7 +232,7 @@ impl Dag {
         }
         if !found_run_cache {
             run_cache_file.packages.push(RunCacheFilePackage {
-                path: cur_relative_path,
+                path: cur_relative_path.clone(),
                 manifest_last_modified: manifest_last_modified.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs(),
                 build_script_run: false,
             });
@@ -244,6 +274,7 @@ impl Dag {
     }
 }
 
+#[derive(Clone)]
 pub struct DagEdge {
     pub from: Rc<WhackPackage>,
     pub to: Rc<WhackPackage>,
@@ -262,5 +293,8 @@ pub enum WhackPackageProcessingError {
     UnspecifiedWorkspaceMember,
     ManifestIsNotAPackage {
         manifest_path: String,
+    },
+    IllegalPackageName {
+        name: String,
     },
 }
