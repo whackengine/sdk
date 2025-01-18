@@ -1,6 +1,7 @@
 use std::rc::Rc;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::time::{Duration, SystemTime};
 use crate::packagemanager::*;
 use hydroperfox_filepaths::FlexPath;
 use colored::Colorize;
@@ -20,7 +21,7 @@ impl Dag {
     /// 
     /// - `entry_dir` - The directory where the entry point "whack.toml" file lies and where
     ///   the "target" directory is stored.
-    pub async fn retrieve(mut dir: &PathBuf, entry_dir: &PathBuf, mut package: Option<String>, mut lockfile: Option<&mut WhackLockfile>, run_cache_file: &mut Option<RunCacheFile>) -> Result<(Dag, Dag), DagError> {
+    pub async fn retrieve(mut dir: &PathBuf, entry_dir: &PathBuf, mut package: Option<String>, mut lockfile: Option<&mut WhackLockfile>, run_cache_file: &mut RunCacheFile) -> Result<(Dag, Dag), DagError> {
         let mut manifest: Option<WhackManifest> = None;
 
         // Read the Whack manifest
@@ -58,6 +59,7 @@ impl Dag {
                     // Read the specified package's manifest and move into its directory
                     let (new_dir, new_manifest_path, new_manifest) = Dag::move_into_workspace_member(&flexdir, p, &workspace.members);
                     dir = &new_dir;
+                    flexdir = FlexPath::new_native(&dir.to_str().unwrap());
                     manifest_path = new_manifest_path;
                     manifest = new_manifest;
                 }
@@ -79,14 +81,18 @@ impl Dag {
 
         // Check for manifest updates (check the RunCacheFile). Mutate the
         // RunCacheFile, as well; writing new content to it.
-        fixme();
+        let mut manifest_last_modified = std::fs::metadata(&manifest_path).unwrap().modified().unwrap();
+        let cur_relative_path = FlexPath::new_native(&entry_dir.to_str().unwrap()).relative(&dir.to_str().unwrap());
+        let manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path, run_cache_file);
 
         // If the manifest has been updated,
         // either in the entry package or in another local package,
         // update dependencies and clear up the build script's artifacts.
         // Remember that the lock file must be considered for the
         // exact versions of registry dependencies.
-        fixme();
+        if manifest_updated || manifest_updated_in_another_local_package {
+            fixme();
+        }
 
         // Build a directed acyclic graph (DAG) of the dependencies:
         // one for the project's dependencies and one for the
@@ -126,6 +132,34 @@ impl Dag {
 
         println!("{} Could not find member {}", "Error:".red(), package);
         std::process::exit(1);
+    }
+
+    fn check_manifest_modified(manifest_last_modified: SystemTime, cur_relative_path: String, run_cache_file: &mut RunCacheFile) -> bool {
+        let mut manifest_updated: bool = true;
+        let mut found_run_cache = false;
+        for p in run_cache_file.packages.iter_mut() {
+            if cur_relative_path == p.path {
+                found_run_cache = true;
+
+                // Found the package into the run cache file
+                if (SystemTime::UNIX_EPOCH + Duration::from_secs(p.manifest_last_modified)) == manifest_last_modified {
+                    manifest_updated = false;
+                } else {
+                    p.manifest_last_modified = manifest_last_modified.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
+                    p.build_script_run = false;
+                }
+                break;
+            }
+        }
+        if !found_run_cache {
+            run_cache_file.packages.push(RunCacheFilePackage {
+                path: cur_relative_path,
+                manifest_last_modified: manifest_last_modified.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs(),
+                build_script_run: false,
+            });
+        }
+
+        manifest_updated
     }
 }
 

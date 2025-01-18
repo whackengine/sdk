@@ -46,6 +46,12 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     if std::fs::exists(&run_cache_path).unwrap() && std::fs::metadata(&run_cache_path).unwrap().is_file() {
         run_cache_file = Some(toml::from_str::<RunCacheFile>(&std::fs::read_to_string(&run_cache_path).unwrap()).unwrap());
     }
+    if run_cache_file.is_none() {
+        run_cache_file = Some(RunCacheFile {
+            packages: vec![]
+        });
+    }
+    let mut run_cache_file = run_cache_file.unwrap();
 
     let dir = PathBuf::from_str(&dir.to_string_with_flex_separator()).unwrap();
 
