@@ -6,7 +6,7 @@ use crate::packagemanager::*;
 pub struct DependencyUpdate;
 
 impl DependencyUpdate {
-    pub async fn update_dependencies(entry_dir: &PathBuf, manifest: &WhackManifest, run_cache_file: &mut RunCacheFile, conflicting_dependencies_tracker: &mut HashMap<String, HashMap<String, Version>>) {
+    pub async fn update_dependencies(entry_dir: &PathBuf, manifest: &WhackManifest, run_cache_file: &mut RunCacheFile, conflicting_dependencies_tracker: &mut HashMap<String, HashMap<String, Version>>) -> Result<(), WhackPackageProcessingError> {
         // TODO: detect version conflicts by reading the
         // `conflicting_dependencies_tracker` table.
 
@@ -17,6 +17,7 @@ impl DependencyUpdate {
         if let Some(deps1) = manifest.build_dependencies.as_ref() {
             deps.extend(deps1.iter().map(|(k, v)| (k.clone(), v.clone())));
         }
+
         for (name, dep) in deps.iter() {
             match dep {
                 ManifestDependency::Version(_ver) => {
@@ -29,5 +30,7 @@ impl DependencyUpdate {
                 },
             }
         }
+
+        Ok(())
     }
 }

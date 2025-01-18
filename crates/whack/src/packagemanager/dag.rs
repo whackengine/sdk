@@ -23,7 +23,10 @@ impl Dag {
     /// 
     /// - `entry_dir` - The directory where the entry point "whack.toml" file lies and where
     ///   the "target" directory is stored.
-    pub async fn retrieve(mut dir: &PathBuf, entry_dir: &PathBuf, mut package: Option<String>, mut lockfile: Option<&mut WhackLockfile>, run_cache_file: &mut RunCacheFile, conflicting_dependencies_tracker: &mut HashMap<String, HashMap<String, Version>>) -> Result<(Dag, Dag), DagError> {
+    pub async fn retrieve(mut dir: &PathBuf, entry_dir: &PathBuf, mut package: Option<String>, mut lockfile: Option<&mut WhackLockfile>, run_cache_file: &mut RunCacheFile, conflicting_dependencies_tracker: &mut HashMap<String, HashMap<String, Version>>, package_internator: &mut WhackPackageInternator, cycle_prevention_list: Vec<PathBuf>) -> Result<(Dag, Dag), WhackPackageProcessingError> {
+        if cycle_prevention_list.contains(&dir.canonicalize().unwrap()) {
+            return Err(WhackPackageProcessingError::CircularDependency { directory: dir.to_str().unwrap().to_owned() });
+        }
         let mut manifest: Option<WhackManifest> = None;
 
         // Read the Whack manifest
@@ -37,8 +40,7 @@ impl Dag {
                     manifest = Some(m);
                 },
                 Err(error) => {
-                    println!("{} Whack manifest at {} contains invalid TOML: {}", "Error:".red(), manifest_path.to_str().unwrap(), error.message());
-                    std::process::exit(1);
+                    return Err(WhackPackageProcessingError::InvalidManifest{ manifest_path: manifest_path.to_str().unwrap().to_owned(), message: error.message().to_owned() });
                 }
             }
         }
@@ -70,15 +72,13 @@ impl Dag {
             }
 
             if !package_ok {
-                println!("{} Must specify which package to be processed in Whack workspace.", "Error:".red());
-                std::process::exit(1);
+                return Err(WhackPackageProcessingError::UnspecifiedWorkspaceMember);
             }
         }
 
         // Make sure manifest describes a package.
         if manifest.package.is_none() {
-            println!("{} Whack manifest at {} does not describe a package.", "Error:".red(), manifest_path.to_str().unwrap());
-            std::process::exit(1);
+            return Err(WhackPackageProcessingError::ManifestIsNotAPackage { manifest_path: manifest_path.to_str().unwrap().to_owned() });
         }
 
         // Check for manifest updates (check the RunCacheFile). Mutate the
@@ -119,16 +119,37 @@ impl Dag {
         // Remember that the lock file must be considered for the
         // exact versions of registry dependencies.
         if manifest_updated {
-            DependencyUpdate::update_dependencies(entry_dir, &manifest, run_cache_file, conflicting_dependencies_tracker).await;
+            DependencyUpdate::update_dependencies(entry_dir, &manifest, run_cache_file, conflicting_dependencies_tracker).await?;
         }
 
         // Build a directed acyclic graph (DAG) of the dependencies:
         // one for the project's dependencies and one for the
         // build script's dependencies.
-        fixme();
+        //
+        // TODO on next cycle_prevention_list clone, push the actual `dir`.
+        let mut dags: Vec<Dag> = vec![];
+        for deps in [manifest.dependencies.as_ref(), manifest.build_dependencies.as_ref()] {
+            let mut vertices: Vec<Rc<WhackPackage>> = vec![];
+            let mut edges: Vec<DagEdge> = vec![];
+            let mut first: Option<Rc<WhackPackage>> = None;
+            let mut last: Option<Rc<WhackPackage>> = None;
+
+            last = Some(package_internator.intern(&dir, &cur_relative_path, &manifest));
+
+            if let Some(deps) = deps {
+                fixme();
+            }
+
+            dags.push(Dag {
+                vertices,
+                edges,
+                first: first.unwrap(),
+                last: last.unwrap(),
+            });
+        }
 
         // Return result
-        fixme()
+        Ok((dags[0], dags[1]))
     }
 
     fn move_into_workspace_member(flexdir: &FlexPath, package: &str, members: &Vec<String>) -> (PathBuf, PathBuf, WhackManifest) {
@@ -228,7 +249,18 @@ pub struct DagEdge {
     pub to: Rc<WhackPackage>,
 }
 
-pub enum DagError {
+pub enum WhackPackageProcessingError {
     ManifestNotFound,
     PackageMustBeSpecified,
+    CircularDependency {
+        directory: String,
+    },
+    InvalidManifest {
+        manifest_path: String,
+        message: String,
+    },
+    UnspecifiedWorkspaceMember,
+    ManifestIsNotAPackage {
+        manifest_path: String,
+    },
 }

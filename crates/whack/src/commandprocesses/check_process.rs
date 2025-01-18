@@ -64,16 +64,34 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     // Conflicting dependencies tracker
     let mut conflicting_dependencies_tracker = HashMap::<String, HashMap<String, Version>>::new();
 
+    // Package internator
+    let mut package_internator = WhackPackageInternator::new();
+
+    // Cycle prevention list (vector of package absolute paths)
+    let mut cycle_prevention_list = Vec::<PathBuf>::new();
+
     // Process directed acyclic graph
-    let (dag, build_script_dag) = match Dag::retrieve(&dir, &dir, package.cloned(), lockfile.as_mut(), &mut run_cache_file, &mut conflicting_dependencies_tracker).await {
+    let (dag, build_script_dag) = match Dag::retrieve(&dir, &dir, package.cloned(), lockfile.as_mut(), &mut run_cache_file, &mut conflicting_dependencies_tracker, &mut package_internator, cycle_prevention_list).await {
         Ok(dag) => dag,
         Err(error) => {
             match error {
-                DagError::ManifestNotFound => {
+                WhackPackageProcessingError::ManifestNotFound => {
                     println!("{} {}", "Error:".red(), "Whack manifest not found.");
                 },
-                DagError::PackageMustBeSpecified => {
+                WhackPackageProcessingError::PackageMustBeSpecified => {
                     println!("{} {}", "Error:".red(), "Package must be specified.");
+                },
+                WhackPackageProcessingError::CircularDependency { directory } => {
+                    println!("{} Circular dependency is not allowed: {}", "Error:".red(), directory);
+                },
+                WhackPackageProcessingError::InvalidManifest { manifest_path, message } => {
+                    println!("{} Whack manifest at {} contains invalid TOML: {}", "Error:".red(), manifest_path, message);
+                },
+                WhackPackageProcessingError::UnspecifiedWorkspaceMember => {
+                    println!("{} Must specify which package to be processed in Whack workspace.", "Error:".red());
+                },
+                WhackPackageProcessingError::ManifestIsNotAPackage { manifest_path } => {
+                    println!("{} Whack manifest at {} does not describe a package.", "Error:".red(), manifest_path);
                 },
             }
 
