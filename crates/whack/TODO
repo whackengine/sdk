@@ -17,3 +17,7 @@ In `DependencyUpdate::update_dependencies()`:
 - [x] Handle local dependencies (no need to symlink them as this has nothing to do with Node.js's `node_modules`)
 - [ ] Download registry dependencies into the `target` directory
 - [ ] Download Git dependencies into the `target` directory
+
+## DAG
+
+- [ ] Retrieve the DAG interning `Rc<WhackPackage>`s and preventing circular packages.
