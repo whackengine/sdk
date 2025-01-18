@@ -20,7 +20,7 @@ impl Dag {
 
         // Read the Whack manifest
         let mut flexdir = FlexPath::new_native(dir.to_str().unwrap());
-        let manifest_path = PathBuf::from_str(&flexdir.resolve("whack.toml").to_string_with_flex_separator()).unwrap();
+        let mut manifest_path = PathBuf::from_str(&flexdir.resolve("whack.toml").to_string_with_flex_separator()).unwrap();
 
         if std::fs::exists(&manifest_path).unwrap() && std::fs::metadata(&manifest_path).unwrap().is_file() {
             let contents = std::fs::read_to_string(&manifest_path).unwrap();
@@ -51,8 +51,9 @@ impl Dag {
 
                 if !package_ok {
                     // Read the specified package's manifest and move into its directory
-                    let (new_dir, new_manifest) = Dag::move_into_workspace_member(&flexdir, p, &workspace.members);
+                    let (new_dir, new_manifest_path, new_manifest) = Dag::move_into_workspace_member(&flexdir, p, &workspace.members);
                     dir = &new_dir;
+                    manifest_path = new_manifest_path;
                     manifest = new_manifest;
                 }
             } else if let Some(workspace_default_package) = manifest.package.as_ref() {
@@ -63,6 +64,12 @@ impl Dag {
                 println!("{} Must specify which package to be processed in Whack workspace.", "Error:".red());
                 std::process::exit(1);
             }
+        }
+
+        // Make sure manifest describes a package.
+        if manifest.package.is_none() {
+            println!("{} Whack manifest at {} does not describe a package.", "Error:".red(), manifest_path.to_str().unwrap());
+            std::process::exit(1);
         }
 
         // Check for manifest updates.
@@ -84,7 +91,7 @@ impl Dag {
         fixme()
     }
 
-    fn move_into_workspace_member(flexdir: &FlexPath, package: &str, members: &Vec<String>) -> (PathBuf, WhackManifest) {
+    fn move_into_workspace_member(flexdir: &FlexPath, package: &str, members: &Vec<String>) -> (PathBuf, PathBuf, WhackManifest) {
         for member in members.iter() {
             let member_flexdir = flexdir.resolve(member);
             let member_manifest_flexpath = member_flexdir.resolve("whack.toml");
@@ -99,7 +106,7 @@ impl Dag {
                     Ok(m) => {
                         if let Some(p) = m.package.as_ref() {
                             if p.name == package {
-                                return (member_dir, m);
+                                return (member_dir, member_manifest_path, m);
                             }
                         }
                     },
