@@ -6,6 +6,8 @@ use hydroperfox_filepaths::FlexPath;
 use colored::Colorize;
 use semver::Version;
 
+use super::CommandProcessCommons;
+
 pub async fn check_process(matches: &clap::ArgMatches) {
     let builtins = matches.get_one::<std::path::PathBuf>("builtins").cloned().unwrap_or(PathBuf::from_str("../builtins/packages/whack.base").unwrap());
     let package = matches.get_one::<String>("package");
@@ -79,39 +81,24 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     let mut cycle_prevention_list = Vec::<PathBuf>::new();
 
     // Process directed acyclic graph
-    let (dag, build_script_dag) = match Dag::retrieve(dir.clone(), &dir, package.cloned(), &mut lockfile, &mut run_cache_file, &mut conflicting_dependencies_tracker, &mut package_internator, cycle_prevention_list).await {
+    let (mut dag, mut build_script_dag) = match Dag::retrieve(dir.clone(), &dir, package.cloned(), &mut lockfile, &mut run_cache_file, &mut conflicting_dependencies_tracker, &mut package_internator, cycle_prevention_list).await {
         Ok(dag) => dag,
         Err(error) => {
-            match error {
-                WhackPackageProcessingError::ManifestNotFound => {
-                    println!("{} {}", "Error:".red(), "Whack manifest not found.");
-                },
-                WhackPackageProcessingError::PackageMustBeSpecified => {
-                    println!("{} {}", "Error:".red(), "Package must be specified.");
-                },
-                WhackPackageProcessingError::CircularDependency { directory } => {
-                    println!("{} Circular dependency is not allowed: {}", "Error:".red(), directory);
-                },
-                WhackPackageProcessingError::InvalidManifest { manifest_path, message } => {
-                    println!("{} Whack manifest at {} contains invalid TOML: {}", "Error:".red(), manifest_path, message);
-                },
-                WhackPackageProcessingError::UnspecifiedWorkspaceMember => {
-                    println!("{} Must specify which package to be processed in Whack workspace.", "Error:".red());
-                },
-                WhackPackageProcessingError::ManifestIsNotAPackage { manifest_path } => {
-                    println!("{} Whack manifest at {} does not describe a package.", "Error:".red(), manifest_path);
-                },
-                WhackPackageProcessingError::IllegalPackageName { name } => {
-                    println!("{} Found illegal package name: {}", "Error:".red(), name);
-                },
-            }
-
+            CommandProcessCommons::print_package_processing_error(error);
             return;
         },
     };
 
-    // Check the built-ins first (process their Whack package and combine their DAG with each of the above DAGs)
-    fixme();
+    // Process the built-ins as well.
+    let (builtins_dag, builtins_build_script_dag) = match Dag::retrieve(dir.clone(), &dir, package.cloned(), &mut lockfile, &mut run_cache_file, &mut conflicting_dependencies_tracker, &mut package_internator, cycle_prevention_list).await {
+        Ok(dag) => dag,
+        Err(error) => {
+            CommandProcessCommons::print_package_processing_error(error);
+            return;
+        },
+    };
+    dag.prepend_dag(builtins_dag);
+    build_script_dag.prepend_dag(builtins_build_script_dag);
 
     // Check each dependency in ascending order for AS3 and MXML errors,
     // running the build script if required.

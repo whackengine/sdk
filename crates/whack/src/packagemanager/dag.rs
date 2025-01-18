@@ -11,7 +11,6 @@ use semver::Version;
 /// Directed acyclic graph of the dependency tree.
 #[derive(Clone)]
 pub struct Dag {
-    pub vertices: Vec<Rc<WhackPackage>>,
     pub edges: Vec<DagEdge>,
     pub first: Rc<WhackPackage>,
     pub last: Rc<WhackPackage>,
@@ -126,19 +125,17 @@ impl Dag {
         // Build a directed acyclic graph (DAG) of the dependencies:
         // one for the project's dependencies and one for the
         // build script's dependencies.
-        let mut vertices1: Vec<Rc<WhackPackage>> = vec![];
         let mut edges1: Vec<DagEdge> = vec![];
         let mut first1: Option<Rc<WhackPackage>> = None;
         let mut last1: Option<Rc<WhackPackage>> = None;
 
         // build script parts
-        let mut vertices2: Vec<Rc<WhackPackage>> = vec![];
         let mut edges2: Vec<DagEdge> = vec![];
         let mut first2: Option<Rc<WhackPackage>> = None;
         let mut last2: Option<Rc<WhackPackage>> = None;
 
         let mut next_cycle_prevention_list = cycle_prevention_list.clone();
-        next_cycle_prevention_list.push(dir.clone());
+        next_cycle_prevention_list.push(dir.canonicalize().unwrap());
 
         if let Some(deps) = manifest.dependencies.as_ref() {
             for (dep_name, dep) in deps.iter() {
@@ -146,8 +143,8 @@ impl Dag {
                     ManifestDependency::Version(_) => {
                         let next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
                         let (prepend_dag_1, prepend_dag_2) = Box::pin(Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list.clone())).await?;
-                        do_prepend_dag(prepend_dag_1, &mut vertices1, &mut edges1, &mut first1, &mut last1);
-                        do_prepend_dag(prepend_dag_2, &mut vertices2, &mut edges2, &mut first2, &mut last2);
+                        do_append_dag(prepend_dag_1, &mut edges1, &mut first1, &mut last1);
+                        do_append_dag(prepend_dag_2, &mut edges2, &mut first2, &mut last2);
                     },
                     ManifestDependency::Advanced { path, .. } => {
                         let next_dir: PathBuf;
@@ -157,8 +154,8 @@ impl Dag {
                             next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
                         }
                         let (prepend_dag_1, prepend_dag_2) = Box::pin(Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list.clone())).await?;
-                        do_prepend_dag(prepend_dag_1, &mut vertices1, &mut edges1, &mut first1, &mut last1);
-                        do_prepend_dag(prepend_dag_2, &mut vertices2, &mut edges2, &mut first2, &mut last2);
+                        do_append_dag(prepend_dag_1, &mut edges1, &mut first1, &mut last1);
+                        do_append_dag(prepend_dag_2, &mut edges2, &mut first2, &mut last2);
                     },
                 }
             }
@@ -170,8 +167,8 @@ impl Dag {
                     ManifestDependency::Version(_version) => {
                         let next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
                         let (prepend_dag_1, prepend_dag_2) = Box::pin(Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list.clone())).await?;
-                        do_prepend_dag(prepend_dag_1, &mut vertices1, &mut edges1, &mut first1, &mut last1);
-                        do_prepend_dag(prepend_dag_2, &mut vertices2, &mut edges2, &mut first2, &mut last2);
+                        do_append_dag(prepend_dag_1, &mut edges1, &mut first1, &mut last1);
+                        do_append_dag(prepend_dag_2, &mut edges2, &mut first2, &mut last2);
                     },
                     ManifestDependency::Advanced { path, .. } => {
                         let next_dir: PathBuf;
@@ -181,8 +178,8 @@ impl Dag {
                             next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
                         }
                         let (prepend_dag_1, prepend_dag_2) = Box::pin(Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list.clone())).await?;
-                        do_prepend_dag(prepend_dag_1, &mut vertices1, &mut edges1, &mut first1, &mut last1);
-                        do_prepend_dag(prepend_dag_2, &mut vertices2, &mut edges2, &mut first2, &mut last2);
+                        do_append_dag(prepend_dag_1, &mut edges1, &mut first1, &mut last1);
+                        do_append_dag(prepend_dag_2, &mut edges2, &mut first2, &mut last2);
                     },
                 }
             }
@@ -191,52 +188,38 @@ impl Dag {
         let this_pckg = package_internator.intern(&dir, &cur_relative_path, &manifest);
 
         // 1 (not build script)
-        vertices1.push(this_pckg.clone());
-        if let Some(semilast) = last1 {
-            edges1.push(DagEdge {
-                from: semilast,
-                to: this_pckg.clone(),
-            });
+        if last1.is_some() {
+            edges1.last_mut().unwrap().to = this_pckg.clone();
         }
         if first1.is_none() {
             first1 = Some(this_pckg.clone());
         }
         last1 = Some(this_pckg.clone());
-        if edges1.is_empty() {
-            edges1.push(DagEdge {
-                from: this_pckg.clone(),
-                to: this_pckg.clone(),
-            });
-        }
+        edges1.push(DagEdge {
+            from: this_pckg.clone(),
+            to: this_pckg.clone(),
+        });
 
         // 2 (build script)
-        vertices2.push(this_pckg.clone());
-        if let Some(semilast) = last2 {
-            edges2.push(DagEdge {
-                from: semilast,
-                to: this_pckg.clone(),
-            });
+        if last2.is_some() {
+            edges2.last_mut().unwrap().to = this_pckg.clone();
         }
         if first2.is_none() {
             first2 = Some(this_pckg.clone());
         }
         last2 = Some(this_pckg.clone());
-        if edges2.is_empty() {
-            edges2.push(DagEdge {
-                from: this_pckg.clone(),
-                to: this_pckg,
-            });
-        }
+        edges2.push(DagEdge {
+            from: this_pckg.clone(),
+            to: this_pckg,
+        });
 
         Ok((
             Dag {
-                vertices: vertices1,
                 edges: edges1,
                 first: first1.unwrap(),
                 last: last1.unwrap(),
             },
             Dag {
-                vertices: vertices2,
                 edges: edges2,
                 first: first2.unwrap(),
                 last: last2.unwrap(),
@@ -334,10 +317,69 @@ impl Dag {
 
         manifest_updated
     }
+
+    pub fn iter<'a>(&'a self) -> DagIterator<'a> {
+        DagIterator {
+            dag: self,
+            current_package: Some(self.first.clone()),
+        }
+    }
+
+    pub fn append_dag(&mut self, dag: Dag) {
+        let mut fst = Some(self.first.clone());
+        let mut lst = Some(self.last.clone());
+        do_append_dag(dag, &mut self.edges, &mut fst, &mut lst);
+        self.first = fst.unwrap();
+        self.last = lst.unwrap();
+    }
+
+    pub fn prepend_dag(&mut self, dag: Dag) {
+        do_prepend_dag(dag, &mut self.edges, &mut self.first);
+    }
 }
 
-fn do_prepend_dag(prepend_dag: Dag, vertices: &mut Vec<Rc<WhackPackage>>, edges: &mut Vec<DagEdge>, first: &mut Option<Rc<WhackPackage>>, last: &mut Option<Rc<WhackPackage>>) {
-    fixme();
+pub struct DagIterator<'a> {
+    dag: &'a Dag,
+    current_package: Option<Rc<WhackPackage>>,
+}
+
+impl<'a> Iterator for DagIterator<'a> {
+    type Item = Rc<WhackPackage>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(current_package) = self.current_package.clone() {
+            for edge in self.dag.edges.iter() {
+                if Rc::ptr_eq(&edge.from, &current_package) {
+                    if Rc::ptr_eq(&edge.to, &current_package) {
+                        self.current_package = None;
+                    } else {
+                        self.current_package = Some(edge.to.clone());
+                    }
+                    return Some(current_package);
+                }
+            }
+        }
+        None
+    }
+}
+
+fn do_append_dag(append_dag: Dag, edges: &mut Vec<DagEdge>, first: &mut Option<Rc<WhackPackage>>, last: &mut Option<Rc<WhackPackage>>) {
+    if first.is_none() {
+        *first = Some(append_dag.first.clone());
+    }
+    if last.is_some() {
+        edges.last_mut().unwrap().to = append_dag.first;
+    }
+    edges.extend(append_dag.edges.iter().cloned());
+    *last = Some(append_dag.last);
+}
+
+fn do_prepend_dag(mut prepend_dag: Dag, edges: &mut Vec<DagEdge>, first: &mut Rc<WhackPackage>) {
+    prepend_dag.edges.last_mut().unwrap().to = first.clone();
+    *first = prepend_dag.first;
+    for i in 0..prepend_dag.edges.len() {
+        edges.insert(i, prepend_dag.edges[i].clone());
+    }
 }
 
 #[derive(Clone)]
