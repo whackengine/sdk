@@ -74,6 +74,10 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     dag.prepend_dag(builtins_dag);
     build_script_dag.prepend_dag(builtins_build_script_dag);
 
+    // Filter out duplicate entries from `dag` and `build_script_dag` by
+    // reorganizing each of them.
+    fixme();
+
     // Check each dependency in ascending order for AS3 and MXML errors,
     // running the build script if required.
     // (REMEMBER to ignore .include.as files)
