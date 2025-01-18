@@ -10,6 +10,24 @@ impl DependencyUpdate {
         // TODO: detect version conflicts by reading the
         // `conflicting_dependencies_tracker` table.
 
-        fixme();
+        let mut deps = HashMap::<String, ManifestDependency>::new();
+        if let Some(deps1) = manifest.dependencies.as_ref() {
+            deps.extend(deps1.iter().map(|(k, v)| (k.clone(), v.clone())));
+        }
+        if let Some(deps1) = manifest.build_dependencies.as_ref() {
+            deps.extend(deps1.iter().map(|(k, v)| (k.clone(), v.clone())));
+        }
+        for (name, dep) in deps.iter() {
+            match dep {
+                ManifestDependency::Version(_ver) => {
+                    panic!("Registry dependencies are not implemented yet.");
+                },
+                ManifestDependency::Advanced { version: _, path, git, rev, branch } => {
+                    if path.is_none() {
+                        panic!("Registry or Git dependencies are not implemented yet.");
+                    }
+                },
+            }
+        }
     }
 }

@@ -85,7 +85,7 @@ impl Dag {
         // RunCacheFile, as well; writing new content to it.
         let mut manifest_last_modified = std::fs::metadata(&manifest_path).unwrap().modified().unwrap();
         let cur_relative_path = FlexPath::new_native(&entry_dir.to_str().unwrap()).relative(&dir.to_str().unwrap());
-        let manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path, run_cache_file, &manifest.dependencies, &manifest.build_dependencies, &flexdir, entry_dir);
+        let manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path, run_cache_file, manifest.dependencies.as_ref(), manifest.build_dependencies.as_ref(), &flexdir, entry_dir);
 
         // Contribute dependencies to the `conflicting_dependencies_tracker` table.
         let package_name: &String = &manifest.package.as_ref().unwrap().name;
@@ -93,11 +93,11 @@ impl Dag {
             conflicting_dependencies_tracker.insert(package_name.clone(), HashMap::new());
         }
         let mut tracker1 = conflicting_dependencies_tracker.get_mut(package_name).unwrap();
-        let deps = HashMap::<String, ManifestDependency>::new();
-        if let Some(deps1) = manifest.dependencies {
+        let mut deps = HashMap::<String, ManifestDependency>::new();
+        if let Some(deps1) = manifest.dependencies.as_ref() {
             deps.extend(deps1.iter().map(|(k, v)| (k.clone(), v.clone())));
         }
-        if let Some(deps1) = manifest.build_dependencies {
+        if let Some(deps1) = manifest.build_dependencies.as_ref() {
             deps.extend(deps1.iter().map(|(k, v)| (k.clone(), v.clone())));
         }
         for (name, dep) in deps.iter() {
@@ -162,7 +162,7 @@ impl Dag {
         std::process::exit(1);
     }
 
-    fn check_manifest_modified(manifest_last_modified: SystemTime, cur_relative_path: String, run_cache_file: &mut RunCacheFile, dependencies: &Option<HashMap<String, ManifestDependency>>, build_dependencies: &Option<HashMap<String, ManifestDependency>>, flexdir: &FlexPath, entry_dir: &PathBuf) -> bool {
+    fn check_manifest_modified(manifest_last_modified: SystemTime, cur_relative_path: String, run_cache_file: &mut RunCacheFile, dependencies: Option<&HashMap<String, ManifestDependency>>, build_dependencies: Option<&HashMap<String, ManifestDependency>>, flexdir: &FlexPath, entry_dir: &PathBuf) -> bool {
         let mut manifest_updated: bool = true;
         let mut found_run_cache = false;
         for p in run_cache_file.packages.iter_mut() {
@@ -208,7 +208,7 @@ impl Dag {
                                 if m.package.is_some() {
                                     let manifest_last_modified = std::fs::metadata(&local_dep_manifest_path).unwrap().modified().unwrap();
                                     let cur_relative_path = FlexPath::new_native(&entry_dir.to_str().unwrap()).relative(&local_dep_dir);
-                                    let local_dep_manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path, run_cache_file, &m.dependencies, &m.build_dependencies, &local_dep_flexdir, entry_dir);
+                                    let local_dep_manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path, run_cache_file, m.dependencies.as_ref(), m.build_dependencies.as_ref(), &local_dep_flexdir, entry_dir);
                                     manifest_updated = manifest_updated || local_dep_manifest_updated;
                                 }
                             },

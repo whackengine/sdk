@@ -14,6 +14,6 @@ In `DependencyUpdate::update_dependencies()`:
 
 - [ ] Check for duplicate. If an already downloaded version is compatible with the required version, then skip update.
 - [ ] Check for conflicting versions by reading the `conflicting_dependencies_tracker` table
-- [ ] Handle local dependencies (no need to symlink them as this has nothing to do with Node.js's `node_modules`)
+- [x] Handle local dependencies (no need to symlink them as this has nothing to do with Node.js's `node_modules`)
 - [ ] Download registry dependencies into the `target` directory
 - [ ] Download Git dependencies into the `target` directory
