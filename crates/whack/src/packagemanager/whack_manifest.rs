@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use semver::Version;
 use serde::{Serialize, Deserialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct WhackManifest {
     pub workspace: Option<WorkspaceManifest>,
     pub package: Option<PackageManifest>,
@@ -18,12 +18,12 @@ pub struct WhackManifest {
     pub define: Option<HashMap<String, toml::Value>>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct WorkspaceManifest {
     pub members: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct PackageManifest {
     pub name: String,
     pub version: Version,
@@ -42,19 +42,19 @@ pub struct PackageManifest {
     pub metadata: Option<toml::Value>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ManifestClientSide {
     #[serde(rename = "main-class")]
     pub main_class: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ManifestServerSide {
     #[serde(rename = "command-name")]
     pub command_name: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ManifestDependency {
     Version(Version),
@@ -67,7 +67,7 @@ pub enum ManifestDependency {
     },
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ManifestJscript {
     path: String,
     #[serde(rename = "import-declaration")]

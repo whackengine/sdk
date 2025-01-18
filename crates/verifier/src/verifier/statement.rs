@@ -142,6 +142,9 @@ impl StatementSubverifier {
             Directive::EnumDefinition(defn) => {
                 Self::verify_block(verifier, &defn.block);
             },
+            Directive::FunctionDefinition(defn) => {
+                Self::verify_fn_defn(verifier, stmt, defn);
+            },
             _ => {},
         }
     }
@@ -182,15 +185,17 @@ impl StatementSubverifier {
 
         let mut r_t = sig.result_type();
 
-        match r_t.promise_result_type(&host) {
-            Ok(Some(prom_r_t)) => {
-                r_t = prom_r_t;
-            },
-            Ok(None) => {},
-            Err(_) => {
-                verifier.add_verify_error(&retstmt.location, WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
-                return;
-            },
+        if act.of_method().is_async() {
+            match r_t.promise_result_type(&host) {
+                Ok(Some(prom_r_t)) => {
+                    r_t = prom_r_t;
+                },
+                Ok(None) => {},
+                Err(_) => {
+                    verifier.add_verify_error(&retstmt.location, WhackDiagnosticKind::ReachedMaximumCycles, diagarg![]);
+                    return;
+                },
+            }
         }
 
         if let Some(exp) = retstmt.expression.as_ref() {
@@ -356,5 +361,45 @@ impl StatementSubverifier {
         }
 
         Ok(None)
+    }
+
+    fn verify_fn_defn(verifier: &mut Subverifier, drtv: &Rc<Directive>, defn: &FunctionDefinition) {
+        match &defn.name {
+            FunctionName::Identifier(name) => Self::verify_any_fn_defn(verifier, drtv, defn, name),
+            FunctionName::Constructor(name) => Self::verify_any_fn_defn(verifier, drtv, defn, name),
+            FunctionName::Getter(name) => Self::verify_any_fn_defn(verifier, drtv, defn, name),
+            FunctionName::Setter(name) => Self::verify_any_fn_defn(verifier, drtv, defn, name),
+        }
+    }
+
+    fn verify_any_fn_defn(verifier: &mut Subverifier, drtv: &Rc<Directive>, defn: &FunctionDefinition, _name: &(String, Location)) {
+        // Retrieve method slot
+        let slot = verifier.host.node_mapping().get(drtv);
+
+        if slot.is_none() {
+            return;
+        }
+
+        let slot = slot.unwrap();
+
+        // Retrieve activation
+        let activation = slot.activation().unwrap();
+
+        // FunctionCommon
+        let common = defn.common.clone();
+
+        // Save scope
+        let kscope = verifier.scope();
+
+        // Definition partials
+        let partials = verifier.function_definition_partials.get(&NodeAsKey(common.clone())).unwrap();
+
+        // Enter scope
+        verifier.inherit_and_enter_scope(&activation);
+
+        FunctionCommonSubverifier::verify_function_definition_common_statements_only(verifier, &common, &partials);
+
+        // Restore scope
+        verifier.set_scope(&kscope);
     }
 }

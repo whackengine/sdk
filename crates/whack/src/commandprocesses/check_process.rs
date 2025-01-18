@@ -1,5 +1,8 @@
+use std::path::PathBuf;
+use std::str::FromStr;
 use crate::packagemanager::*;
-use colored::*;
+use hydroperfox_filepaths::FlexPath;
+use colored::Colorize;
 
 pub async fn check_process(matches: &clap::ArgMatches) {
     let builtins = matches.get_one::<std::path::PathBuf>("builtins");
@@ -8,11 +11,36 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     let dir = std::env::current_dir().unwrap();
 
     // Read lockfile
-    let lockfile_path = dir.join("whack.lock");
     let mut lockfile: Option<WhackLockfile> = None;
-    if std::fs::exists(&lockfile_path).unwrap() && std::fs::metadata(&lockfile_path).unwrap().is_file() {
-        lockfile = toml::from_str::<WhackLockfile>(&std::fs::read_to_string(&lockfile_path).unwrap()).ok();
+    let mut dir = FlexPath::new_native(dir.to_str().unwrap());
+    let mut found_base_manifest = false;
+    loop {
+        let manifest_path = PathBuf::from_str(&dir.resolve("whack.toml").to_string_with_flex_separator()).unwrap();
+
+        if std::fs::exists(&manifest_path).unwrap() && std::fs::metadata(&manifest_path).unwrap().is_file() {
+            found_base_manifest = true;
+
+            let lockfile_path = PathBuf::from_str(&dir.resolve("whack.lock").to_string_with_flex_separator()).unwrap();
+            if std::fs::exists(&lockfile_path).unwrap() && std::fs::metadata(&lockfile_path).unwrap().is_file() {
+                lockfile = toml::from_str::<WhackLockfile>(&std::fs::read_to_string(&lockfile_path).unwrap()).ok();
+            }
+
+            break;
+        }
+
+        // Look up
+        let mut next_dir = dir.resolve("..");
+        if dir == next_dir || dir.to_string().is_empty() {
+            break;
+        }
     }
+
+    if !found_base_manifest {
+        println!("{} Currently not inside a Whack project.", "Error:".red());
+        std::process::exit(1);
+    }
+
+    let dir = PathBuf::from_str(&dir.to_string_with_flex_separator()).unwrap();
 
     // Process directed acyclic graph
     let dag = match Dag::retrieve(&dir, &dir, package.cloned(), lockfile.as_mut()).await {
