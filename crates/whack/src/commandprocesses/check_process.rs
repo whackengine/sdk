@@ -65,7 +65,7 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     let mut conflicting_dependencies_tracker = HashMap::<String, HashMap<String, Version>>::new();
 
     // Process directed acyclic graph
-    let dag = match Dag::retrieve(&dir, &dir, package.cloned(), lockfile.as_mut(), &mut run_cache_file, &mut conflicting_dependencies_tracker).await {
+    let (dag, build_script_dag) = match Dag::retrieve(&dir, &dir, package.cloned(), lockfile.as_mut(), &mut run_cache_file, &mut conflicting_dependencies_tracker).await {
         Ok(dag) => dag,
         Err(error) => {
             match error {
@@ -81,7 +81,7 @@ pub async fn check_process(matches: &clap::ArgMatches) {
         },
     };
 
-    // Check the built-ins first
+    // Check the built-ins first (process their Whack package and combine their DAG with each of the above DAGs)
     fixme();
 
     // Check each dependency in ascending order for AS3 and MXML errors,
