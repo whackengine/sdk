@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
 use crate::packagemanager::*;
-use hydroperfox_filepaths::FlexPath;
 use colored::Colorize;
 use semver::Version;
 
@@ -15,29 +14,7 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     let dir = std::env::current_dir().unwrap();
 
     // Detect entry point directory and read lockfile
-    let mut dir = FlexPath::new_native(dir.to_str().unwrap());
-    let mut lockfile: Option<WhackLockfile> = None;
-    let lockfile_path = PathBuf::from_str(&dir.resolve("whack.lock").to_string_with_flex_separator()).unwrap();
-    let mut found_base_manifest = false;
-    loop {
-        let manifest_path = PathBuf::from_str(&dir.resolve("whack.toml").to_string_with_flex_separator()).unwrap();
-
-        if std::fs::exists(&manifest_path).unwrap() && std::fs::metadata(&manifest_path).unwrap().is_file() {
-            found_base_manifest = true;
-
-            if std::fs::exists(&lockfile_path).unwrap() && std::fs::metadata(&lockfile_path).unwrap().is_file() {
-                lockfile = toml::from_str::<WhackLockfile>(&std::fs::read_to_string(&lockfile_path).unwrap()).ok();
-            }
-
-            break;
-        }
-
-        // Look up
-        let mut next_dir = dir.resolve("..");
-        if dir == next_dir || dir.to_string().is_empty() {
-            break;
-        }
-    }
+    let (dir, mut lockfile, lockfile_path, found_base_manifest) = CommandProcessCommons::entry_point_lookup(&dir);
 
     if !found_base_manifest {
         println!("{} Currently not inside a Whack project.", "Error:".red());
@@ -77,11 +54,8 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     // Package internator
     let mut package_internator = WhackPackageInternator::new();
 
-    // Cycle prevention list (vector of package absolute paths)
-    let mut cycle_prevention_list = Vec::<PathBuf>::new();
-
     // Process directed acyclic graph
-    let (mut dag, mut build_script_dag) = match Dag::retrieve(dir.clone(), &dir, package.cloned(), &mut lockfile, &mut run_cache_file, &mut conflicting_dependencies_tracker, &mut package_internator, cycle_prevention_list).await {
+    let (mut dag, mut build_script_dag) = match Dag::retrieve(dir.clone(), &dir, package.cloned(), &mut lockfile, &mut run_cache_file, &mut conflicting_dependencies_tracker, &mut package_internator, vec![]).await {
         Ok(dag) => dag,
         Err(error) => {
             CommandProcessCommons::print_package_processing_error(error);
@@ -90,7 +64,7 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     };
 
     // Process the built-ins as well.
-    let (builtins_dag, builtins_build_script_dag) = match Dag::retrieve(dir.clone(), &dir, package.cloned(), &mut lockfile, &mut run_cache_file, &mut conflicting_dependencies_tracker, &mut package_internator, cycle_prevention_list).await {
+    let (builtins_dag, builtins_build_script_dag) = match Dag::retrieve(builtins, &dir, package.cloned(), &mut lockfile, &mut run_cache_file, &mut conflicting_dependencies_tracker, &mut package_internator, vec![]).await {
         Ok(dag) => dag,
         Err(error) => {
             CommandProcessCommons::print_package_processing_error(error);
