@@ -1,5 +1,11 @@
 # Package manager
 
+## Build scripts
+
+For build scripts to run, it is first necessary to have the language tooling working well.
+
+- [ ] Implemented
+
 ## Package last modified/"build script is run?" cache file
 
 This cache file, referred to as just "run cache file" (`target/.run-cache.toml`), is stored inside the `target` directory for determining whether a package needs to be updated or not and wether a package's build script has been run or not.

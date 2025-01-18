@@ -120,66 +120,128 @@ impl Dag {
         // Remember that the lock file must be considered for the
         // exact versions of registry dependencies.
         if manifest_updated {
-            DependencyUpdate::update_dependencies(entry_dir, &manifest, run_cache_file, conflicting_dependencies_tracker, lockfile).await?;
+            Box::pin(DependencyUpdate::update_dependencies(entry_dir, &manifest, run_cache_file, conflicting_dependencies_tracker, lockfile)).await?;
         }
 
         // Build a directed acyclic graph (DAG) of the dependencies:
         // one for the project's dependencies and one for the
         // build script's dependencies.
-        let mut dags: Vec<Dag> = vec![];
-        for deps in [manifest.dependencies.as_ref(), manifest.build_dependencies.as_ref()] {
-            let mut vertices: Vec<Rc<WhackPackage>> = vec![];
-            let mut edges: Vec<DagEdge> = vec![];
-            let mut first: Option<Rc<WhackPackage>> = None;
-            let mut last: Option<Rc<WhackPackage>> = None;
+        let mut vertices1: Vec<Rc<WhackPackage>> = vec![];
+        let mut edges1: Vec<DagEdge> = vec![];
+        let mut first1: Option<Rc<WhackPackage>> = None;
+        let mut last1: Option<Rc<WhackPackage>> = None;
 
-            let mut next_cycle_prevention_list = cycle_prevention_list.clone();
-            next_cycle_prevention_list.push(dir.clone());
+        // build script parts
+        let mut vertices2: Vec<Rc<WhackPackage>> = vec![];
+        let mut edges2: Vec<DagEdge> = vec![];
+        let mut first2: Option<Rc<WhackPackage>> = None;
+        let mut last2: Option<Rc<WhackPackage>> = None;
 
-            if let Some(deps) = deps {
-                for (dep_name, dep) in deps.iter() {
-                    match dep {
-                        ManifestDependency::Version(version) => {
-                            let next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
-                            let prepend_dag = Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list).await?;
-                            fixme();
-                        },
-                        ManifestDependency::Advanced { path, git, .. } => {
-                            fixme();
-                        },
-                    }
+        let mut next_cycle_prevention_list = cycle_prevention_list.clone();
+        next_cycle_prevention_list.push(dir.clone());
+
+        if let Some(deps) = manifest.dependencies.as_ref() {
+            for (dep_name, dep) in deps.iter() {
+                match dep {
+                    ManifestDependency::Version(_) => {
+                        let next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
+                        let (prepend_dag_1, prepend_dag_2) = Box::pin(Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list.clone())).await?;
+                        do_prepend_dag(prepend_dag_1, &mut vertices1, &mut edges1, &mut first1, &mut last1);
+                        do_prepend_dag(prepend_dag_2, &mut vertices2, &mut edges2, &mut first2, &mut last2);
+                    },
+                    ManifestDependency::Advanced { path, .. } => {
+                        let next_dir: PathBuf;
+                        if let Some(path) = path {
+                            next_dir = PathBuf::from_str(&FlexPath::from_n_native([dir.to_str().unwrap(), path]).to_string_with_flex_separator()).unwrap();
+                        } else {
+                            next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
+                        }
+                        let (prepend_dag_1, prepend_dag_2) = Box::pin(Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list.clone())).await?;
+                        do_prepend_dag(prepend_dag_1, &mut vertices1, &mut edges1, &mut first1, &mut last1);
+                        do_prepend_dag(prepend_dag_2, &mut vertices2, &mut edges2, &mut first2, &mut last2);
+                    },
                 }
             }
+        }
 
-            let this_pckg = package_internator.intern(&dir, &cur_relative_path, &manifest);
-            vertices.push(this_pckg.clone());
-            if let Some(semilast) = last {
-                edges.push(DagEdge {
-                    from: semilast,
-                    to: this_pckg.clone(),
-                });
+        if let Some(deps) = manifest.build_dependencies.as_ref() {
+            for (dep_name, dep) in deps.iter() {
+                match dep {
+                    ManifestDependency::Version(_version) => {
+                        let next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
+                        let (prepend_dag_1, prepend_dag_2) = Box::pin(Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list.clone())).await?;
+                        do_prepend_dag(prepend_dag_1, &mut vertices1, &mut edges1, &mut first1, &mut last1);
+                        do_prepend_dag(prepend_dag_2, &mut vertices2, &mut edges2, &mut first2, &mut last2);
+                    },
+                    ManifestDependency::Advanced { path, .. } => {
+                        let next_dir: PathBuf;
+                        if let Some(path) = path {
+                            next_dir = PathBuf::from_str(&FlexPath::from_n_native([dir.to_str().unwrap(), path]).to_string_with_flex_separator()).unwrap();
+                        } else {
+                            next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
+                        }
+                        let (prepend_dag_1, prepend_dag_2) = Box::pin(Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list.clone())).await?;
+                        do_prepend_dag(prepend_dag_1, &mut vertices1, &mut edges1, &mut first1, &mut last1);
+                        do_prepend_dag(prepend_dag_2, &mut vertices2, &mut edges2, &mut first2, &mut last2);
+                    },
+                }
             }
-            if first.is_none() {
-                first = Some(this_pckg.clone());
-            }
-            last = Some(this_pckg.clone());
-            if edges.is_empty() {
-                edges.push(DagEdge {
-                    from: this_pckg.clone(),
-                    to: this_pckg,
-                });
-            }
+        }
 
-            dags.push(Dag {
-                vertices,
-                edges,
-                first: first.unwrap(),
-                last: last.unwrap(),
+        let this_pckg = package_internator.intern(&dir, &cur_relative_path, &manifest);
+
+        // 1 (not build script)
+        vertices1.push(this_pckg.clone());
+        if let Some(semilast) = last1 {
+            edges1.push(DagEdge {
+                from: semilast,
+                to: this_pckg.clone(),
+            });
+        }
+        if first1.is_none() {
+            first1 = Some(this_pckg.clone());
+        }
+        last1 = Some(this_pckg.clone());
+        if edges1.is_empty() {
+            edges1.push(DagEdge {
+                from: this_pckg.clone(),
+                to: this_pckg.clone(),
             });
         }
 
-        // Return result
-        Ok((dags[0].clone(), dags[1].clone()))
+        // 2 (build script)
+        vertices2.push(this_pckg.clone());
+        if let Some(semilast) = last2 {
+            edges2.push(DagEdge {
+                from: semilast,
+                to: this_pckg.clone(),
+            });
+        }
+        if first2.is_none() {
+            first2 = Some(this_pckg.clone());
+        }
+        last2 = Some(this_pckg.clone());
+        if edges2.is_empty() {
+            edges2.push(DagEdge {
+                from: this_pckg.clone(),
+                to: this_pckg,
+            });
+        }
+
+        Ok((
+            Dag {
+                vertices: vertices1,
+                edges: edges1,
+                first: first1.unwrap(),
+                last: last1.unwrap(),
+            },
+            Dag {
+                vertices: vertices2,
+                edges: edges2,
+                first: first2.unwrap(),
+                last: last2.unwrap(),
+            }
+        ))
     }
 
     fn move_into_workspace_member(flexdir: &FlexPath, package: &str, members: &Vec<String>) -> (PathBuf, PathBuf, WhackManifest) {
@@ -272,6 +334,10 @@ impl Dag {
 
         manifest_updated
     }
+}
+
+fn do_prepend_dag(prepend_dag: Dag, vertices: &mut Vec<Rc<WhackPackage>>, edges: &mut Vec<DagEdge>, first: &mut Option<Rc<WhackPackage>>, last: &mut Option<Rc<WhackPackage>>) {
+    fixme();
 }
 
 #[derive(Clone)]

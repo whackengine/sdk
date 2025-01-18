@@ -7,7 +7,7 @@ use colored::Colorize;
 use semver::Version;
 
 pub async fn check_process(matches: &clap::ArgMatches) {
-    let builtins = matches.get_one::<std::path::PathBuf>("builtins");
+    let builtins = matches.get_one::<std::path::PathBuf>("builtins").cloned().unwrap_or(PathBuf::from_str("../builtins/packages/whack.base").unwrap());
     let package = matches.get_one::<String>("package");
 
     let dir = std::env::current_dir().unwrap();
