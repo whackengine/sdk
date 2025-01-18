@@ -2,6 +2,7 @@ use std::{path::PathBuf, str::FromStr};
 use crate::packagemanager::*;
 use colored::Colorize;
 use hydroperfox_filepaths::FlexPath;
+use whackengine_verifier::ns::*;
 
 pub struct CommandProcessCommons;
 
@@ -59,6 +60,76 @@ impl CommandProcessCommons {
             WhackPackageProcessingError::IllegalPackageName { name } => {
                 println!("{} Found illegal package name: {}", "Error:".red(), name);
             },
+            WhackPackageProcessingError::FileNotFound { path } => {
+                println!("{} File not found: {}", "Error:".red(), path);
+            },
+            WhackPackageProcessingError::UnrecognizedSourceFileExtension { path } => {
+                println!("{} Unrecognized source file extension at: {}", "Error:".red(), path);
+            },
         }
     }
+
+    pub fn recurse_source_files(path: &PathBuf) -> Result<Vec<Rc<CompilationUnit>>, WhackPackageProcessingError> {
+        if !std::fs::exists(path).unwrap() {
+            return Err(WhackPackageProcessingError::FileNotFound {
+                path: path.to_str().unwrap().to_owned(),
+            });
+        }
+        let m = std::fs::metadata(path).unwrap();
+        if m.is_file() {
+            let flexpath = FlexPath::new_native(path.to_str().unwrap());
+            if !flexpath.has_extensions([".as", ".mxml"]) {
+                return Err(WhackPackageProcessingError::UnrecognizedSourceFileExtension {
+                    path: path.to_str().unwrap().to_owned(),
+                });
+            }
+            let text = std::fs::read_to_string(path).unwrap();
+            return Ok(vec![CompilationUnit::new(Some(path.canonicalize().unwrap().to_str().unwrap().to_owned()), text)]);
+        }
+        if m.is_dir() {
+            let mut r: Vec<Rc<CompilationUnit>> = vec![];
+            for filename in std::fs::read_dir(path).unwrap() {
+                let subpath = filename.unwrap().path();
+                let m = std::fs::metadata(&subpath).unwrap();
+                if m.is_dir() {
+                    r.extend(CommandProcessCommons::recurse_source_files(&subpath)?);
+                    continue;
+                }
+                if subpath.ends_with(".include.as") {
+                    continue;
+                }
+                if subpath.ends_with(".as") || subpath.ends_with(".mxml") {
+                    let text = std::fs::read_to_string(&subpath).unwrap();
+                    r.push(CompilationUnit::new(Some(subpath.canonicalize().unwrap().to_str().unwrap().to_owned()), text));
+                }
+            }
+            return Ok(r);
+        }
+        Ok(vec![])
+    }
+}
+
+pub enum WhackPackageProcessingError {
+    ManifestNotFound,
+    PackageMustBeSpecified,
+    CircularDependency {
+        directory: String,
+    },
+    InvalidManifest {
+        manifest_path: String,
+        message: String,
+    },
+    UnspecifiedWorkspaceMember,
+    ManifestIsNotAPackage {
+        manifest_path: String,
+    },
+    IllegalPackageName {
+        name: String,
+    },
+    FileNotFound {
+        path: String,
+    },
+    UnrecognizedSourceFileExtension {
+        path: String
+    },
 }

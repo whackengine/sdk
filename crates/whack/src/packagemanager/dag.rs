@@ -387,22 +387,3 @@ pub struct DagEdge {
     pub from: Rc<WhackPackage>,
     pub to: Rc<WhackPackage>,
 }
-
-pub enum WhackPackageProcessingError {
-    ManifestNotFound,
-    PackageMustBeSpecified,
-    CircularDependency {
-        directory: String,
-    },
-    InvalidManifest {
-        manifest_path: String,
-        message: String,
-    },
-    UnspecifiedWorkspaceMember,
-    ManifestIsNotAPackage {
-        manifest_path: String,
-    },
-    IllegalPackageName {
-        name: String,
-    },
-}
