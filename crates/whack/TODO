@@ -7,3 +7,15 @@ This cache file, referred to as just "run cache file" (`target/.run-cache.toml`)
 - [ ] Empty a specific package's data from this file if it is
   - [ ] upgraded or
   - [ ] removed
+
+## Update dependencies
+
+In `DependencyUpdate::update_dependencies()`:
+
+- [ ] Check for conflicting versions using the `conflicting_dependencies_tracker` table
+- [ ] Symlink local dependencies into the `target` directory
+  - [ ] After that, contribute to the `conflicting_dependencies_tracker` table
+- [ ] Download registry dependencies into the `target` directory
+  - [ ] After that, contribute to the `conflicting_dependencies_tracker` table
+- [ ] Download Git dependencies into the `target` directory
+  - [ ] After that, contribute to the `conflicting_dependencies_tracker` table

@@ -12,3 +12,6 @@ pub use run_cache_file::*;
 
 mod dag;
 pub use dag::*;
+
+mod dependency_update;
+pub use dependency_update::*;

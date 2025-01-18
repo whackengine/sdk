@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
 use crate::packagemanager::*;
 use hydroperfox_filepaths::FlexPath;
 use colored::Colorize;
+use semver::Version;
 
 pub async fn check_process(matches: &clap::ArgMatches) {
     let builtins = matches.get_one::<std::path::PathBuf>("builtins");
@@ -40,6 +42,9 @@ pub async fn check_process(matches: &clap::ArgMatches) {
         std::process::exit(1);
     }
 
+    // Target path
+    let target_path = PathBuf::from_str(&dir.resolve("target").to_string_with_flex_separator()).unwrap();
+
     // Read the run cache file
     let mut run_cache_file: Option<RunCacheFile> = None;
     let run_cache_path = PathBuf::from_str(&dir.resolve("target/.run-cache.toml").to_string_with_flex_separator()).unwrap();
@@ -53,10 +58,14 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     }
     let mut run_cache_file = run_cache_file.unwrap();
 
+    // Entry point directory
     let dir = PathBuf::from_str(&dir.to_string_with_flex_separator()).unwrap();
 
+    // Conflicting dependencies tracker
+    let mut conflicting_dependencies_tracker = HashMap::<String, HashMap<String, Version>>::new();
+
     // Process directed acyclic graph
-    let dag = match Dag::retrieve(&dir, &dir, package.cloned(), lockfile.as_mut(), &mut run_cache_file).await {
+    let dag = match Dag::retrieve(&dir, &dir, package.cloned(), lockfile.as_mut(), &mut run_cache_file, &mut conflicting_dependencies_tracker).await {
         Ok(dag) => dag,
         Err(error) => {
             match error {
@@ -79,4 +88,8 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     // running the build script if required.
     // (REMEMBER to ignore .include.as files)
     fixme();
+
+    // Write to the run cache file
+    std::fs::create_dir_all(&target_path).unwrap();
+    std::fs::write(&run_cache_path, toml::to_string::<RunCacheFile>(&run_cache_file).unwrap()).unwrap();
 }

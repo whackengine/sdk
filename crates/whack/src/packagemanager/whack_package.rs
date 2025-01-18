@@ -1,10 +1,13 @@
 use std::path::PathBuf;
 use std::rc::Rc;
 use whackengine_verifier::ns::{CompilationUnit, Mxml, Program, SharedArray};
+use crate::packagemanager::*;
 
 pub struct WhackPackage {
-    /// Physical path relative to the entry path.
+    /// Physical path relative to the entry point path.
     pub path: PathBuf,
+    /// The manifest file representing the package.
+    pub manifest: WhackManifest,
     /// List of ActionScript sources.
     pub sources: SharedArray<WhackSource>,
     /// List of ActionScript build script sources.

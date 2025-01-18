@@ -6,6 +6,7 @@ use std::time::{Duration, SystemTime};
 use crate::packagemanager::*;
 use hydroperfox_filepaths::FlexPath;
 use colored::Colorize;
+use semver::Version;
 
 /// Directed acyclic graph of the dependency tree.
 pub struct Dag {
@@ -22,7 +23,7 @@ impl Dag {
     /// 
     /// - `entry_dir` - The directory where the entry point "whack.toml" file lies and where
     ///   the "target" directory is stored.
-    pub async fn retrieve(mut dir: &PathBuf, entry_dir: &PathBuf, mut package: Option<String>, mut lockfile: Option<&mut WhackLockfile>, run_cache_file: &mut RunCacheFile) -> Result<(Dag, Dag), DagError> {
+    pub async fn retrieve(mut dir: &PathBuf, entry_dir: &PathBuf, mut package: Option<String>, mut lockfile: Option<&mut WhackLockfile>, run_cache_file: &mut RunCacheFile, conflicting_dependencies_tracker: &mut HashMap<String, HashMap<String, Version>>) -> Result<(Dag, Dag), DagError> {
         let mut manifest: Option<WhackManifest> = None;
 
         // Read the Whack manifest
@@ -88,11 +89,11 @@ impl Dag {
 
         // If the manifest has been updated,
         // either in the entry package or in another local package,
-        // update dependencies and clear up the build script's artifacts.
+        // update dependencies and clear up their run cache files.
         // Remember that the lock file must be considered for the
         // exact versions of registry dependencies.
         if manifest_updated {
-            fixme();
+            DependencyUpdate::update_dependencies(entry_dir, &manifest, run_cache_file, conflicting_dependencies_tracker).await;
         }
 
         // Build a directed acyclic graph (DAG) of the dependencies:
