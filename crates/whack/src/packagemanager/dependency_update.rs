@@ -2,6 +2,7 @@ use std::{collections::HashMap, path::PathBuf};
 use colored::Colorize;
 use lazy_regex::regex_is_match;
 use semver::Version;
+use crate::commandprocesses::WhackPackageProcessingError;
 use crate::packagemanager::*;
 
 pub struct DependencyUpdate;

@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 use crate::packagemanager::*;
+use crate::commandprocesses::WhackPackageProcessingError;
 use hydroperfox_filepaths::FlexPath;
 use colored::Colorize;
 use semver::Version;
