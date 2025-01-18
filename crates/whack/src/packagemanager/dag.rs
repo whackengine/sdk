@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -83,14 +84,14 @@ impl Dag {
         // RunCacheFile, as well; writing new content to it.
         let mut manifest_last_modified = std::fs::metadata(&manifest_path).unwrap().modified().unwrap();
         let cur_relative_path = FlexPath::new_native(&entry_dir.to_str().unwrap()).relative(&dir.to_str().unwrap());
-        let manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path, run_cache_file);
+        let manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path, run_cache_file, &manifest.dependencies, &flexdir, entry_dir);
 
         // If the manifest has been updated,
         // either in the entry package or in another local package,
         // update dependencies and clear up the build script's artifacts.
         // Remember that the lock file must be considered for the
         // exact versions of registry dependencies.
-        if manifest_updated || manifest_updated_in_another_local_package {
+        if manifest_updated {
             fixme();
         }
 
@@ -134,7 +135,7 @@ impl Dag {
         std::process::exit(1);
     }
 
-    fn check_manifest_modified(manifest_last_modified: SystemTime, cur_relative_path: String, run_cache_file: &mut RunCacheFile) -> bool {
+    fn check_manifest_modified(manifest_last_modified: SystemTime, cur_relative_path: String, run_cache_file: &mut RunCacheFile, dependencies: &Option<HashMap<String, ManifestDependency>>, flexdir: &FlexPath, entry_dir: &PathBuf) -> bool {
         let mut manifest_updated: bool = true;
         let mut found_run_cache = false;
         for p in run_cache_file.packages.iter_mut() {
@@ -157,6 +158,33 @@ impl Dag {
                 manifest_last_modified: manifest_last_modified.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs(),
                 build_script_run: false,
             });
+        }
+
+        // Check in local dependencies
+        if let Some(deps) = dependencies {
+            for (_, dep) in deps.iter() {
+                if let ManifestDependency::Advanced { ref path, .. } = dep {
+                    if let Some(path) = path {
+                        let local_dep_flexdir = flexdir.resolve(path);
+                        let local_dep_dir = local_dep_flexdir.to_string_with_flex_separator();
+                        let local_dep_manifest_path = flexdir.resolve_n([path, "whack.toml"]).to_string_with_flex_separator();
+                        if std::fs::exists(&local_dep_manifest_path).unwrap() && std::fs::metadata(&local_dep_manifest_path).unwrap().is_file() {
+                            let contents = std::fs::read_to_string(&local_dep_manifest_path).unwrap();
+                            match toml::from_str::<WhackManifest>(&contents) {
+                                Ok(m) => {
+                                    if m.package.is_some() {
+                                        let manifest_last_modified = std::fs::metadata(&local_dep_manifest_path).unwrap().modified().unwrap();
+                                        let cur_relative_path = FlexPath::new_native(&entry_dir.to_str().unwrap()).relative(&local_dep_dir);
+                                        let local_dep_manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path, run_cache_file, &m.dependencies, &local_dep_flexdir, entry_dir);
+                                        manifest_updated = manifest_updated || local_dep_manifest_updated;
+                                    }
+                                },
+                                _ => {},
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         manifest_updated
