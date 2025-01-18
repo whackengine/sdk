@@ -40,10 +40,17 @@ pub async fn check_process(matches: &clap::ArgMatches) {
         std::process::exit(1);
     }
 
+    // Read the run cache file
+    let mut run_cache_file: Option<RunCacheFile> = None;
+    let run_cache_path = PathBuf::from_str(&dir.resolve("target/.run-cache.toml").to_string_with_flex_separator()).unwrap();
+    if std::fs::exists(&run_cache_path).unwrap() && std::fs::metadata(&run_cache_path).unwrap().is_file() {
+        run_cache_file = Some(toml::from_str::<RunCacheFile>(&std::fs::read_to_string(&run_cache_path).unwrap()).unwrap());
+    }
+
     let dir = PathBuf::from_str(&dir.to_string_with_flex_separator()).unwrap();
 
     // Process directed acyclic graph
-    let dag = match Dag::retrieve(&dir, &dir, package.cloned(), lockfile.as_mut()).await {
+    let dag = match Dag::retrieve(&dir, &dir, package.cloned(), lockfile.as_mut(), &mut run_cache_file).await {
         Ok(dag) => dag,
         Err(error) => {
             match error {

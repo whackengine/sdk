@@ -7,5 +7,8 @@ pub use whack_lockfile::*;
 mod whack_package;
 pub use whack_package::*;
 
+mod run_cache_file;
+pub use run_cache_file::*;
+
 mod dag;
 pub use dag::*;

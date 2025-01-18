@@ -15,7 +15,12 @@ pub struct Dag {
 
 impl Dag {
     /// Retrieves the directed acyclic graph of the dependency tree.
-    pub async fn retrieve(mut dir: &PathBuf, entry_dir: &PathBuf, mut package: Option<String>, mut lockfile: Option<&mut WhackLockfile>) -> Result<(Dag, Dag), DagError> {
+    ///
+    /// # Parameters
+    /// 
+    /// - `entry_dir` - The directory where the entry point "whack.toml" file lies and where
+    ///   the "target" directory is stored.
+    pub async fn retrieve(mut dir: &PathBuf, entry_dir: &PathBuf, mut package: Option<String>, mut lockfile: Option<&mut WhackLockfile>, run_cache_file: &mut Option<RunCacheFile>) -> Result<(Dag, Dag), DagError> {
         let mut manifest: Option<WhackManifest> = None;
 
         // Read the Whack manifest
@@ -72,7 +77,8 @@ impl Dag {
             std::process::exit(1);
         }
 
-        // Check for manifest updates.
+        // Check for manifest updates (check the RunCacheFile). Mutate the
+        // RunCacheFile, as well; writing new content to it.
         fixme();
 
         // If the manifest has been updated,
