@@ -85,7 +85,33 @@ impl Dag {
         // RunCacheFile, as well; writing new content to it.
         let mut manifest_last_modified = std::fs::metadata(&manifest_path).unwrap().modified().unwrap();
         let cur_relative_path = FlexPath::new_native(&entry_dir.to_str().unwrap()).relative(&dir.to_str().unwrap());
-        let manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path, run_cache_file, &manifest.dependencies, &flexdir, entry_dir);
+        let manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path, run_cache_file, &manifest.dependencies, &manifest.build_dependencies, &flexdir, entry_dir);
+
+        // Contribute dependencies to the `conflicting_dependencies_tracker` table.
+        let package_name: &String = &manifest.package.as_ref().unwrap().name;
+        if conflicting_dependencies_tracker.get(package_name).is_none() {
+            conflicting_dependencies_tracker.insert(package_name.clone(), HashMap::new());
+        }
+        let mut tracker1 = conflicting_dependencies_tracker.get_mut(package_name).unwrap();
+        let deps = HashMap::<String, ManifestDependency>::new();
+        if let Some(deps1) = manifest.dependencies {
+            deps.extend(deps1.iter().map(|(k, v)| (k.clone(), v.clone())));
+        }
+        if let Some(deps1) = manifest.build_dependencies {
+            deps.extend(deps1.iter().map(|(k, v)| (k.clone(), v.clone())));
+        }
+        for (name, dep) in deps.iter() {
+            match dep {
+                ManifestDependency::Version(ver) => {
+                    tracker1.insert(name.clone(), ver.clone());
+                },
+                ManifestDependency::Advanced { version, .. } => {
+                    if let Some(version) = version {
+                        tracker1.insert(name.clone(), version.clone());
+                    }
+                },
+            }
+        }
 
         // If the manifest has been updated,
         // either in the entry package or in another local package,
@@ -136,7 +162,7 @@ impl Dag {
         std::process::exit(1);
     }
 
-    fn check_manifest_modified(manifest_last_modified: SystemTime, cur_relative_path: String, run_cache_file: &mut RunCacheFile, dependencies: &Option<HashMap<String, ManifestDependency>>, flexdir: &FlexPath, entry_dir: &PathBuf) -> bool {
+    fn check_manifest_modified(manifest_last_modified: SystemTime, cur_relative_path: String, run_cache_file: &mut RunCacheFile, dependencies: &Option<HashMap<String, ManifestDependency>>, build_dependencies: &Option<HashMap<String, ManifestDependency>>, flexdir: &FlexPath, entry_dir: &PathBuf) -> bool {
         let mut manifest_updated: bool = true;
         let mut found_run_cache = false;
         for p in run_cache_file.packages.iter_mut() {
@@ -162,26 +188,31 @@ impl Dag {
         }
 
         // Check in local dependencies
-        if let Some(deps) = dependencies {
-            for (_, dep) in deps.iter() {
-                if let ManifestDependency::Advanced { ref path, .. } = dep {
-                    if let Some(path) = path {
-                        let local_dep_flexdir = flexdir.resolve(path);
-                        let local_dep_dir = local_dep_flexdir.to_string_with_flex_separator();
-                        let local_dep_manifest_path = flexdir.resolve_n([path, "whack.toml"]).to_string_with_flex_separator();
-                        if std::fs::exists(&local_dep_manifest_path).unwrap() && std::fs::metadata(&local_dep_manifest_path).unwrap().is_file() {
-                            let contents = std::fs::read_to_string(&local_dep_manifest_path).unwrap();
-                            match toml::from_str::<WhackManifest>(&contents) {
-                                Ok(m) => {
-                                    if m.package.is_some() {
-                                        let manifest_last_modified = std::fs::metadata(&local_dep_manifest_path).unwrap().modified().unwrap();
-                                        let cur_relative_path = FlexPath::new_native(&entry_dir.to_str().unwrap()).relative(&local_dep_dir);
-                                        let local_dep_manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path, run_cache_file, &m.dependencies, &local_dep_flexdir, entry_dir);
-                                        manifest_updated = manifest_updated || local_dep_manifest_updated;
-                                    }
-                                },
-                                _ => {},
-                            }
+        let mut deps = HashMap::<String, ManifestDependency>::new();
+        if let Some(deps1) = dependencies {
+            deps.extend(deps1.iter().map(|(k, v)| (k.clone(), v.clone())));
+        }
+        if let Some(deps1) = build_dependencies {
+            deps.extend(deps1.iter().map(|(k, v)| (k.clone(), v.clone())));
+        }
+        for (_, dep) in deps.iter() {
+            if let ManifestDependency::Advanced { ref path, .. } = dep {
+                if let Some(path) = path {
+                    let local_dep_flexdir = flexdir.resolve(path);
+                    let local_dep_dir = local_dep_flexdir.to_string_with_flex_separator();
+                    let local_dep_manifest_path = flexdir.resolve_n([path, "whack.toml"]).to_string_with_flex_separator();
+                    if std::fs::exists(&local_dep_manifest_path).unwrap() && std::fs::metadata(&local_dep_manifest_path).unwrap().is_file() {
+                        let contents = std::fs::read_to_string(&local_dep_manifest_path).unwrap();
+                        match toml::from_str::<WhackManifest>(&contents) {
+                            Ok(m) => {
+                                if m.package.is_some() {
+                                    let manifest_last_modified = std::fs::metadata(&local_dep_manifest_path).unwrap().modified().unwrap();
+                                    let cur_relative_path = FlexPath::new_native(&entry_dir.to_str().unwrap()).relative(&local_dep_dir);
+                                    let local_dep_manifest_updated = Dag::check_manifest_modified(manifest_last_modified, cur_relative_path, run_cache_file, &m.dependencies, &m.build_dependencies, &local_dep_flexdir, entry_dir);
+                                    manifest_updated = manifest_updated || local_dep_manifest_updated;
+                                }
+                            },
+                            _ => {},
                         }
                     }
                 }

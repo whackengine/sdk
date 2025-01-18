@@ -12,10 +12,8 @@ This cache file, referred to as just "run cache file" (`target/.run-cache.toml`)
 
 In `DependencyUpdate::update_dependencies()`:
 
-- [ ] Check for conflicting versions using the `conflicting_dependencies_tracker` table
-- [ ] Symlink local dependencies into the `target` directory
-  - [ ] After that, contribute to the `conflicting_dependencies_tracker` table
+- [ ] Check for duplicate. If an already downloaded version is compatible with the required version, then skip update.
+- [ ] Check for conflicting versions by reading the `conflicting_dependencies_tracker` table
+- [ ] Handle local dependencies (no need to symlink them as this has nothing to do with Node.js's `node_modules`)
 - [ ] Download registry dependencies into the `target` directory
-  - [ ] After that, contribute to the `conflicting_dependencies_tracker` table
 - [ ] Download Git dependencies into the `target` directory
-  - [ ] After that, contribute to the `conflicting_dependencies_tracker` table
