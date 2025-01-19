@@ -601,6 +601,8 @@ impl Subverifier {
                 result = None;
             } else if r1.static_type(&self.host).is::<InvalidationEntity>() {
                 result = None;
+            } else if r1.static_type(&self.host).is::<UnresolvedEntity>() {
+                return Err(DeferError(None));
             }
         }
 
