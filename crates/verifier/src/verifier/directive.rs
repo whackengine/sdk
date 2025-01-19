@@ -1926,8 +1926,15 @@ impl DirectiveSubverifier {
                 verifier.set_drtv_phase(drtv, VerifierPhase::Beta);
                 Err(DeferError(None))
             },
-            // Beta
             VerifierPhase::Beta => {
+                // Reserved phase (ns definition pass)
+
+                // Next phase
+                verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                Err(DeferError(None))
+            },
+            // Delta
+            VerifierPhase::Delta => {
                 for binding in &defn.bindings {
                     // If a binding is a simple identifier,
                     // try resolving type annotation if any; if resolved,
@@ -1948,11 +1955,11 @@ impl DirectiveSubverifier {
                 }
 
                 // Next phase
-                verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                verifier.set_drtv_phase(drtv, VerifierPhase::Epsilon);
                 Err(DeferError(None))
             },
-            // Delta
-            VerifierPhase::Delta => {
+            // Epsilon
+            VerifierPhase::Epsilon => {
                 for binding in &defn.bindings {
                     // If a binding is a simple identifier and
                     // the binding's slot is not invalidated and its static type is unresolved,
@@ -1975,20 +1982,20 @@ impl DirectiveSubverifier {
                 }
 
                 // Next phase
-                verifier.set_drtv_phase(drtv, VerifierPhase::Epsilon);
+                verifier.set_drtv_phase(drtv, VerifierPhase::Eta);
                 Err(DeferError(None))
             },
-            // Epsilon
-            VerifierPhase::Epsilon => {
+            // Eta
+            VerifierPhase::Eta => {
                 // @todo
                 // - Handle the `[Bindable]` meta-data for simple identifier patterns
                 // - Handle the `[Embed]` meta-data for simple identifier patterns
 
                 // Next phase
-                verifier.set_drtv_phase(drtv, VerifierPhase::Eta);
+                verifier.set_drtv_phase(drtv, VerifierPhase::Theta);
                 Err(DeferError(None))
             },
-            VerifierPhase::Eta => {
+            VerifierPhase::Theta => {
                 // Reserved phase
 
                 // Next phase

@@ -119,7 +119,7 @@ impl CommandProcessCommons {
 
         // Define RT::client and RT::server
         let mut rt_client = true;
-        let mut rt_server = true;
+        let mut rt_server: bool = false;
         let entry_pckg = dag.last.clone();
         if entry_pckg.manifest.client_side.is_some() {
             if entry_pckg.manifest.server_side.is_some() {
@@ -129,6 +129,7 @@ impl CommandProcessCommons {
             rt_server = false;
         } else if entry_pckg.manifest.server_side.is_some() {
             rt_client = false;
+            rt_server = true;
         }
 
         for pckg in dag.iter() {
@@ -207,6 +208,7 @@ impl CommandProcessCommons {
             for cu in compilation_units.iter() {
                 cu.sort_diagnostics();
                 for diagnostic in cu.nested_diagnostics() {
+                    let diagnostic = WhackDiagnostic(&diagnostic);
                     if diagnostic.is_error() {
                         println!("{} {}", "Error:".red(), diagnostic.format_english());
                     } else {
@@ -238,7 +240,7 @@ impl CommandProcessCommons {
                     diag = WhackDiagnostic::new_warning(&loc, WhackDiagnosticKind::Unused, diagarg![name.clone()]);
                 }
                 cu.add_diagnostic(diag.clone());
-                println!("{} {}", "Warning:".yellow(), diag.format_english());
+                println!("{} {}", "Warning:".yellow(), WhackDiagnostic(&diag).format_english());
                 cu.sort_diagnostics();
             }
         }
