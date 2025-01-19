@@ -12,3 +12,8 @@ build_script_run = false
 path = "../../whacklib/packages/as3.lang"
 manifest_last_modified = 1736880996
 build_script_run = false
+
+[[packages]]
+path = "builtins"
+manifest_last_modified = 1737300490
+build_script_run = false
