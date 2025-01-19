@@ -1,0 +1,14 @@
+[[packages]]
+path = ""
+manifest_last_modified = 1737287080
+build_script_run = false
+
+[[packages]]
+path = "../../whacklib/packages/whack.base"
+manifest_last_modified = 1736880976
+build_script_run = false
+
+[[packages]]
+path = "../../whacklib/packages/as3.lang"
+manifest_last_modified = 1736880996
+build_script_run = false

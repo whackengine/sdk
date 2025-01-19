@@ -1,14 +1,14 @@
 use std::{collections::HashMap, path::PathBuf};
 use colored::Colorize;
 use lazy_regex::regex_is_match;
-use semver::Version;
+use semver::VersionReq;
 use crate::commandprocesses::WhackPackageProcessingError;
 use crate::packagemanager::*;
 
 pub struct DependencyUpdate;
 
 impl DependencyUpdate {
-    pub async fn update_dependencies(entry_dir: &PathBuf, manifest: &WhackManifest, run_cache_file: &mut RunCacheFile, conflicting_dependencies_tracker: &mut HashMap<String, HashMap<String, Version>>, lockfile: &mut WhackLockfile) -> Result<(), WhackPackageProcessingError> {
+    pub async fn update_dependencies(entry_dir: &PathBuf, manifest: &WhackManifest, run_cache_file: &mut RunCacheFile, conflicting_dependencies_tracker: &mut HashMap<String, HashMap<String, VersionReq>>, lockfile: &mut WhackLockfile) -> Result<(), WhackPackageProcessingError> {
         // TODO: detect version conflicts by reading the
         // `conflicting_dependencies_tracker` table.
 

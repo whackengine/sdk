@@ -57,9 +57,9 @@ pub struct ManifestServerSide {
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ManifestDependency {
-    Version(Version),
+    Version(String),
     Advanced {
-        version: Option<Version>,
+        version: Option<String>,
         path: Option<String>,
         git: Option<String>,
         rev: Option<String>,

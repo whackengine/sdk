@@ -4,7 +4,7 @@ use std::str::FromStr;
 use crate::packagemanager::*;
 use colored::Colorize;
 use hydroperfox_filepaths::FlexPath;
-use semver::Version;
+use semver::VersionReq;
 
 use super::CommandProcessCommons;
 
@@ -64,7 +64,7 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     let dir = PathBuf::from_str(&dir.to_string_with_flex_separator()).unwrap();
 
     // Conflicting dependencies tracker
-    let mut conflicting_dependencies_tracker = HashMap::<String, HashMap<String, Version>>::new();
+    let mut conflicting_dependencies_tracker = HashMap::<String, HashMap<String, VersionReq>>::new();
 
     // Package internator
     let mut package_internator = WhackPackageInternator::new();

@@ -8,7 +8,7 @@ use crate::commandprocesses::WhackPackageProcessingError;
 use by_address::ByAddress;
 use hydroperfox_filepaths::FlexPath;
 use colored::Colorize;
-use semver::Version;
+use semver::VersionReq;
 
 /// Directed acyclic graph of the dependency tree.
 #[derive(Clone)]
@@ -25,7 +25,7 @@ impl Dag {
     /// 
     /// - `entry_dir` - The directory where the entry point "whack.toml" file lies and where
     ///   the "target" directory is stored.
-    pub async fn retrieve(mut dir: PathBuf, entry_dir: &PathBuf, package: Option<String>, lockfile: &mut WhackLockfile, run_cache_file: &mut RunCacheFile, conflicting_dependencies_tracker: &mut HashMap<String, HashMap<String, Version>>, package_internator: &mut WhackPackageInternator, cycle_prevention_list: Vec<PathBuf>) -> Result<(Dag, Dag), WhackPackageProcessingError> {
+    pub async fn retrieve(mut dir: PathBuf, entry_dir: &PathBuf, package: Option<String>, lockfile: &mut WhackLockfile, run_cache_file: &mut RunCacheFile, conflicting_dependencies_tracker: &mut HashMap<String, HashMap<String, VersionReq>>, package_internator: &mut WhackPackageInternator, cycle_prevention_list: Vec<PathBuf>) -> Result<(Dag, Dag), WhackPackageProcessingError> {
         if cycle_prevention_list.contains(&dir.canonicalize().unwrap()) {
             return Err(WhackPackageProcessingError::CircularDependency { directory: dir.to_str().unwrap().to_owned() });
         }
@@ -105,11 +105,21 @@ impl Dag {
         for (name, dep) in deps.iter() {
             match dep {
                 ManifestDependency::Version(ver) => {
-                    tracker1.insert(name.clone(), ver.clone());
+                    let ver = VersionReq::from_str(ver);
+                    if ver.is_err() {
+                        println!("{} Whack manifest at {:?} contains invalid SemVer version at a dependency.", "Error:".red(), manifest_path);
+                        std::process::exit(1);
+                    }
+                    tracker1.insert(name.clone(), ver.unwrap());
                 },
                 ManifestDependency::Advanced { version, .. } => {
                     if let Some(version) = version {
-                        tracker1.insert(name.clone(), version.clone());
+                        let ver = VersionReq::from_str(version);
+                        if ver.is_err() {
+                            println!("{} Whack manifest at {:?} contains invalid SemVer version at a dependency.", "Error:".red(), manifest_path);
+                            std::process::exit(1);
+                        }
+                        tracker1.insert(name.clone(), ver.unwrap());
                     }
                 },
             }
