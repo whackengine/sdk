@@ -95,10 +95,11 @@ impl CommandProcessCommons {
                     r.extend(CommandProcessCommons::recurse_source_files(&subpath)?);
                     continue;
                 }
-                if subpath.ends_with(".include.as") {
+                let subpath_str = subpath.to_str().unwrap();
+                if subpath_str.ends_with(".include.as") {
                     continue;
                 }
-                if subpath.ends_with(".as") || subpath.ends_with(".mxml") {
+                if subpath_str.ends_with(".as") || subpath_str.ends_with(".mxml") {
                     let text = std::fs::read_to_string(&subpath).unwrap();
                     r.push(CompilationUnit::new(Some(subpath.canonicalize().unwrap().to_str().unwrap().to_owned()), text));
                 }
