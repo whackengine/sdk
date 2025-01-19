@@ -112,7 +112,13 @@ impl Dag {
                     }
                     tracker1.insert(name.clone(), ver.unwrap());
                 },
-                ManifestDependency::Advanced { version, .. } => {
+                ManifestDependency::Advanced { version, path, git, .. } => {
+                    if (version.is_some() && path.is_some())
+                    || (version.is_some() && git.is_some())
+                    || (path.is_some() && git.is_some()) {
+                        println!("{} Whack manifest at {:?} contains a dependency that is both either a registry, Git or local dependency at the same time.", "Error:".red(), manifest_path);
+                        std::process::exit(1);
+                    }
                     if let Some(version) = version {
                         let ver = VersionReq::from_str(version);
                         if ver.is_err() {
