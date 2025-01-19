@@ -76,7 +76,8 @@ pub async fn check_process(matches: &clap::ArgMatches) {
 
     // Filter out duplicate entries from `dag` and `build_script_dag` by
     // reorganizing each of them.
-    fixme();
+    dag.filter_out_duplicates();
+    build_script_dag.filter_out_duplicates();
 
     // Check each dependency in ascending order for AS3 and MXML errors,
     // running the build script if required.

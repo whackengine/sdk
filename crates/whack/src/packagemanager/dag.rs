@@ -1,10 +1,11 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 use crate::packagemanager::*;
 use crate::commandprocesses::WhackPackageProcessingError;
+use by_address::ByAddress;
 use hydroperfox_filepaths::FlexPath;
 use colored::Colorize;
 use semver::Version;
@@ -336,6 +337,35 @@ impl Dag {
 
     pub fn prepend_dag(&mut self, dag: Dag) {
         do_prepend_dag(dag, &mut self.edges, &mut self.first);
+    }
+
+    pub fn filter_out_duplicates(&mut self) {
+        let mut new_edges: Vec<DagEdge> = vec![];
+        let mut first: Option<Rc<WhackPackage>> = None;
+        let mut last: Option<Rc<WhackPackage>> = None;
+        let mut found: HashSet<ByAddress<Rc<WhackPackage>>> = HashSet::new();
+
+        for pckg in self.iter() {
+            if found.contains(&ByAddress(pckg.clone())) {
+                continue;
+            }
+            if first.is_none() {
+                first = Some(pckg.clone());
+            }
+            if last.is_some() {
+                new_edges.last_mut().unwrap().to = pckg.clone();
+            }
+            new_edges.push(DagEdge {
+                from: pckg.clone(),
+                to: pckg.clone(),
+            });
+            last = Some(pckg.clone());
+            found.insert(ByAddress(pckg));
+        }
+
+        self.edges = new_edges;
+        self.first = first.unwrap();
+        self.last = last.unwrap();
     }
 }
 
