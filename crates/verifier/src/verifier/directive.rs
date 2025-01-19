@@ -559,6 +559,7 @@ impl DirectiveSubverifier {
                     verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
                     return Ok(());
                 }
+
                 let (class_parent_scope, class_parent, mut class_out, ns) = defn_local.unwrap();
 
                 let public_ns = class_parent_scope.search_system_ns_in_scope_chain(SystemNamespaceKind::Public).unwrap();
@@ -2092,6 +2093,8 @@ impl DirectiveSubverifier {
             var_scope.class()
         } else if var_scope.is::<InterfaceScope>() {
             var_scope.interface()
+        } else if var_scope.is::<PackageScope>() {
+            var_scope.package()
         } else {
             var_scope.clone()
         };
@@ -2166,6 +2169,8 @@ impl DirectiveSubverifier {
             var_scope.class()
         } else if var_scope.is::<InterfaceScope>() {
             var_scope.interface()
+        } else if var_scope.is::<PackageScope>() {
+            var_scope.package()
         } else {
             var_scope.clone()
         };
