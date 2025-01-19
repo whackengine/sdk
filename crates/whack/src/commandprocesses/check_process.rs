@@ -3,13 +3,16 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use crate::packagemanager::*;
 use colored::Colorize;
+use hydroperfox_filepaths::FlexPath;
 use semver::Version;
 
 use super::CommandProcessCommons;
 
 pub async fn check_process(matches: &clap::ArgMatches) {
-    let builtins = matches.get_one::<std::path::PathBuf>("builtins").cloned().unwrap_or(PathBuf::from_str("../builtins/packages/whack.base").unwrap());
+    let builtins = matches.get_one::<String>("builtins").cloned().unwrap_or("../builtins/packages/whack.base".to_owned());
+    let builtins = PathBuf::from_str(&FlexPath::from_n_native([std::env::current_dir().unwrap().to_str().unwrap(), &builtins]).to_string_with_flex_separator()).unwrap();
     let package: Option<&String> = matches.get_one::<String>("package");
+    let initial_path: Option<&String> = matches.get_one::<String>("path");
     // Command line provided configuration constants
     let defined_constants = matches
         .get_many::<String>("define")
@@ -20,7 +23,10 @@ pub async fn check_process(matches: &clap::ArgMatches) {
         })
         .collect::<Vec<_>>();
 
-    let dir = std::env::current_dir().unwrap();
+    let mut dir = std::env::current_dir().unwrap();
+    if let Some(initial_path) = initial_path {
+        dir = PathBuf::from_str(&FlexPath::new_native(&dir.to_str().unwrap()).resolve(initial_path).to_string_with_flex_separator()).unwrap();
+    }
 
     // Detect entry point directory and read lockfile
     let (dir, mut lockfile, lockfile_path, found_base_manifest) = CommandProcessCommons::entry_point_lookup(&dir);

@@ -114,6 +114,7 @@ pub enum WhackDiagnosticKind {
     Unused = 2158,
     RecordLikeClassMustHaveEmptyConstructor = 2159,
     IllegalMapKey = 2160,
+    UnusedImport = 2161,
 }
 
 impl WhackDiagnosticKind {

@@ -116,8 +116,24 @@ impl CommandProcessCommons {
 
         let mut verifier = Verifier::new(&as3host);
 
+        // Define RT::client and RT::server
+        let mut rt_client = true;
+        let mut rt_server = true;
+        let entry_pckg = dag.last.clone();
+        if entry_pckg.manifest.client_side.is_some() {
+            if entry_pckg.manifest.server_side.is_some() {
+                println!("{} Package cannot be both a client-side and server-side application at the same time.", "Error:".red());
+                std::process::exit(1);
+            }
+            rt_server = false;
+        } else if entry_pckg.manifest.server_side.is_some() {
+            rt_client = false;
+        }
+
         for pckg in dag.iter() {
             // Setup configuration constants
+            as3host.config_constants().set("RT::client".to_owned(), rt_client.to_string());
+            as3host.config_constants().set("RT::server".to_owned(), rt_server.to_string());
             for (k, v) in defined_constants.iter() {
                 as3host.config_constants().set(k.clone(), v.clone());
             }
@@ -200,6 +216,30 @@ impl CommandProcessCommons {
 
             // Clear configuration constants
             as3host.clear_config_constants();
+
+            // If there are any errors, stop verification from here.
+            if verifier.invalidated() {
+                break;
+            }
+        }
+
+        for entity in Unused(&as3host).all().iter() {
+            let loc = entity.location().unwrap();
+            let cu = loc.compilation_unit();
+            if CompilerOptions::of(&cu).warnings.unused {
+                let diag: Diagnostic;
+                if entity.is::<PackagePropertyImport>() || entity.is::<PackageWildcardImport>()
+                || entity.is::<PackageRecursiveImport>() {
+                    diag = WhackDiagnostic::new_warning(&loc, WhackDiagnosticKind::UnusedImport, diagarg![]);
+                // Nominal entity
+                } else {
+                    let name = entity.name().to_string();
+                    diag = WhackDiagnostic::new_warning(&loc, WhackDiagnosticKind::Unused, diagarg![name.clone()]);
+                }
+                cu.add_diagnostic(diag.clone());
+                println!("{} {}", "Warning:".yellow(), diag.format_english());
+                cu.sort_diagnostics();
+            }
         }
 
         (as3host, verifier)

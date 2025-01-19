@@ -264,6 +264,18 @@ impl Verifier {
         None
     }
 
+    pub fn add_syntax_error(&mut self, location: &Location, kind: WhackDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) {
+        self.verifier.add_syntax_error(location, kind, arguments);
+    }
+
+    pub fn add_verify_error(&mut self, location: &Location, kind: WhackDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) {
+        self.verifier.add_verify_error(location, kind, arguments);
+    }
+
+    pub fn add_warning(&mut self, location: &Location, kind: WhackDiagnosticKind, arguments: Vec<Rc<dyn DiagnosticArgument>>) {
+        self.verifier.add_warning(location, kind, arguments);
+    }
+
     fn collect_package_definitions(program: &Rc<Program>) -> Vec<Rc<PackageDefinition>> {
         let mut r = program.packages.clone();
         for drtv in &program.directives {
