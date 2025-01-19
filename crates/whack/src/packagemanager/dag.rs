@@ -153,7 +153,7 @@ impl Dag {
             for (dep_name, dep) in deps.iter() {
                 match dep {
                     ManifestDependency::Version(_) => {
-                        let next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
+                        let next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target/downloads", dep_name]).to_string_with_flex_separator()).unwrap();
                         let (prepend_dag_1, prepend_dag_2) = Box::pin(Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list.clone())).await?;
                         do_append_dag(prepend_dag_1, &mut edges1, &mut first1, &mut last1);
                         do_append_dag(prepend_dag_2, &mut edges2, &mut first2, &mut last2);
@@ -163,7 +163,7 @@ impl Dag {
                         if let Some(path) = path {
                             next_dir = PathBuf::from_str(&FlexPath::from_n_native([dir.to_str().unwrap(), path]).to_string_with_flex_separator()).unwrap();
                         } else {
-                            next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
+                            next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target/downloads", dep_name]).to_string_with_flex_separator()).unwrap();
                         }
                         let (prepend_dag_1, prepend_dag_2) = Box::pin(Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list.clone())).await?;
                         do_append_dag(prepend_dag_1, &mut edges1, &mut first1, &mut last1);
@@ -177,7 +177,7 @@ impl Dag {
             for (dep_name, dep) in deps.iter() {
                 match dep {
                     ManifestDependency::Version(_version) => {
-                        let next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
+                        let next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target/downloads", dep_name]).to_string_with_flex_separator()).unwrap();
                         let (prepend_dag_1, prepend_dag_2) = Box::pin(Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list.clone())).await?;
                         do_append_dag(prepend_dag_1, &mut edges2, &mut first2, &mut last2);
                         do_append_dag(prepend_dag_2, &mut edges2, &mut first2, &mut last2);
@@ -187,7 +187,7 @@ impl Dag {
                         if let Some(path) = path {
                             next_dir = PathBuf::from_str(&FlexPath::from_n_native([dir.to_str().unwrap(), path]).to_string_with_flex_separator()).unwrap();
                         } else {
-                            next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target", dep_name]).to_string_with_flex_separator()).unwrap();
+                            next_dir = PathBuf::from_str(&FlexPath::from_n_native([entry_dir.to_str().unwrap(), "target/downloads", dep_name]).to_string_with_flex_separator()).unwrap();
                         }
                         let (prepend_dag_1, prepend_dag_2) = Box::pin(Dag::retrieve(next_dir, entry_dir, None, lockfile, run_cache_file, conflicting_dependencies_tracker, package_internator, next_cycle_prevention_list.clone())).await?;
                         do_append_dag(prepend_dag_1, &mut edges2, &mut first2, &mut last2);

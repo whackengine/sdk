@@ -25,6 +25,7 @@ impl DependencyUpdate {
                 return Err(WhackPackageProcessingError::IllegalPackageName { name: name.clone() });
             }
             match dep {
+                // Always store downloaded packages at `target/downloads`
                 ManifestDependency::Version(_ver) => {
                     panic!("Registry dependencies are not implemented yet.");
                 },
