@@ -29,14 +29,9 @@ impl DirectiveSubverifier {
                         host.factory().create_scope()
                     });
                     verifier.inherit_and_enter_scope(&scope);
-                    let any_defer = Self::verify_directives_for_ns_defn(verifier, &block.directives).is_err();
+                    let _ = Self::verify_directives_for_ns_defn(verifier, &block.directives).is_err();
                     verifier.exit_scope();
-                    if any_defer {
-                        Err(DeferError(None))
-                    } else {
-                        verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
-                        Ok(())
-                    }
+                    Err(DeferError(None))
                 },
                 Directive::IncludeDirective(incdrtv) => {
                     if incdrtv.nested_directives.len() == 0 {
@@ -4168,13 +4163,8 @@ impl DirectiveSubverifier {
             host.factory().create_scope()
         });
         verifier.inherit_and_enter_scope(&scope);
-        let any_defer = Self::verify_directives_for_ns_defn(verifier, &block.directives).is_err();
+        let _ = Self::verify_directives_for_ns_defn(verifier, &block.directives).is_err();
         verifier.exit_scope();
-        if any_defer {
-            Err(DeferError(None))
-        } else {
-            verifier.set_block_phase(block, VerifierPhase::Finished);
-            Ok(())
-        }
+        Err(DeferError(None))
     }
 }

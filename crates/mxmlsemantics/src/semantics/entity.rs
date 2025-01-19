@@ -2706,6 +2706,7 @@ smodel! {
     pub struct OriginalVirtualSlot: VirtualSlot {
         let ref m_name: Option<QName> = None;
         let ref m_location: Option<Location> = None;
+        let ref m_metadata: SharedArray<Rc<Metadata>> = SharedArray::new();
         let ref m_asdoc: Option<Rc<Asdoc>> = None;
         let ref m_getter: Option<Entity> = None;
         let ref m_setter: Option<Entity> = None;
@@ -2784,6 +2785,10 @@ smodel! {
 
         pub override fn set_location(&self, loc: Option<Location>) {
             self.set_m_location(loc);
+        }
+
+        pub override fn metadata(&self) -> SharedArray<Rc<Metadata>> {
+            self.m_metadata()
         }
 
         /// The event name indicated by a `[Bindable]` meta-data tag.
@@ -2910,6 +2915,10 @@ smodel! {
 
         pub override fn bindable_event(&self) -> Option<String> {
             self.origin().bindable_event()
+        }
+
+        pub override fn metadata(&self) -> SharedArray<Rc<Metadata>> {
+            self.origin().metadata()
         }
 
         pub override fn parent(&self) -> Option<Entity> {
