@@ -235,7 +235,7 @@ smodel! {
         }
 
         pub fn public_ns(&self) -> Option<Entity> {
-            panic!();
+            None
         }
 
         pub fn set_public_ns(&self, ns: Option<Entity>) {
@@ -243,7 +243,7 @@ smodel! {
         }
 
         pub fn private_ns(&self) -> Option<Entity> {
-            panic!();
+            None
         }
 
         pub fn set_private_ns(&self, ns: Option<Entity>) {
@@ -251,7 +251,7 @@ smodel! {
         }
 
         pub fn protected_ns(&self) -> Option<Entity> {
-            panic!();
+            None
         }
 
         pub fn set_protected_ns(&self, ns: Option<Entity>) {
@@ -259,7 +259,7 @@ smodel! {
         }
 
         pub fn static_protected_ns(&self) -> Option<Entity> {
-            panic!();
+            None
         }
 
         pub fn set_static_protected_ns(&self, ns: Option<Entity>) {
@@ -267,7 +267,7 @@ smodel! {
         }
 
         pub fn internal_ns(&self) -> Option<Entity> {
-            panic!();
+            None
         }
 
         pub fn set_internal_ns(&self, ns: Option<Entity>) {
@@ -3430,6 +3430,18 @@ smodel! {
         pub override fn class(&self) -> Entity {
             self.m_class().unwrap()
         }
+
+        pub override fn private_ns(&self) -> Option<Entity> {
+            self.class().private_ns()
+        }
+
+        pub override fn protected_ns(&self) -> Option<Entity> {
+            self.class().protected_ns()
+        }
+
+        pub override fn static_protected_ns(&self) -> Option<Entity> {
+            self.class().static_protected_ns()
+        }
     }
 
     pub struct EnumScope: FixtureScope {
@@ -3442,6 +3454,10 @@ smodel! {
 
         pub override fn class(&self) -> Entity {
             self.m_class().unwrap()
+        }
+
+        pub override fn private_ns(&self) -> Option<Entity> {
+            self.class().private_ns()
         }
     }
 
@@ -3468,6 +3484,14 @@ smodel! {
 
         pub override fn package(&self) -> Entity {
             self.m_pckg().unwrap()
+        }
+
+        pub override fn public_ns(&self) -> Option<Entity> {
+            self.package().public_ns()
+        }
+
+        pub override fn internal_ns(&self) -> Option<Entity> {
+            self.package().internal_ns()
         }
     }
 
