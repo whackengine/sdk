@@ -1,7 +1,9 @@
+/*
 package
 {
     public var x:*;
 }
+*/
 
 package
 {
