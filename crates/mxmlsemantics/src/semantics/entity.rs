@@ -223,7 +223,7 @@ smodel! {
         }
 
         pub fn parent(&self) -> Option<Entity> {
-            panic!();
+            None
         }
 
         pub fn set_parent(&self, p: Option<Entity>) {
@@ -597,7 +597,11 @@ smodel! {
             if self.is::<InvalidationEntity>() {
                 return Ok(self.clone());
             }
-            let parent = self.parent().unwrap();
+            let parent = self.parent();
+            if parent.is_none() {
+                return Ok(host.factory().create_value(&host.any_type()));
+            }
+            let parent = parent.unwrap();
             if parent.is::<ClassType>() || parent.is::<EnumType>() {
                 return host.factory().create_static_reference_value(&parent, self);
             }
@@ -3513,7 +3517,7 @@ smodel! {
         }
 
         pub override fn static_type(&self, host: &Database) -> Entity {
-            self.m_static_type().unwrap()
+            self.m_static_type().unwrap_or(host.unresolved_entity())
         }
 
         pub override fn set_static_type(&self, value: Entity) {
@@ -4500,7 +4504,7 @@ impl<'a> Iterator for DescendingClassHierarchy<'a> {
                 self.0 = None;
             } else {
                 self.0 = r.extends_class(self.1);
-                if self.0.as_ref().unwrap() == &self.2 {
+                if self.0.is_some() && self.0.as_ref().unwrap() == &self.2 {
                     self.0 = None;
                 }
             }

@@ -409,7 +409,7 @@ impl DirectiveSubverifier {
 
                         // If variable is marked constant, is not `[Embed]` and does not contain an initializer,
                         // then report an error
-                        if is_const {
+                        if is_const && binding.initializer.is_none() {
                             verifier.add_verify_error(&binding.destructuring.location, WhackDiagnosticKind::ConstantMustContainInitializer, diagarg![]);
                         }
                     }
@@ -2064,7 +2064,7 @@ impl DirectiveSubverifier {
 
                     // If variable is marked constant, is not `[Embed]` and does not contain an initializer,
                     // then report an error
-                    if is_const && !(i == 0 && Attribute::find_metadata(&defn.attributes).iter().any(|mdata| mdata.name.0 == "Embed")) {
+                    if is_const && binding.initializer.is_none() && !(i == 0 && Attribute::find_metadata(&defn.attributes).iter().any(|mdata| mdata.name.0 == "Embed")) {
                         verifier.add_verify_error(&binding.destructuring.location, WhackDiagnosticKind::ConstantMustContainInitializer, diagarg![]);
                     }
                 }
