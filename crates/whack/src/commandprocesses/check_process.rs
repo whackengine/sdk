@@ -9,7 +9,16 @@ use super::CommandProcessCommons;
 
 pub async fn check_process(matches: &clap::ArgMatches) {
     let builtins = matches.get_one::<std::path::PathBuf>("builtins").cloned().unwrap_or(PathBuf::from_str("../builtins/packages/whack.base").unwrap());
-    let package = matches.get_one::<String>("package");
+    let package: Option<&String> = matches.get_one::<String>("package");
+    // Command line provided configuration constants
+    let defined_constants = matches
+        .get_many::<String>("define")
+        .unwrap_or_default()
+        .map(|v| {
+            let s = v.split("=").collect::<Vec<_>>();
+            (s[0].to_owned(), s.get(1).unwrap_or(&"").to_string())
+        })
+        .collect::<Vec<_>>();
 
     let dir = std::env::current_dir().unwrap();
 
@@ -79,10 +88,13 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     dag.filter_out_duplicates();
     build_script_dag.filter_out_duplicates();
 
-    // Check each dependency in ascending order for AS3 and MXML errors,
-    // running the build script if required.
-    // (REMEMBER to ignore .include.as files)
-    fixme();
+    // Run build scripts across packages in ascending order
+    // (depending on the run cache file)
+    //
+    // @todo fixme();
+
+    // Check each dependency in ascending order for AS3 and MXML errors.
+    let as3host = CommandProcessCommons::verify_sources_from_dag(&dag, &defined_constants);
 
     // Write to the run cache file
     std::fs::create_dir_all(&target_path).unwrap();

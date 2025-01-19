@@ -320,6 +320,7 @@ impl Dag {
         manifest_updated
     }
 
+    /// Iterates the directed acyclic graph in ascending order.
     pub fn iter<'a>(&'a self) -> DagIterator<'a> {
         DagIterator {
             dag: self,

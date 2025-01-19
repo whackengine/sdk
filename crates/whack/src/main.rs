@@ -1,3 +1,5 @@
+use clap::ArgAction;
+
 #[tokio::main]
 async fn main() {
     let cmd = clap::Command::new("whack")
@@ -12,6 +14,9 @@ async fn main() {
                 .arg(clap::arg!(--"package" <NAME>)
                     .help("For a workspace, specifies the Whack package to operate on.")
                     .alias("p"))
+                .arg(clap::arg!(--"define" <KEYVALUE>)
+                    .help("Defines a configuration constant with the syntax NS::NAME=val.")
+                    .action(ArgAction::Append))
         );
 
     let matches = cmd.get_matches();

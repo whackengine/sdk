@@ -107,6 +107,94 @@ impl CommandProcessCommons {
         }
         Ok(vec![])
     }
+
+    pub fn verify_sources_from_dag(dag: &Dag, defined_constants: &Vec<(String, String)>) -> (Rc<Database>, Verifier) {
+        let as3host = Rc::new(Database::new(DatabaseOptions {
+            project_path: Some(dag.last.absolute_path.canonicalize().unwrap().to_str().unwrap().to_owned()),
+            ..default()
+        }));
+
+        let verifier = Verifier::new(&as3host);
+
+        for pckg in dag.iter() {
+            // Setup configuration constants
+            for (k, v) in defined_constants.iter() {
+                as3host.config_constants().set(k.clone(), v.clone());
+            }
+            if let Some(define_1) = pckg.manifest.define.as_ref() {
+                for (k, v) in define_1.iter() {
+                    let val = match v {
+                        toml::Value::Boolean(v) => v.to_string(),
+                        toml::Value::Float(v) => v.to_string(),
+                        toml::Value::Integer(v) => v.to_string(),
+                        toml::Value::String(v) => v.clone(),
+                        _ => "".to_owned(),
+                    };
+                    as3host.config_constants().set(k.clone(), val);
+                }
+            }
+
+            let mut compilation_units: Vec<Rc<CompilationUnit>> = vec![];
+            if let Some(source_path) = pckg.manifest.package.as_ref().unwrap().source_path.as_ref() {
+                for source_path_1 in source_path.iter() {
+                    let source_path_1_str = FlexPath::new_native(pckg.absolute_path.to_str().unwrap()).resolve(source_path_1).to_string_with_flex_separator();
+                    match CommandProcessCommons::recurse_source_files(&PathBuf::from_str(&source_path_1_str).unwrap()) {
+                        Ok(files) => {
+                            compilation_units.extend(files);
+                        },
+                        Err(error) => {
+                            CommandProcessCommons::print_package_processing_error(error);
+                            std::process::exit(1);
+                        },
+                    }
+                }
+            }
+
+            // Build the default compiler options
+            let compiler_options = Rc::new(CompilerOptions::default());
+
+            // Parse and initialize compiler options across compilation units
+            let mut programs: Vec<Rc<Program>> = vec![];
+            let mut mxml: Vec<Rc<Mxml>> = vec![];
+            for cu in compilation_units.iter() {
+                // Initialize compiler options
+                cu.set_compiler_options(Some(compiler_options));
+
+                let file_path = cu.file_path().unwrap();
+                if file_path.ends_with(".mxml") {
+                    // Parse MXML
+                    mxml.push(ParserFacade(cu, default()).parse_mxml());
+
+                    // @todo Remove this when MXML is implemented in verification, codegen,
+                    // IDE integration and ASDoc.
+                    println!("{} MXML is not implemented yet: {}", "Error:".red(), file_path);
+                    std::process::exit(1);
+                } else {
+                    // Parse AS3
+                    programs.push(ParserFacade(cu, default()).parse_program());
+                }
+            }
+
+            // Contribute WhackSources to the WhackPackage.
+            for program in programs.iter() {
+                pckg.sources.push(WhackSource::As3(program.clone()));
+            }
+            for mxml1 in mxml.iter() {
+                pckg.sources.push(WhackSource::Mxml(mxml1.clone()));
+            }
+
+            // Verify
+            verifier.verify_programs(&compiler_options, programs, mxml);
+
+            // Sort and log diagnostics
+            fixme();
+
+            // Clear configuration constants
+            as3host.clear_config_constants();
+        }
+
+        (as3host, verifier)
+    }
 }
 
 pub enum WhackPackageProcessingError {
