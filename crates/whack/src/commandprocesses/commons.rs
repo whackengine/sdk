@@ -114,7 +114,7 @@ impl CommandProcessCommons {
             ..default()
         }));
 
-        let verifier = Verifier::new(&as3host);
+        let mut verifier = Verifier::new(&as3host);
 
         for pckg in dag.iter() {
             // Setup configuration constants
@@ -158,7 +158,7 @@ impl CommandProcessCommons {
             let mut mxml: Vec<Rc<Mxml>> = vec![];
             for cu in compilation_units.iter() {
                 // Initialize compiler options
-                cu.set_compiler_options(Some(compiler_options));
+                cu.set_compiler_options(Some(compiler_options.clone()));
 
                 let file_path = cu.file_path().unwrap();
                 if file_path.ends_with(".mxml") {
@@ -177,17 +177,26 @@ impl CommandProcessCommons {
 
             // Contribute WhackSources to the WhackPackage.
             for program in programs.iter() {
-                pckg.sources.push(WhackSource::As3(program.clone()));
+                pckg.sources.clone().push(WhackSource::As3(program.clone()));
             }
             for mxml1 in mxml.iter() {
-                pckg.sources.push(WhackSource::Mxml(mxml1.clone()));
+                pckg.sources.clone().push(WhackSource::Mxml(mxml1.clone()));
             }
 
             // Verify
             verifier.verify_programs(&compiler_options, programs, mxml);
 
             // Sort and log diagnostics
-            fixme();
+            for cu in compilation_units.iter() {
+                cu.sort_diagnostics();
+                for diagnostic in cu.nested_diagnostics() {
+                    if diagnostic.is_error() {
+                        println!("{} {}", "Error:".red(), diagnostic.format_english());
+                    } else {
+                        println!("{} {}", "Warning:".yellow(), diagnostic.format_english());
+                    }
+                }
+            }
 
             // Clear configuration constants
             as3host.clear_config_constants();

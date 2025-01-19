@@ -94,7 +94,7 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     // @todo fixme();
 
     // Check each dependency in ascending order for AS3 and MXML errors.
-    let as3host = CommandProcessCommons::verify_sources_from_dag(&dag, &defined_constants);
+    let (as3host, verifier) = CommandProcessCommons::verify_sources_from_dag(&dag, &defined_constants);
 
     // Write to the run cache file
     std::fs::create_dir_all(&target_path).unwrap();
