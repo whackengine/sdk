@@ -132,6 +132,8 @@ impl CommandProcessCommons {
             rt_server = true;
         }
 
+        let mut unused_start = 0usize;
+
         for pckg in dag.iter() {
             // Setup configuration constants
             as3host.config_constants().set("RT::client".to_owned(), rt_client.to_string());
@@ -204,6 +206,28 @@ impl CommandProcessCommons {
             // Verify
             verifier.verify_programs(&compiler_options, programs, mxml);
 
+            // Report unused
+            for entity in Unused(&as3host).all()[unused_start..].iter() {
+                let loc = entity.location().unwrap();
+                let cu = loc.compilation_unit();
+                if CompilerOptions::of(&cu).warnings.unused {
+                    let diag: Diagnostic;
+                    if entity.is::<PackagePropertyImport>() || entity.is::<PackageWildcardImport>()
+                    || entity.is::<PackageRecursiveImport>() {
+                        diag = WhackDiagnostic::new_warning(&loc, WhackDiagnosticKind::UnusedImport, diagarg![]);
+                    // Nominal entity
+                    } else {
+                        let name = entity.name().to_string();
+                        diag = WhackDiagnostic::new_warning(&loc, WhackDiagnosticKind::Unused, diagarg![name.clone()]);
+                    }
+                    cu.add_diagnostic(diag.clone());
+                    // println!("{} {}", "Warning:".yellow(), WhackDiagnostic(&diag).format_english());
+                    // cu.sort_diagnostics();
+                }
+            }
+
+            unused_start = Unused(&as3host).all().len();
+
             // Sort and log diagnostics
             for cu in compilation_units.iter() {
                 cu.sort_diagnostics();
@@ -223,25 +247,6 @@ impl CommandProcessCommons {
             // If there are any errors, stop verification from here.
             if verifier.invalidated() {
                 break;
-            }
-        }
-
-        for entity in Unused(&as3host).all().iter() {
-            let loc = entity.location().unwrap();
-            let cu = loc.compilation_unit();
-            if CompilerOptions::of(&cu).warnings.unused {
-                let diag: Diagnostic;
-                if entity.is::<PackagePropertyImport>() || entity.is::<PackageWildcardImport>()
-                || entity.is::<PackageRecursiveImport>() {
-                    diag = WhackDiagnostic::new_warning(&loc, WhackDiagnosticKind::UnusedImport, diagarg![]);
-                // Nominal entity
-                } else {
-                    let name = entity.name().to_string();
-                    diag = WhackDiagnostic::new_warning(&loc, WhackDiagnosticKind::Unused, diagarg![name.clone()]);
-                }
-                cu.add_diagnostic(diag.clone());
-                println!("{} {}", "Warning:".yellow(), WhackDiagnostic(&diag).format_english());
-                cu.sort_diagnostics();
             }
         }
 
