@@ -565,9 +565,9 @@ impl DirectiveSubverifier {
                 class_entity.set_location(Some(defn.name.1.clone()));
                 let metadata = Attribute::find_metadata(&defn.attributes);
                 for m in metadata.iter() {
-                    // [RecordLike] meta-data
-                    if m.name.0 == "RecordLike" {
-                        class_entity.set_is_record_like_class(true);
+                    // [Record] meta-data
+                    if m.name.0 == "Record" {
+                        class_entity.set_is_record_class(true);
                         class_entity.set_is_final(true);
                     // [whack_external] meta-data
                     } else if m.name.0 == "whack_external" {
@@ -815,11 +815,11 @@ impl DirectiveSubverifier {
 
                 let mut about_to_defer = host.object_type().is::<UnresolvedEntity>();
 
-                // If `is_record_like_class()` is true and the class is not a direct subclass
-                // of `Object`, report a verify error and call `set_is_record_like_class(false)`.
-                if !about_to_defer && class_entity.is_record_like_class() && class_entity.extends_class(&host).map(|b| b == host.object_type()).unwrap_or(true) {
-                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::RecordLikeClassMustExtendObject, diagarg![]);
-                    class_entity.set_is_record_like_class(false);
+                // If `is_record_class()` is true and the class is not a direct subclass
+                // of `Object`, report a verify error and call `set_is_record_class(false)`.
+                if !about_to_defer && class_entity.is_record_class() && class_entity.extends_class(&host).map(|b| b == host.object_type()).unwrap_or(true) {
+                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::RecordClassMustExtendObject, diagarg![]);
+                    class_entity.set_is_record_class(false);
                 }
 
                 // Given all present `[Event]` meta-data
@@ -1067,24 +1067,24 @@ impl DirectiveSubverifier {
                     }
                 }
 
-                // Ensure RecordLike classes have an empty constructor.
-                if !guard.record_like_ctor_done.get() {
-                    if class_entity.is_record_like_class() {
+                // Ensure Record classes have an empty constructor.
+                if !guard.record_ctor_done.get() {
+                    if class_entity.is_record_class() {
                         if let Some(ctor) = class_entity.constructor_method(&host) {
                             let ctorsig = ctor.signature(&host);
                             if ctorsig.is::<UnresolvedEntity>() {
                                 about_to_defer = true;
                             } else {
                                 if ctorsig.params().length() != 0 {
-                                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::RecordLikeClassMustHaveEmptyConstructor, diagarg![]);
+                                    verifier.add_verify_error(&defn.name.1, WhackDiagnosticKind::RecordClassMustHaveEmptyConstructor, diagarg![]);
                                 }
-                                guard.record_like_ctor_done.set(true);
+                                guard.record_ctor_done.set(true);
                             }
                         } else {
-                            guard.record_like_ctor_done.set(true);
+                            guard.record_ctor_done.set(true);
                         }
                     } else {
-                        guard.record_like_ctor_done.set(true);
+                        guard.record_ctor_done.set(true);
                     }
                 }
 

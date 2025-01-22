@@ -84,7 +84,7 @@ pub enum WhackDiagnosticKind {
     CannotExtendFinalClass = 2128,
     ExtendingSelfReferentialClass = 2129,
     NotAnInterface = 2130,
-    RecordLikeClassMustExtendObject = 2131,
+    RecordClassMustExtendObject = 2131,
     MalformedEventMetadata = 2132,
     AbstractMethodMustBeOverriden = 2133,
     AbstractGetterMustBeOverriden = 2134,
@@ -112,7 +112,7 @@ pub enum WhackDiagnosticKind {
     ReturnNotAllowedInGlobalInit = 2156,
     NamespaceConflictsWithConfigurationNs = 2157,
     Unused = 2158,
-    RecordLikeClassMustHaveEmptyConstructor = 2159,
+    RecordClassMustHaveEmptyConstructor = 2159,
     IllegalMapKey = 2160,
     UnusedImport = 2161,
 }
