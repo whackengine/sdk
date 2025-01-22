@@ -2,7 +2,3 @@
 
 - [ ] For the demo, the type annotation at the variable definition `var undefined:*` is generating a defer error due to `TypeConstant` being stated that it holds an unresolved static type.
   - https://users.rust-lang.org/t/resolved-at-constructor-but-unresolved-later/124453
-
-# Efficiency
-
-https://users.rust-lang.org/t/is-there-a-more-memory-efficient-arena-for-compilers/124451/1
