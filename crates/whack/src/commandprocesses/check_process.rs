@@ -9,7 +9,7 @@ use semver::VersionReq;
 use super::CommandProcessCommons;
 
 pub async fn check_process(matches: &clap::ArgMatches) {
-    let builtins = matches.get_one::<String>("builtins").cloned().unwrap_or("../builtins/packages/whack.base".to_owned());
+    let builtins = matches.get_one::<String>("builtins").cloned().unwrap_or("../lib/packages/whack.base".to_owned());
     let builtins = PathBuf::from_str(&FlexPath::from_n_native([std::env::current_dir().unwrap().to_str().unwrap(), &builtins]).to_string_with_flex_separator()).unwrap();
     let package: Option<&String> = matches.get_one::<String>("package");
     let initial_path: Option<&String> = matches.get_one::<String>("path");
