@@ -273,9 +273,9 @@ dependencies = [
 
 [[package]]
 name = "hydroperfox-smodel"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cdea708c5f999acee28e0fb972ceaa9efa7da12b545bbdf7d18ae5699cfec74"
+checksum = "917d52f195f464d84e2917a03388fefe5a627cca665d58f8868973a32235d894"
 dependencies = [
  "by_address",
  "hydroperfox-smodel-proc",

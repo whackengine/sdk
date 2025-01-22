@@ -169,6 +169,12 @@ impl Database {
         host
     }
 
+    /// Performs a cleanup of dead objects from the arena held
+    /// by this database.
+    pub fn clean_arena(&self) {
+        self.arena.clean();
+    }
+
     #[inline(always)]
     pub fn factory(&self) -> Factory {
         Factory(self)

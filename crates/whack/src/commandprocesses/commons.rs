@@ -206,6 +206,9 @@ impl CommandProcessCommons {
             // Verify
             verifier.verify_programs(&compiler_options, programs, mxml);
 
+            // Clean arena
+            as3host.clean_arena();
+
             // Report unused
             for entity in Unused(&as3host).all()[unused_start..].iter() {
                 let loc = entity.location().unwrap();
