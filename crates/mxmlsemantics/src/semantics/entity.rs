@@ -588,7 +588,8 @@ smodel! {
                 self.is::<TupleType>() ||
                 self.is::<NullableType>() ||
                 self.is::<NonNullableType>() ||
-                self.is::<TypeAfterSubstitution>()) {
+                self.is::<TypeAfterSubstitution>() ||
+                self.is::<TypeParameterType>()) {
                 return host.factory().create_type_constant(self);
             }
             if self.is::<Namespace>() {
