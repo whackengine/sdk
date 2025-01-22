@@ -76,7 +76,7 @@ impl<'a> PropertyLookup<'a> {
             };
 
             // Qualifier must be a compile-time namespace, otherwise return static dynamic reference.
-            if qual.as_ref().map(|q| q.is_namespace_or_ns_constant()).unwrap_or(true) {
+            if !qual.as_ref().map(|q| q.is_namespace_or_ns_constant()).unwrap_or(true) {
                 let k = map_defer_error(PropertyLookupKey::LocalName(local_name).computed_or_local_name(self.0))?;
                 return Ok(Some(self.0.factory().create_static_dynamic_reference_value(base, qual, &k)));
             }
@@ -109,7 +109,7 @@ impl<'a> PropertyLookup<'a> {
             };
 
             // Qualifier must be a compile-time namespace, otherwise return static dynamic reference.
-            if qual.as_ref().map(|q| q.is_namespace_or_ns_constant()).unwrap_or(true) {
+            if !qual.as_ref().map(|q| q.is_namespace_or_ns_constant()).unwrap_or(true) {
                 let k = map_defer_error(PropertyLookupKey::LocalName(key).computed_or_local_name(self.0))?;
                 return Ok(Some(self.0.factory().create_static_dynamic_reference_value(base, qual, &k)));
             }
@@ -286,7 +286,7 @@ impl<'a> PropertyLookup<'a> {
             };
 
             // Qualifier must be a compile-time namespace.
-            if qual.as_ref().map(|q| q.is_namespace_or_ns_constant()).unwrap_or(true) {
+            if !qual.as_ref().map(|q| q.is_namespace_or_ns_constant()).unwrap_or(true) {
                 return Ok(None);
             }
 
