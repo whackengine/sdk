@@ -1810,6 +1810,9 @@ impl DirectiveSubverifier {
                     if let Expression::StringLiteral(literal) = r.as_ref() {
                         ns_alias.set_alias_of(&verifier.host.factory().create_user_ns(literal.value.clone()));
                     }
+                } else {
+                    // Create alias to a new internal namespace
+                    ns_alias.set_alias_of(&verifier.host.factory().create_internal_ns(None));
                 }
 
                 // Map directive to type alias entity
@@ -1837,9 +1840,6 @@ impl DirectiveSubverifier {
                             verifier.add_verify_error(&r.location(), WhackDiagnosticKind::NotANamespaceConstant, diagarg![]);
                             ns_alias.set_alias_of(&host.invalidation_entity());
                         }
-                    } else {
-                        // Create alias to a new internal namespace
-                        ns_alias.set_alias_of(&host.factory().create_internal_ns(None));
                     }
                 }
 
