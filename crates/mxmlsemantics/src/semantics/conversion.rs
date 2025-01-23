@@ -8,6 +8,12 @@ pub enum ConversionKind {
     /// Implicit conversion.
     ToAny,
 
+    /// Implicit conversion. (JSVal may be nullable or non-nullable if desired.)
+    FromJsval,
+
+    /// Implicit conversion. (JSVal may be nullable or non-nullable if desired.)
+    ToJsval,
+
     /// Implicit conversion between number types,
     /// where the base and target are as they are
     /// (not marked nullable or non-nullable).
@@ -121,6 +127,8 @@ impl ConversionKind {
         [
             Self::FromAny,
             Self::ToAny,
+            Self::FromJsval,
+            Self::ToJsval,
             Self::BetweenNumber,
             Self::ToCovariant,
             Self::ItrfcToObject,
@@ -216,6 +224,18 @@ impl<'a> ConversionMethods<'a> {
 
         let from_type_esc = from_type.escape_of_nullable_or_non_nullable();
         let target_type_esc = target_type.escape_of_nullable_or_non_nullable();
+
+        let jsval_type = self.0.jsval_type().defer()?;
+
+        // From JSVal
+        if from_type_esc == jsval_type {
+            return Ok(Some(self.0.factory().create_conversion_value(value, ConversionKind::FromJsval, optional, target_type)?));
+        }
+
+        // To JSVal
+        if target_type_esc == jsval_type {
+            return Ok(Some(self.0.factory().create_conversion_value(value, ConversionKind::ToJsval, optional, target_type)?));
+        }
 
         if from_type_esc.is_subtype_of(&target_type_esc, self.0)? {
             let both_include_null = from_type.includes_null(self.0)? && target_type.includes_null(self.0)?;
