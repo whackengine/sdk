@@ -84,7 +84,6 @@ pub enum WhackDiagnosticKind {
     CannotExtendFinalClass = 2128,
     ExtendingSelfReferentialClass = 2129,
     NotAnInterface = 2130,
-    RecordClassMustExtendObject = 2131,
     MalformedEventMetadata = 2132,
     AbstractMethodMustBeOverriden = 2133,
     AbstractGetterMustBeOverriden = 2134,
