@@ -1,4 +1,3 @@
 # Fix bugs in the mxmlsemantics/verifier
 
 - [ ] Why are unused entities happening with used locals?
-- [ ] Why are max cycles happening?
