@@ -1,4 +1,3 @@
 # Fix bugs in the mxmlsemantics/verifier
 
-- [ ] Why printing unused errors without replacing the `$1` parameter?
 - [ ] Why are unused entities happening with used locals?
