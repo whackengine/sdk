@@ -18,7 +18,7 @@ impl<'a> Unused<'a> {
 
     pub fn add_nominal(&self, thing: &Entity) {
         let name = thing.name();
-        if name.in_public_or_protected_ns() || name.local_name().starts_with('_') {
+        if name.in_public_or_protected_ns_or_user_ns() || name.local_name().starts_with('_') {
             return;
         }
         self.add(thing);
@@ -33,7 +33,7 @@ impl<'a> Unused<'a> {
             return;
         }
         let qn = property.name();
-        if !qn.in_public_or_protected_ns() {
+        if !qn.in_public_or_protected_ns_or_user_ns() {
             if property.is_entity_after_substitution() {
                 self.mark_used(&property.origin());
             } else {

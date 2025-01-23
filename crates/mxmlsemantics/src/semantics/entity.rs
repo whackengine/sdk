@@ -4305,6 +4305,11 @@ impl QName {
         ns.is_public_ns() || ns.is_protected_ns()
     }
 
+    pub fn in_public_or_protected_ns_or_user_ns(&self) -> bool {
+        let ns = self.namespace();
+        ns.is_public_ns() || ns.is_protected_ns() || ns.is::<UserNamespace>()
+    }
+
     pub fn namespace(&self) -> Entity {
         self.0.m_namespace.clone()
     }

@@ -1,4 +1,4 @@
 # Fix bugs in the mxmlsemantics/verifier
 
-- [ ] For the demo, the type annotation at the variable definition `var undefined:*` is generating a defer error due to `TypeConstant` being stated that it holds an unresolved static type.
-  - https://users.rust-lang.org/t/resolved-at-constructor-but-unresolved-later/124453
+- [ ] Why printing unused errors without replacing the `$1` parameter?
+- [ ] Why are unused entities happening with used locals?
