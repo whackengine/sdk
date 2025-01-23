@@ -217,7 +217,7 @@ impl DirectiveSubverifier {
             let init = init.unwrap_or(verifier.host.factory().create_value(&verifier.host.any_type()));
 
             loop {
-                match DestructuringDeclarationSubverifier::verify_pattern(verifier, &parameter.destructuring, &init, false, &mut block_scope.properties(&verifier.host), &internal_ns, &block_scope, false) {
+                match DestructuringDeclarationSubverifier::verify_pattern(verifier, &parameter.destructuring, &init, false, &mut block_scope.properties(&verifier.host), &internal_ns, &block_scope, false, false) {
                     Ok(_) => {
                         break;
                     },
@@ -260,7 +260,7 @@ impl DirectiveSubverifier {
                 let init = init.unwrap_or(verifier.host.factory().create_value(&verifier.host.any_type()));
 
                 loop {
-                    match DestructuringDeclarationSubverifier::verify_pattern(verifier, &parameter.destructuring, &init, false, &mut block_scope.properties(&verifier.host), &internal_ns, &block_scope, false) {
+                    match DestructuringDeclarationSubverifier::verify_pattern(verifier, &parameter.destructuring, &init, false, &mut block_scope.properties(&verifier.host), &internal_ns, &block_scope, false, false) {
                         Ok(_) => {
                             break;
                         },
@@ -292,7 +292,7 @@ impl DirectiveSubverifier {
                 VerifierPhase::Alpha => {
                     for binding in &defn.bindings {
                         // Verify identifier binding or destructuring pattern (alpha)
-                        let _ = DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &verifier.host.unresolved_entity(), defn.kind.0 == VariableDefinitionKind::Const, &mut scope.properties(&host), &internal_ns, &scope, false);
+                        let _ = DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &verifier.host.unresolved_entity(), defn.kind.0 == VariableDefinitionKind::Const, &mut scope.properties(&host), &internal_ns, &scope, false, false);
                     }
 
                     // Next phase
@@ -396,7 +396,7 @@ impl DirectiveSubverifier {
                         });
 
                         // Verify the identifier binding or destructuring pattern
-                        DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &init, is_const, &mut scope.properties(&host), &internal_ns, &scope, false)?;
+                        DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &init, is_const, &mut scope.properties(&host), &internal_ns, &scope, false, false)?;
 
                         // Remove *init1* from "cached_var_init"
                         verifier.cached_var_init.remove(&ByAddress(binding.destructuring.destructuring.clone()));
@@ -441,7 +441,7 @@ impl DirectiveSubverifier {
                     let binding = &defn.bindings[0];
 
                     // Verify pattern (alpha)
-                    let _ = DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &verifier.host.unresolved_entity(), defn.kind.0 == VariableDefinitionKind::Const, &mut scope.properties(&host), &internal_ns, &scope, false);
+                    let _ = DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &verifier.host.unresolved_entity(), defn.kind.0 == VariableDefinitionKind::Const, &mut scope.properties(&host), &internal_ns, &scope, false, false);
 
                     // Next phase
                     verifier.set_drtv_phase(drtv, VerifierPhase::Beta);
@@ -504,7 +504,7 @@ impl DirectiveSubverifier {
 
                     // Resolve destructuring pattern
                     let init = host.factory().create_value(&expected_type);
-                    match DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &init, is_const, &mut scope.properties(&host), &internal_ns, &scope, false) {
+                    match DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &init, is_const, &mut scope.properties(&host), &internal_ns, &scope, false, false) {
                         Ok(_) => {},
                         Err(DeferError(None)) => {
                             return Err(DeferError(None));
@@ -1900,7 +1900,7 @@ impl DirectiveSubverifier {
                     }
 
                     // Verify identifier binding or destructuring pattern (alpha)
-                    let _ = DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &verifier.host.unresolved_entity(), defn.kind.0 == VariableDefinitionKind::Const, &mut var_out, &ns, &var_parent, is_external);
+                    let _ = DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &verifier.host.unresolved_entity(), defn.kind.0 == VariableDefinitionKind::Const, &mut var_out, &ns, &var_parent, is_external, false);
                 }
 
                 // Set ASDoc and meta-data
@@ -2044,7 +2044,7 @@ impl DirectiveSubverifier {
                     }
 
                     // Verify the identifier binding or destructuring pattern
-                    DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &init, is_const, &mut var_out, &ns, &var_parent, is_external)?;
+                    DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &init, is_const, &mut var_out, &ns, &var_parent, is_external, false)?;
 
                     // Remove *init1* from "cached_var_init"
                     verifier.cached_var_init.remove(&ByAddress(binding.destructuring.destructuring.clone()));
@@ -2368,7 +2368,7 @@ impl DirectiveSubverifier {
         
                                 if last_param_kind.may_be_followed_by(param_node.kind) {
                                     loop {
-                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, defn.common.body.is_none()) {
                                             Ok(_) => {
                                                 break;
                                             },
@@ -2412,7 +2412,7 @@ impl DirectiveSubverifier {
         
                                 if last_param_kind.may_be_followed_by(param_node.kind) {
                                     loop {
-                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, &param_node.destructuring.destructuring, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, &param_node.destructuring.destructuring, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, defn.common.body.is_none()) {
                                             Ok(_) => {
                                                 break;
                                             },
@@ -2451,7 +2451,7 @@ impl DirectiveSubverifier {
         
                                 if last_param_kind.may_be_followed_by(param_node.kind) && last_param_kind != ParameterKind::Rest {
                                     loop {
-                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, defn.common.body.is_none()) {
                                             Ok(_) => {
                                                 break;
                                             },
@@ -2721,7 +2721,7 @@ impl DirectiveSubverifier {
         
                                 if last_param_kind.may_be_followed_by(param_node.kind) {
                                     loop {
-                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, defn.common.body.is_none()) {
                                             Ok(_) => {
                                                 break;
                                             },
@@ -2765,7 +2765,7 @@ impl DirectiveSubverifier {
         
                                 if last_param_kind.may_be_followed_by(param_node.kind) {
                                     loop {
-                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, &param_node.destructuring.destructuring, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, &param_node.destructuring.destructuring, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, defn.common.body.is_none()) {
                                             Ok(_) => {
                                                 break;
                                             },
@@ -2804,7 +2804,7 @@ impl DirectiveSubverifier {
         
                                 if last_param_kind.may_be_followed_by(param_node.kind) && last_param_kind != ParameterKind::Rest {
                                     loop {
-                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, defn.common.body.is_none()) {
                                             Ok(_) => {
                                                 break;
                                             },
@@ -3097,7 +3097,7 @@ impl DirectiveSubverifier {
         
                                 if last_param_kind.may_be_followed_by(param_node.kind) {
                                     loop {
-                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, defn.common.body.is_none()) {
                                             Ok(_) => {
                                                 break;
                                             },
@@ -3141,7 +3141,7 @@ impl DirectiveSubverifier {
         
                                 if last_param_kind.may_be_followed_by(param_node.kind) {
                                     loop {
-                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, &param_node.destructuring.destructuring, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, &param_node.destructuring.destructuring, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, defn.common.body.is_none()) {
                                             Ok(_) => {
                                                 break;
                                             },
@@ -3180,7 +3180,7 @@ impl DirectiveSubverifier {
         
                                 if last_param_kind.may_be_followed_by(param_node.kind) && last_param_kind != ParameterKind::Rest {
                                     loop {
-                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, defn.common.body.is_none()) {
                                             Ok(_) => {
                                                 break;
                                             },
@@ -3496,7 +3496,7 @@ impl DirectiveSubverifier {
         
                                 if last_param_kind.may_be_followed_by(param_node.kind) {
                                     loop {
-                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, defn.common.body.is_none()) {
                                             Ok(_) => {
                                                 break;
                                             },
@@ -3540,7 +3540,7 @@ impl DirectiveSubverifier {
         
                                 if last_param_kind.may_be_followed_by(param_node.kind) {
                                     loop {
-                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, &param_node.destructuring.destructuring, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, &param_node.destructuring.destructuring, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, defn.common.body.is_none()) {
                                             Ok(_) => {
                                                 break;
                                             },
@@ -3579,7 +3579,7 @@ impl DirectiveSubverifier {
         
                                 if last_param_kind.may_be_followed_by(param_node.kind) && last_param_kind != ParameterKind::Rest {
                                     loop {
-                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, defn.common.body.is_none()) {
                                             Ok(_) => {
                                                 break;
                                             },

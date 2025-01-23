@@ -1825,7 +1825,7 @@ impl ExpSubverifier {
 
                         if last_param_kind.may_be_followed_by(param_node.kind) {
                             loop {
-                                match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, false) {
                                     Ok(_) => {
                                         break;
                                     },
@@ -1869,7 +1869,7 @@ impl ExpSubverifier {
 
                         if last_param_kind.may_be_followed_by(param_node.kind) {
                             loop {
-                                match DestructuringDeclarationSubverifier::verify_pattern(verifier, &param_node.destructuring.destructuring, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                match DestructuringDeclarationSubverifier::verify_pattern(verifier, &param_node.destructuring.destructuring, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, false) {
                                     Ok(_) => {
                                         break;
                                     },
@@ -1908,7 +1908,7 @@ impl ExpSubverifier {
 
                         if last_param_kind.may_be_followed_by(param_node.kind) && last_param_kind != ParameterKind::Rest {
                             loop {
-                                match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false) {
+                                match DestructuringDeclarationSubverifier::verify_pattern(verifier, pattern, &init, false, &mut activation.properties(&host), &internal_ns, &activation, false, false) {
                                     Ok(_) => {
                                         break;
                                     },

@@ -13,17 +13,17 @@ impl DestructuringDeclarationSubverifier {
     /// Verifies a pattern.
     ///
     /// `init` may be a value, an `InvalidationEntity` or an `UnresolvedEntity`
-    pub fn verify_pattern(verifier: &mut Subverifier, pattern: &Rc<Expression>, init: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool) -> Result<(), DeferError> {
+    pub fn verify_pattern(verifier: &mut Subverifier, pattern: &Rc<Expression>, init: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool, mark_used: bool) -> Result<(), DeferError> {
         match pattern.as_ref() {
             Expression::QualifiedIdentifier(id) =>
-                Self::verify_identifier_pattern(verifier, pattern, id, init, read_only, output, ns, parent, is_external),
+                Self::verify_identifier_pattern(verifier, pattern, id, init, read_only, output, ns, parent, is_external, mark_used),
             Expression::ObjectInitializer(literal) =>
-                Self::verify_object_pattern(verifier, pattern, literal, init, read_only, output, ns, parent, is_external),
+                Self::verify_object_pattern(verifier, pattern, literal, init, read_only, output, ns, parent, is_external, mark_used),
             Expression::ArrayLiteral(literal) =>
-                Self::verify_array_pattern(verifier, pattern, literal, init, read_only, output, ns, parent, is_external),
+                Self::verify_array_pattern(verifier, pattern, literal, init, read_only, output, ns, parent, is_external, mark_used),
             Expression::Unary(e) => {
                 if e.operator == Operator::NonNull {
-                    Self::verify_non_null_pattern(verifier, pattern, e, init, read_only, output, ns, parent, is_external)
+                    Self::verify_non_null_pattern(verifier, pattern, e, init, read_only, output, ns, parent, is_external, mark_used)
                 } else {
                     Ok(())
                 }
@@ -32,7 +32,7 @@ impl DestructuringDeclarationSubverifier {
         }
     }
 
-    fn verify_identifier_pattern(verifier: &mut Subverifier, pattern: &Rc<Expression>, id: &QualifiedIdentifier, init: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool) -> Result<(), DeferError> {
+    fn verify_identifier_pattern(verifier: &mut Subverifier, pattern: &Rc<Expression>, id: &QualifiedIdentifier, init: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool, mark_used: bool) -> Result<(), DeferError> {
         let mut slot = verifier.host.node_mapping().get(pattern);
         let mut slot_just_init = false;
         if slot.is_none() {
@@ -54,7 +54,9 @@ impl DestructuringDeclarationSubverifier {
             if let Some(prev) = output.get(&name) {
                 slot = Some(verifier.handle_definition_conflict(&prev, &slot1));
             } else {
-                Unused(&verifier.host).add_nominal(&slot1);
+                if !mark_used {
+                    Unused(&verifier.host).add_nominal(&slot1);
+                }
                 output.set(name, slot1.clone());
                 slot = Some(slot1);
             }
@@ -113,7 +115,7 @@ impl DestructuringDeclarationSubverifier {
         }
     }
 
-    fn verify_array_pattern(verifier: &mut Subverifier, pattern: &Rc<Expression>, literal: &ArrayLiteral, init: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool) -> Result<(), DeferError> {
+    fn verify_array_pattern(verifier: &mut Subverifier, pattern: &Rc<Expression>, literal: &ArrayLiteral, init: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool, mark_used: bool) -> Result<(), DeferError> {
         let mut slot = verifier.host.node_mapping().get(pattern);
         let mut slot_just_init = false;
         if slot.is_none() {
@@ -145,7 +147,7 @@ impl DestructuringDeclarationSubverifier {
                 for elem in &literal.elements {
                     match elem {
                         Element::Expression(subpat) => {
-                            if let Err(DeferError(subphase)) = Self::verify_pattern(verifier, subpat, &verifier.host.unresolved_entity(), read_only, output, ns, parent, is_external) {
+                            if let Err(DeferError(subphase)) = Self::verify_pattern(verifier, subpat, &verifier.host.unresolved_entity(), read_only, output, ns, parent, is_external, mark_used) {
                                 assert_eq!(subphase, Some(VerifierPhase::Beta));
                             }
                         },
@@ -155,7 +157,7 @@ impl DestructuringDeclarationSubverifier {
                             }
                             rest_i = i;
                             rest_loc = Some(loc.clone());
-                            if let Err(DeferError(subphase)) = Self::verify_pattern(verifier, restpat, &verifier.host.unresolved_entity(), read_only, output, ns, parent, is_external) {
+                            if let Err(DeferError(subphase)) = Self::verify_pattern(verifier, restpat, &verifier.host.unresolved_entity(), read_only, output, ns, parent, is_external, mark_used) {
                                 assert_eq!(subphase, Some(VerifierPhase::Beta));
                             }
                         },
@@ -193,33 +195,33 @@ impl DestructuringDeclarationSubverifier {
 
                 // Verify Vector.<T> in omega phase
                 if let Some(elem_type) = init_st_esc.vector_element_type(&verifier.host)? {
-                    Self::verify_vector_array_pattern_omega(verifier, literal, &slot, &init_st_esc, &elem_type, read_only, output, ns, parent, is_external)
+                    Self::verify_vector_array_pattern_omega(verifier, literal, &slot, &init_st_esc, &elem_type, read_only, output, ns, parent, is_external, mark_used)
                 // Verify Array.<T> in omega phase
                 } else if let Some(elem_type) = init_st_esc.array_element_type(&verifier.host)? {
-                    Self::verify_array_array_pattern_omega(verifier, literal, &slot, &init_st_esc, &elem_type, read_only, output, ns, parent, is_external)
+                    Self::verify_array_array_pattern_omega(verifier, literal, &slot, &init_st_esc, &elem_type, read_only, output, ns, parent, is_external, mark_used)
                 // Verify tuple in omega phase
                 } else if init_st_esc.is::<TupleType>() {
-                    Self::verify_tuple_array_pattern_omega(verifier, literal, &slot, &init_st_esc, read_only, output, ns, parent, is_external)
+                    Self::verify_tuple_array_pattern_omega(verifier, literal, &slot, &init_st_esc, read_only, output, ns, parent, is_external, mark_used)
                 // Verify * or Object in omega phase
                 } else if [verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&init_st_esc) {
-                    Self::verify_untyped_array_pattern_omega(verifier, literal, &slot, read_only, output, ns, parent, is_external)
+                    Self::verify_untyped_array_pattern_omega(verifier, literal, &slot, read_only, output, ns, parent, is_external, mark_used)
                 // Invalidation in omega phase
                 } else {
-                    Self::verify_invalidation_array_pattern_omega(verifier, literal, &slot, read_only, output, ns, parent, is_external)
+                    Self::verify_invalidation_array_pattern_omega(verifier, literal, &slot, read_only, output, ns, parent, is_external, mark_used)
                 }
             },
             _ => panic!(),
         }
     }
 
-    fn verify_vector_array_pattern_omega(verifier: &mut Subverifier, literal: &ArrayLiteral, patslot: &Entity, vector_type: &Entity, elem_type: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool) -> Result<(), DeferError> {
+    fn verify_vector_array_pattern_omega(verifier: &mut Subverifier, literal: &ArrayLiteral, patslot: &Entity, vector_type: &Entity, elem_type: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool, mark_used: bool) -> Result<(), DeferError> {
         for elem in &literal.elements {
             match elem {
                 Element::Expression(subpat) => {
-                    Self::verify_pattern(verifier, subpat, &verifier.host.factory().create_value(elem_type), read_only, output, ns, parent, is_external)?;
+                    Self::verify_pattern(verifier, subpat, &verifier.host.factory().create_value(elem_type), read_only, output, ns, parent, is_external, mark_used)?;
                 },
                 Element::Rest((restpat, _)) => {
-                    Self::verify_pattern(verifier, restpat, &verifier.host.factory().create_value(vector_type), read_only, output, ns, parent, is_external)?;
+                    Self::verify_pattern(verifier, restpat, &verifier.host.factory().create_value(vector_type), read_only, output, ns, parent, is_external, mark_used)?;
                 },
                 Element::Elision => {},
             }
@@ -230,14 +232,14 @@ impl DestructuringDeclarationSubverifier {
         Ok(())
     }
 
-    fn verify_array_array_pattern_omega(verifier: &mut Subverifier, literal: &ArrayLiteral, patslot: &Entity, array_type: &Entity, elem_type: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool) -> Result<(), DeferError> {
+    fn verify_array_array_pattern_omega(verifier: &mut Subverifier, literal: &ArrayLiteral, patslot: &Entity, array_type: &Entity, elem_type: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool, mark_used: bool) -> Result<(), DeferError> {
         for elem in &literal.elements {
             match elem {
                 Element::Expression(subpat) => {
-                    Self::verify_pattern(verifier, subpat, &verifier.host.factory().create_value(elem_type), read_only, output, ns, parent, is_external)?;
+                    Self::verify_pattern(verifier, subpat, &verifier.host.factory().create_value(elem_type), read_only, output, ns, parent, is_external, mark_used)?;
                 },
                 Element::Rest((restpat, _)) => {
-                    Self::verify_pattern(verifier, restpat, &verifier.host.factory().create_value(array_type), read_only, output, ns, parent, is_external)?;
+                    Self::verify_pattern(verifier, restpat, &verifier.host.factory().create_value(array_type), read_only, output, ns, parent, is_external, mark_used)?;
                 },
                 Element::Elision => {},
             }
@@ -248,7 +250,7 @@ impl DestructuringDeclarationSubverifier {
         Ok(())
     }
 
-    fn verify_tuple_array_pattern_omega(verifier: &mut Subverifier, literal: &ArrayLiteral, patslot: &Entity, tuple_type: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool) -> Result<(), DeferError> {
+    fn verify_tuple_array_pattern_omega(verifier: &mut Subverifier, literal: &ArrayLiteral, patslot: &Entity, tuple_type: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool, mark_used: bool) -> Result<(), DeferError> {
         let elem_types = tuple_type.element_types();
         let mut i: usize = 0;
         let mut rest_found = false;
@@ -257,16 +259,16 @@ impl DestructuringDeclarationSubverifier {
             match elem {
                 Element::Expression(subpat) => {
                     if rest_found || i >= elem_types.length() {
-                        Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
+                        Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external, mark_used)?;
                     } else {
                         let elem_type = elem_types.get(i).unwrap();
-                        Self::verify_pattern(verifier, subpat, &verifier.host.factory().create_value(&elem_type), read_only, output, ns, parent, is_external)?;
+                        Self::verify_pattern(verifier, subpat, &verifier.host.factory().create_value(&elem_type), read_only, output, ns, parent, is_external, mark_used)?;
                     }
                 },
                 Element::Rest((restpat, _)) => {
                     let array_type_of_any = verifier.host.array_type_of_any()?;
                     rest_found = true;
-                    Self::verify_pattern(verifier, restpat, &verifier.host.factory().create_value(&array_type_of_any), read_only, output, ns, parent, is_external)?;
+                    Self::verify_pattern(verifier, restpat, &verifier.host.factory().create_value(&array_type_of_any), read_only, output, ns, parent, is_external, mark_used)?;
                 },
                 Element::Elision => {},
             }
@@ -282,14 +284,14 @@ impl DestructuringDeclarationSubverifier {
         Ok(())
     }
 
-    fn verify_untyped_array_pattern_omega(verifier: &mut Subverifier, literal: &ArrayLiteral, patslot: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool) -> Result<(), DeferError> {
+    fn verify_untyped_array_pattern_omega(verifier: &mut Subverifier, literal: &ArrayLiteral, patslot: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool, mark_used:bool) -> Result<(), DeferError> {
         for elem in &literal.elements {
             match elem {
                 Element::Expression(subpat) => {
-                    Self::verify_pattern(verifier, subpat, &verifier.host.factory().create_value(&verifier.host.any_type()), read_only, output, ns, parent, is_external)?;
+                    Self::verify_pattern(verifier, subpat, &verifier.host.factory().create_value(&verifier.host.any_type()), read_only, output, ns, parent, is_external, mark_used)?;
                 },
                 Element::Rest((restpat, _)) => {
-                    Self::verify_pattern(verifier, restpat, &verifier.host.factory().create_value(&verifier.host.any_type()), read_only, output, ns, parent, is_external)?;
+                    Self::verify_pattern(verifier, restpat, &verifier.host.factory().create_value(&verifier.host.any_type()), read_only, output, ns, parent, is_external, mark_used)?;
                 },
                 Element::Elision => {},
             }
@@ -300,14 +302,14 @@ impl DestructuringDeclarationSubverifier {
         Ok(())
     }
 
-    fn verify_invalidation_array_pattern_omega(verifier: &mut Subverifier, literal: &ArrayLiteral, patslot: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool) -> Result<(), DeferError> {
+    fn verify_invalidation_array_pattern_omega(verifier: &mut Subverifier, literal: &ArrayLiteral, patslot: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool, mark_used: bool) -> Result<(), DeferError> {
         for elem in &literal.elements {
             match elem {
                 Element::Expression(subpat) => {
-                    Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
+                    Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external, mark_used)?;
                 },
                 Element::Rest((restpat, _)) => {
-                    Self::verify_pattern(verifier, restpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
+                    Self::verify_pattern(verifier, restpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external, mark_used)?;
                 },
                 Element::Elision => {},
             }
@@ -318,7 +320,7 @@ impl DestructuringDeclarationSubverifier {
         Ok(())
     }
 
-    fn verify_non_null_pattern(verifier: &mut Subverifier, pattern: &Rc<Expression>, literal: &UnaryExpression, init: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool) -> Result<(), DeferError> {
+    fn verify_non_null_pattern(verifier: &mut Subverifier, pattern: &Rc<Expression>, literal: &UnaryExpression, init: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool, mark_used: bool) -> Result<(), DeferError> {
         let mut slot = verifier.host.node_mapping().get(pattern);
         let mut slot_just_init = false;
         if slot.is_none() {
@@ -345,7 +347,7 @@ impl DestructuringDeclarationSubverifier {
         match phase {
             VerifierPhase::Alpha => {
                 // Verify subpattern
-                if let Err(DeferError(subphase)) = Self::verify_pattern(verifier, &literal.expression, &verifier.host.unresolved_entity(), read_only, output, ns, parent, is_external) {
+                if let Err(DeferError(subphase)) = Self::verify_pattern(verifier, &literal.expression, &verifier.host.unresolved_entity(), read_only, output, ns, parent, is_external, mark_used) {
                     assert_eq!(subphase, Some(VerifierPhase::Beta));
                 }
 
@@ -389,7 +391,7 @@ impl DestructuringDeclarationSubverifier {
                 };
 
                 // Verify subpattern
-                Self::verify_pattern(verifier, &literal.expression, &verifier.host.factory().create_value(&init_st_non_null), read_only, output, ns, parent, is_external)?;
+                Self::verify_pattern(verifier, &literal.expression, &verifier.host.factory().create_value(&init_st_non_null), read_only, output, ns, parent, is_external, mark_used)?;
 
                 // Report warning
                 if init_st_is_non_null {
@@ -404,7 +406,7 @@ impl DestructuringDeclarationSubverifier {
         }
     }
 
-    fn verify_object_pattern(verifier: &mut Subverifier, pattern: &Rc<Expression>, literal: &ObjectInitializer, init: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool) -> Result<(), DeferError> {
+    fn verify_object_pattern(verifier: &mut Subverifier, pattern: &Rc<Expression>, literal: &ObjectInitializer, init: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool, mark_used: bool) -> Result<(), DeferError> {
         let mut slot = verifier.host.node_mapping().get(pattern);
         let mut slot_just_init = false;
         if slot.is_none() {
@@ -430,7 +432,7 @@ impl DestructuringDeclarationSubverifier {
 
         match phase {
             VerifierPhase::Alpha => {
-                Self::verify_object_pattern_alpha(verifier, literal, &slot, read_only, output, ns, parent, is_external)
+                Self::verify_object_pattern_alpha(verifier, literal, &slot, read_only, output, ns, parent, is_external, mark_used)
             },
             VerifierPhase::Beta => {
                 verifier.phase_of_entity.insert(slot.clone(), VerifierPhase::Delta);
@@ -445,13 +447,13 @@ impl DestructuringDeclarationSubverifier {
                 Err(DeferError(Some(VerifierPhase::Omega)))
             },
             VerifierPhase::Omega => {
-                Self::verify_object_pattern_omega(verifier, literal, &slot, init, read_only, output, ns, parent, is_external)
+                Self::verify_object_pattern_omega(verifier, literal, &slot, init, read_only, output, ns, parent, is_external, mark_used)
             },
             _ => panic!(),
         }
     }
 
-    fn verify_object_pattern_alpha(verifier: &mut Subverifier, literal: &ObjectInitializer, patslot: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool) -> Result<(), DeferError> {
+    fn verify_object_pattern_alpha(verifier: &mut Subverifier, literal: &ObjectInitializer, patslot: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool, mark_used: bool) -> Result<(), DeferError> {
         // Verify fields
         for field in &literal.fields {
             match field.as_ref() {
@@ -461,7 +463,7 @@ impl DestructuringDeclarationSubverifier {
                     verifier.host.node_mapping().set(field, Some(resolution.clone()));
 
                     if let Some(subpat) = subpat {
-                        if let Err(DeferError(subphase)) = Self::verify_pattern(verifier, subpat, &verifier.host.unresolved_entity(), read_only, output, ns, parent, is_external) {
+                        if let Err(DeferError(subphase)) = Self::verify_pattern(verifier, subpat, &verifier.host.unresolved_entity(), read_only, output, ns, parent, is_external, mark_used) {
                             assert_eq!(subphase, Some(VerifierPhase::Beta));
                         }
                     } else {
@@ -476,12 +478,12 @@ impl DestructuringDeclarationSubverifier {
                             continue;
                         };
 
-                        resolution.set_var_slot(Some(Self::verify_shorthand_of_object_pattern_alpha(verifier, shorthand, read_only, output, ns, parent, is_external)));
+                        resolution.set_var_slot(Some(Self::verify_shorthand_of_object_pattern_alpha(verifier, shorthand, read_only, output, ns, parent, is_external, mark_used)));
                     }
                 },
                 InitializerField::Rest((restpat, loc)) => {
                     verifier.add_verify_error(loc, WhackDiagnosticKind::UnexpectedRest, diagarg![]);
-                    if let Err(DeferError(subphase)) = Self::verify_pattern(verifier, restpat, &verifier.host.unresolved_entity(), read_only, output, ns, parent, is_external) {
+                    if let Err(DeferError(subphase)) = Self::verify_pattern(verifier, restpat, &verifier.host.unresolved_entity(), read_only, output, ns, parent, is_external, mark_used) {
                         assert_eq!(subphase, Some(VerifierPhase::Beta));
                     }
                 },
@@ -492,7 +494,7 @@ impl DestructuringDeclarationSubverifier {
         Err(DeferError(Some(VerifierPhase::Beta)))
     }
 
-    fn verify_shorthand_of_object_pattern_alpha(verifier: &mut Subverifier, shorthand: (String, Location), read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool) -> Entity {
+    fn verify_shorthand_of_object_pattern_alpha(verifier: &mut Subverifier, shorthand: (String, Location), read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool, mark_used: bool) -> Entity {
         let name = verifier.host.factory().create_qname(ns, shorthand.0.clone());
         let slot = verifier.host.factory().create_variable_slot(&name, read_only, &verifier.host.unresolved_entity());
         slot.set_location(Some(shorthand.1.clone()));
@@ -510,13 +512,15 @@ impl DestructuringDeclarationSubverifier {
         if let Some(prev) = output.get(&name) {
             verifier.handle_definition_conflict(&prev, &slot)
         } else {
-            Unused(&verifier.host).add_nominal(&slot);
+            if !mark_used {
+                Unused(&verifier.host).add_nominal(&slot);
+            }
             output.set(name, slot.clone());
             slot
         }
     }
 
-    fn verify_object_pattern_omega(verifier: &mut Subverifier, literal: &ObjectInitializer, patslot: &Entity, init: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool) -> Result<(), DeferError> {
+    fn verify_object_pattern_omega(verifier: &mut Subverifier, literal: &ObjectInitializer, patslot: &Entity, init: &Entity, read_only: bool, output: &mut Names, ns: &Entity, parent: &Entity, is_external: bool, mark_used: bool) -> Result<(), DeferError> {
         init.defer()?;
         let init_st = init.static_type(&verifier.host).defer()?;
 
@@ -550,7 +554,7 @@ impl DestructuringDeclarationSubverifier {
                             var_slot.set_static_type(verifier.host.invalidation_entity());
                         }
                         if let Some(subpat) = subpat {
-                            Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
+                            Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external, mark_used)?;
                         }
                         resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
                         continue;
@@ -569,7 +573,7 @@ impl DestructuringDeclarationSubverifier {
                                     var_slot.set_static_type(verifier.host.invalidation_entity());
                                 }
                                 if let Some(subpat) = subpat {
-                                    Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
+                                    Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external, mark_used)?;
                                 }
                                 resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
                                 verifier.add_verify_error(name_loc, WhackDiagnosticKind::AmbiguousReference, diagarg![name.clone()]);
@@ -583,7 +587,7 @@ impl DestructuringDeclarationSubverifier {
                                     var_slot.set_static_type(verifier.host.invalidation_entity());
                                 }
                                 if let Some(subpat) = subpat {
-                                    Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
+                                    Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external, mark_used)?;
                                 }
                                 resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
                                 verifier.add_verify_error(name_loc, WhackDiagnosticKind::AccessOfVoid, diagarg![]);
@@ -594,7 +598,7 @@ impl DestructuringDeclarationSubverifier {
                                     var_slot.set_static_type(verifier.host.invalidation_entity());
                                 }
                                 if let Some(subpat) = subpat {
-                                    Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
+                                    Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external, mark_used)?;
                                 }
                                 resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
                                 verifier.add_verify_error(name_loc, WhackDiagnosticKind::AccessOfNullable, diagarg![]);
@@ -608,7 +612,7 @@ impl DestructuringDeclarationSubverifier {
                             var_slot.set_static_type(verifier.host.invalidation_entity());
                         }
                         if let Some(subpat) = subpat {
-                            Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
+                            Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external, mark_used)?;
                         }
                         resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
                         verifier.add_verify_error(name_loc, WhackDiagnosticKind::UndefinedPropertyWithStaticType, diagarg![key.local_name().unwrap(), init_st.clone()]);
@@ -627,7 +631,7 @@ impl DestructuringDeclarationSubverifier {
                             var_slot.set_static_type(postval.static_type(&verifier.host));
                         }
                         if let Some(subpat) = subpat {
-                            Self::verify_pattern(verifier, subpat, &postval, read_only, output, ns, parent, is_external)?;
+                            Self::verify_pattern(verifier, subpat, &postval, read_only, output, ns, parent, is_external, mark_used)?;
                         }
                         resolution.set_field_reference(Some(postval));
                     } else {
@@ -635,13 +639,13 @@ impl DestructuringDeclarationSubverifier {
                             var_slot.set_static_type(verifier.host.invalidation_entity());
                         }
                         if let Some(subpat) = subpat {
-                            Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
+                            Self::verify_pattern(verifier, subpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external, mark_used)?;
                         }
                         resolution.set_field_reference(Some(verifier.host.invalidation_entity()));
                     }
                 },
                 InitializerField::Rest((restpat, _)) => {
-                    Self::verify_pattern(verifier, restpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external)?;
+                    Self::verify_pattern(verifier, restpat, &verifier.host.invalidation_entity(), read_only, output, ns, parent, is_external, mark_used)?;
                 },
             }
         }
