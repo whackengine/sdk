@@ -1523,11 +1523,13 @@ impl ExpSubverifier {
                 // Auto escape out of nullable form or propagate non-nullable from
                 // the right operand.
                 let right_st = right.static_type(&verifier.host);
-                if right.conversion_kind() == ConversionKind::NonNullableToNullable {
-                    return Ok(Some(verifier.host.factory().create_value(&right_st.base().static_type(&verifier.host))));
-                }
-                if right.conversion_kind() == ConversionKind::AsIsToNullable {
-                    return Ok(Some(verifier.host.factory().create_value(&right_st.escape_of_nullable())));
+                if right.is::<ConversionValue>() {
+                    if right.conversion_kind() == ConversionKind::NonNullableToNullable {
+                        return Ok(Some(verifier.host.factory().create_value(&right_st.base().static_type(&verifier.host))));
+                    }
+                    if right.conversion_kind() == ConversionKind::AsIsToNullable {
+                        return Ok(Some(verifier.host.factory().create_value(&right_st.escape_of_nullable())));
+                    }
                 }
 
                 Ok(Some(verifier.host.factory().create_value(&left_st)))
