@@ -28,6 +28,10 @@ impl<'a> Unused<'a> {
         if property.is::<InvalidationEntity>() {
             return;
         }
+        if property.is::<PackagePropertyImport>() || property.is::<PackageWildcardImport>() || property.is::<PackageRecursiveImport>() {
+            self.0.remove_unused_thing(property);
+            return;
+        }
         let qn = property.name();
         if !qn.in_public_or_protected_ns() {
             if property.is_entity_after_substitution() {

@@ -9,11 +9,9 @@ package
 {
     public const undefined: * = void 0;
 
-    /*
     public const NaN: Number = 0 / 0;
 
     public const Infinity: Number = 1 / 0;
-    */
 
     public dynamic final class Array.<T>
     {
