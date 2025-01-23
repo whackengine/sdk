@@ -202,9 +202,18 @@ impl Verifier {
         // Handle deferred function commons for lambdas.
         for _ in 0..Verifier::MAX_CYCLES {
             let mut any_defer = false;
+            let mut eliminated_commons: Vec<Rc<FunctionCommon>> = vec![];
             for (common, partials) in self.verifier.deferred_function_exp.clone().borrow().iter() {
                 let common = (**common).clone();
-                any_defer = any_defer || FunctionCommonSubverifier::verify_function_exp_common(&mut self.verifier, &common, partials).is_err();
+                let r = FunctionCommonSubverifier::verify_function_exp_common(&mut self.verifier, &common, partials).is_err();
+                if !r {
+                    eliminated_commons.push(common);
+                }
+                any_defer = any_defer || r;
+            }
+            // Cleanup the VerifierFunctionPartials cache from Subverifier.
+            for common in eliminated_commons.iter() {
+                self.verifier.deferred_function_exp.remove(&NodeAsKey(common.clone()));
             }
             if !any_defer {
                 break;

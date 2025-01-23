@@ -148,9 +148,6 @@ impl FunctionCommonSubverifier {
         // Set the activation method's signature to the last obtained signature. 
         method.set_signature(&signature.unwrap());
 
-        // Cleanup the VerifierFunctionPartials cache from Subverifier.
-        verifier.deferred_function_exp.remove(&NodeAsKey(common.clone()));
-
         Ok(())
     }
 
