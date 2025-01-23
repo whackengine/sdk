@@ -1308,7 +1308,7 @@ impl ExpSubverifier {
                 let boolean_type = verifier.host.boolean_type().defer()?;
 
                 // Generate warning for unrelated types
-                if left.is_comparison_between_unrelated_types(&right, &verifier.host)? {
+                if left_st.is_comparison_between_unrelated_types(&right_st, &verifier.host)? {
                     verifier.add_warning(&exp.location, WhackDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
                 }
 
@@ -1339,7 +1339,7 @@ impl ExpSubverifier {
                 let boolean_type = verifier.host.boolean_type().defer()?;
 
                 // Generate warning for unrelated types
-                if left.is_comparison_between_unrelated_types(&right, &verifier.host)? {
+                if left_st.is_comparison_between_unrelated_types(&right_st, &verifier.host)? {
                     verifier.add_warning(&exp.location, WhackDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
                 }
 
@@ -1373,7 +1373,7 @@ impl ExpSubverifier {
                 let boolean_type = verifier.host.boolean_type().defer()?;
 
                 // Generate warning for unrelated types
-                if left.is_comparison_between_unrelated_types(&right, &verifier.host)? {
+                if left_st.is_comparison_between_unrelated_types(&right_st, &verifier.host)? {
                     verifier.add_warning(&exp.location, WhackDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
                 }
 
@@ -1394,7 +1394,7 @@ impl ExpSubverifier {
                 let boolean_type = verifier.host.boolean_type().defer()?;
 
                 // Generate warning for unrelated types
-                if left.is_comparison_between_unrelated_types(&right, &verifier.host)? {
+                if left_st.is_comparison_between_unrelated_types(&right_st, &verifier.host)? {
                     verifier.add_warning(&exp.location, WhackDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
                 }
 
@@ -1415,7 +1415,7 @@ impl ExpSubverifier {
                 let boolean_type = verifier.host.boolean_type().defer()?;
 
                 // Generate warning for unrelated types
-                if left.is_comparison_between_unrelated_types(&right, &verifier.host)? {
+                if left_st.is_comparison_between_unrelated_types(&right_st, &verifier.host)? {
                     verifier.add_warning(&exp.location, WhackDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
                 }
 
@@ -1436,7 +1436,7 @@ impl ExpSubverifier {
                 let boolean_type = verifier.host.boolean_type().defer()?;
 
                 // Generate warning for unrelated types
-                if left.is_comparison_between_unrelated_types(&right, &verifier.host)? {
+                if left_st.is_comparison_between_unrelated_types(&right_st, &verifier.host)? {
                     verifier.add_warning(&exp.location, WhackDiagnosticKind::ComparisonBetweenUnrelatedTypes, diagarg![left_st.clone(), right_st.clone()]);
                 }
 
