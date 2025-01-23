@@ -286,7 +286,7 @@ impl<'a> Factory<'a> {
         let empty_list = vec![];
         if list.is_none() {
             list = Some(&empty_list);
-            base_list.insert(indirect_type_params.clone(), vec![]);
+            vasub_list.get_mut(origin).unwrap().insert(indirect_type_params.clone(), vec![]);
         }
         'vasub: for vasub in list.unwrap() {
             let mut substitute_types_1 = indirect_substitute_types.iter();
@@ -336,7 +336,7 @@ impl<'a> Factory<'a> {
         let empty_list = vec![];
         if list.is_none() {
             list = Some(&empty_list);
-            base_list.insert(indirect_type_params.clone(), vec![]);
+            visub_list.get_mut(origin).unwrap().insert(indirect_type_params.clone(), vec![]);
         }
         'visub: for visub in list.unwrap() {
             let mut substitute_types_1 = indirect_substitute_types.iter();
@@ -386,7 +386,7 @@ impl<'a> Factory<'a> {
         let empty_list = vec![];
         if list.is_none() {
             list = Some(&empty_list);
-            base_list.insert(indirect_type_params.clone(), vec![]);
+            mssub_list.get_mut(origin).unwrap().insert(indirect_type_params.clone(), vec![]);
         }
         'mssub: for mssub in list.unwrap() {
             let mut substitute_types_1 = indirect_substitute_types.iter();
