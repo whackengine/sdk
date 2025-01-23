@@ -504,16 +504,20 @@ impl DirectiveSubverifier {
 
                     // Resolve destructuring pattern
                     let init = host.factory().create_value(&expected_type);
-                    match DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &init, is_const, &mut scope.properties(&host), &internal_ns, &scope, false, false) {
-                        Ok(_) => {},
-                        Err(DeferError(None)) => {
-                            return Err(DeferError(None));
-                        },
-                        Err(DeferError(Some(VerifierPhase::Beta))) |
-                        Err(DeferError(Some(VerifierPhase::Delta))) |
-                        Err(DeferError(Some(VerifierPhase::Epsilon))) |
-                        Err(DeferError(Some(VerifierPhase::Omega))) => {},
-                        Err(DeferError(Some(_))) => panic!(),
+                    loop {
+                        match DestructuringDeclarationSubverifier::verify_pattern(verifier, &binding.destructuring.destructuring, &init, is_const, &mut scope.properties(&host), &internal_ns, &scope, false, false) {
+                            Ok(_) => {
+                                break;
+                            },
+                            Err(DeferError(None)) => {
+                                return Err(DeferError(None));
+                            },
+                            Err(DeferError(Some(VerifierPhase::Beta))) |
+                            Err(DeferError(Some(VerifierPhase::Delta))) |
+                            Err(DeferError(Some(VerifierPhase::Epsilon))) |
+                            Err(DeferError(Some(VerifierPhase::Omega))) => {},
+                            Err(DeferError(Some(_))) => panic!(),
+                        }
                     }
 
                     if illegal_obj {
