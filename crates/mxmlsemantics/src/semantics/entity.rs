@@ -4307,7 +4307,7 @@ impl QName {
 
     pub fn in_public_or_protected_ns_or_user_ns(&self) -> bool {
         let ns = self.namespace();
-        ns.is_public_ns() || ns.is_protected_ns() || ns.is::<UserNamespace>()
+        ns.is_public_ns() || ns.is_protected_ns() || ns.is::<UserNamespace>() || ns.parent().is_none()
     }
 
     pub fn namespace(&self) -> Entity {
