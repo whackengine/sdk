@@ -273,9 +273,9 @@ dependencies = [
 
 [[package]]
 name = "hydroperfox-smodel"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "917d52f195f464d84e2917a03388fefe5a627cca665d58f8868973a32235d894"
+checksum = "e4b9e2027762c98f0af47926de6ffee2550bb62ab9718050327d1a6c33becac6"
 dependencies = [
  "by_address",
  "hydroperfox-smodel-proc",
@@ -283,9 +283,9 @@ dependencies = [
 
 [[package]]
 name = "hydroperfox-smodel-proc"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ad9e62d5128731789299d0d7677dc23e72b575220ba37f9d891987c99792e60"
+checksum = "e99450b085814722986397a72b04eefbe26a8d1e672527962622a66f824ca6d3"
 dependencies = [
  "by_address",
  "proc-macro2",
