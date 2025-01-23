@@ -206,7 +206,10 @@ impl DestructuringDeclarationSubverifier {
                 } else if [verifier.host.any_type(), verifier.host.object_type().defer()?].contains(&init_st_esc) {
                     Self::verify_untyped_array_pattern_omega(verifier, literal, &slot, read_only, output, ns, parent, is_external, mark_used)
                 // Invalidation in omega phase
+                } else if init_st == verifier.host.invalidation_entity() {
+                    Self::verify_invalidation_array_pattern_omega(verifier, literal, &slot, read_only, output, ns, parent, is_external, mark_used)
                 } else {
+                    verifier.add_verify_error(&literal.location, WhackDiagnosticKind::CannotUseDestructuringHere, diagarg![]);
                     Self::verify_invalidation_array_pattern_omega(verifier, literal, &slot, read_only, output, ns, parent, is_external, mark_used)
                 }
             },
