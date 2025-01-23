@@ -67,8 +67,8 @@ impl FunctionCommonSubverifier {
         let name_span = partials.name_span();
 
         // Attempt to create signature
-        let mut signature: Option<Entity> = None;
-        if partials.signature().is_none() && partials.result_type().is_some() {
+        let mut signature: Option<Entity> = partials.signature();
+        if signature.is_none() && partials.result_type().is_some() {
             let mut result_type = partials.result_type().unwrap(); 
 
             if common.contains_await && !result_type.promise_result_type(&host)?.is_some() {
@@ -84,6 +84,10 @@ impl FunctionCommonSubverifier {
         // Set the activation method's signature to the last obtained signature if any.
         if let Some(signature) = signature.clone() {
             method.set_signature(&signature);
+        }
+
+        if signature.is_none() {
+            return Err(DeferError(None));
         }
 
         // Resolve directives and then statements, or just the expression body.
