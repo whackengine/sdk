@@ -93,7 +93,9 @@ impl FunctionCommonSubverifier {
         // Resolve directives and then statements, or just the expression body.
         match &common.body {
             Some(FunctionBody::Block(block)) => {
-                let block_scope = host.factory().create_scope();
+                let block_scope = host.lazy_node_mapping(block, || {
+                    host.factory().create_scope()
+                });
                 verifier.inherit_and_enter_scope(&block_scope);
                 DirectiveSubverifier::verify_directives(verifier, &block.directives)?;
                 StatementSubverifier::verify_statements(verifier, &block.directives);
@@ -160,7 +162,9 @@ impl FunctionCommonSubverifier {
         // Resolve directives and then statements, or just the expression body.
         match &common.body {
             Some(FunctionBody::Block(block)) => {
-                let block_scope = host.factory().create_scope();
+                let block_scope = host.lazy_node_mapping(block, || {
+                    host.factory().create_scope()
+                });
                 verifier.inherit_and_enter_scope(&block_scope);
                 DirectiveSubverifier::verify_directives(verifier, &block.directives)?;
                 verifier.exit_scope();
@@ -180,7 +184,9 @@ impl FunctionCommonSubverifier {
         // Resolve directives and then statements, or just the expression body.
         match &common.body {
             Some(FunctionBody::Block(block)) => {
-                let block_scope = host.factory().create_scope();
+                let block_scope = host.lazy_node_mapping(block, || {
+                    host.factory().create_scope()
+                });
                 verifier.inherit_and_enter_scope(&block_scope);
                 StatementSubverifier::verify_statements(verifier, &block.directives);
                 verifier.exit_scope();
