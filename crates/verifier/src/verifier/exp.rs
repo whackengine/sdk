@@ -1864,7 +1864,7 @@ impl ExpSubverifier {
                         } else {
                             init = verifier.imp_coerce_exp(param_node.default_value.as_ref().unwrap(), &param_type)?.unwrap_or(host.invalidation_entity());
                             verifier.cached_var_init.insert(NodeAsKey(pattern.clone()), init.clone());
-                            if !init.is::<InvalidationEntity>() && !init.static_type(&host).is::<Constant>() {
+                            if !init.is::<InvalidationEntity>() && !init.is::<Constant>() {
                                 verifier.add_verify_error(&param_node.default_value.as_ref().unwrap().location(), WhackDiagnosticKind::EntityIsNotAConstant, diagarg![]);
                             }
                         }
