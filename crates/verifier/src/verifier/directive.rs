@@ -2657,6 +2657,13 @@ impl DirectiveSubverifier {
                 Err(DeferError(None))
             },
             VerifierPhase::Beta => {
+                // Reserved phase
+
+                // Next phase
+                verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                Err(DeferError(None))
+            },
+            VerifierPhase::Delta => {
                 // Retrieve method slot
                 let slot = verifier.host.node_mapping().get(drtv).unwrap();
 
@@ -2865,10 +2872,10 @@ impl DirectiveSubverifier {
                 verifier.set_scope(&kscope);
 
                 // Next phase
-                verifier.set_drtv_phase(drtv, VerifierPhase::Delta);
+                verifier.set_drtv_phase(drtv, VerifierPhase::Epsilon);
                 Err(DeferError(None))
             },
-            VerifierPhase::Delta => {
+            VerifierPhase::Epsilon => {
                 // FunctionCommon
                 let common = defn.common.clone();
 
