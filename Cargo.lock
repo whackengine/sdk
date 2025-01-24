@@ -417,9 +417,9 @@ dependencies = [
 
 [[package]]
 name = "mxmlextrema-as3parser"
-version = "1.3.2"
+version = "1.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ed0537d2d02e304bbfa05cc8f07069df8322e1a2f540fb8bce9b3c37e1539b4"
+checksum = "620d7f9077f504ee0f811a8949de4dba39b255e36183706bb64a01b23c8bbd4b"
 dependencies = [
  "bitflags",
  "by_address",

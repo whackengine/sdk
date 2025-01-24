@@ -241,6 +241,8 @@ impl CommandProcessCommons {
                     } else {
                         println!("{} {}", "Warning:".yellow(), diagnostic.format_english());
                     }
+
+                    println!("\n{}\n", &diagnostic.location().show_code());
                 }
             }
 
