@@ -1,6 +1,0 @@
-[package]
-name = "com.hydroper.demo"
-version = "1.0.0"
-source-path = ["src"]
-
-[dependencies]
