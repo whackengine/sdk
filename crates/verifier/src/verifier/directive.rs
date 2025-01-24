@@ -2264,7 +2264,7 @@ impl DirectiveSubverifier {
                 slot.set_asdoc(defn.asdoc.clone());
 
                 // If external, function must be native or abstract.
-                if is_external && !(slot.is_native() || slot.is_abstract()) {
+                if is_external && !(slot.is_native() || slot.is_abstract() || fn_parent.is::<InterfaceType>()) {
                     verifier.add_verify_error(&loc, WhackDiagnosticKind::ExternalFunctionMustBeNativeOrAbstract, diagarg![]);
                 }
 
@@ -2972,7 +2972,7 @@ impl DirectiveSubverifier {
                 slot.set_is_overriding(Attribute::find_override(&defn.attributes).is_some());
 
                 // If external, function must be native or abstract.
-                if is_external && !(slot.is_native() || slot.is_abstract()) {
+                if is_external && !(slot.is_native() || slot.is_abstract() || fn_parent.is::<InterfaceType>()) {
                     verifier.add_verify_error(&loc, WhackDiagnosticKind::ExternalFunctionMustBeNativeOrAbstract, diagarg![]);
                 }
 
@@ -3371,7 +3371,7 @@ impl DirectiveSubverifier {
                 slot.set_is_overriding(Attribute::find_override(&defn.attributes).is_some());
 
                 // If external, function must be native or abstract.
-                if is_external && !(slot.is_native() || slot.is_abstract()) {
+                if is_external && !(slot.is_native() || slot.is_abstract() || fn_parent.is::<InterfaceType>()) {
                     verifier.add_verify_error(&loc, WhackDiagnosticKind::ExternalFunctionMustBeNativeOrAbstract, diagarg![]);
                 }
 
