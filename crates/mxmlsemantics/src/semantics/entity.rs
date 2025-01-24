@@ -131,7 +131,6 @@ smodel! {
         pub fn is_class_or_equivalent(&self) -> bool {
             self.is_class_type_possibly_after_sub()
             || self.is::<EnumType>()
-            || self.is::<TupleType>()
             || self.is::<FunctionType>()
         }
 
@@ -903,7 +902,7 @@ smodel! {
             } else if self.is::<FunctionType>() {
                 return vec![host.function_type()];
             } else if self.is::<TupleType>() {
-                return vec![host.array_type_of_any().unwrap_or(host.unresolved_entity())];
+                return vec![host.object_type()];
             } else if self.is::<InvalidationEntity>() {
                 return vec![];
             }

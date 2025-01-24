@@ -68,6 +68,14 @@ impl<'a> PropertyLookup<'a> {
         let local_name = key.local_name();
         let double_key = map_defer_error(key.double_value())?;
 
+        let mut base = base.clone();
+
+        if base.is::<TypeConstant>() {
+            base = base.referenced_type();
+        } else if base.is::<FixtureReferenceValue>() && base.property().is::<Type>() {
+            base = base.property();
+        }
+
         // If base is a class
         if base.is_class_or_equivalent() {
             // Key must be a String constant
@@ -78,7 +86,7 @@ impl<'a> PropertyLookup<'a> {
             // Qualifier must be a compile-time namespace, otherwise return static dynamic reference.
             if !qual.as_ref().map(|q| q.is_namespace_or_ns_constant()).unwrap_or(true) {
                 let k = map_defer_error(PropertyLookupKey::LocalName(local_name).computed_or_local_name(self.0))?;
-                return Ok(Some(self.0.factory().create_static_dynamic_reference_value(base, qual, &k)));
+                return Ok(Some(self.0.factory().create_static_dynamic_reference_value(&base, qual, &k)));
             }
 
             for class in base.descending_class_hierarchy(self.0).collect::<Vec<_>>() {
@@ -111,7 +119,7 @@ impl<'a> PropertyLookup<'a> {
             // Qualifier must be a compile-time namespace, otherwise return static dynamic reference.
             if !qual.as_ref().map(|q| q.is_namespace_or_ns_constant()).unwrap_or(true) {
                 let k = map_defer_error(PropertyLookupKey::LocalName(key).computed_or_local_name(self.0))?;
-                return Ok(Some(self.0.factory().create_static_dynamic_reference_value(base, qual, &k)));
+                return Ok(Some(self.0.factory().create_static_dynamic_reference_value(&base, qual, &k)));
             }
 
             return Ok(None);
@@ -130,7 +138,7 @@ impl<'a> PropertyLookup<'a> {
 
             if base_esc_type == jsval_type {
                 let k = map_defer_error(key.computed_or_local_name(self.0))?;
-                return Ok(Some(map_defer_error(self.0.factory().create_jsval_reference_value(base, qual, &k))?));
+                return Ok(Some(map_defer_error(self.0.factory().create_jsval_reference_value(&base, qual, &k))?));
             }
 
             // If not calling the property and base is a value whose type is one of
@@ -140,11 +148,11 @@ impl<'a> PropertyLookup<'a> {
             if !calling {
                 if [defer(&self.0.xml_type())?, defer(&self.0.xml_list_type())?].contains(&base_esc_type) {
                     let k = map_defer_error(key.computed_or_local_name(self.0))?;
-                    return Ok(Some(self.0.factory().create_xml_reference_value(base, qual, &k)));
+                    return Ok(Some(self.0.factory().create_xml_reference_value(&base, qual, &k)));
                 }
                 if base_type.escape_of_non_nullable() == map_defer_error(self.0.map_type().defer())? {
                     let k = map_defer_error(key.computed_or_local_name(self.0))?;
-                    return Ok(Some(self.0.factory().create_dynamic_reference_value(base, qual, &k)));
+                    return Ok(Some(self.0.factory().create_dynamic_reference_value(&base, qual, &k)));
                 }
             }
 
@@ -193,7 +201,7 @@ impl<'a> PropertyLookup<'a> {
                 }
 
                 let k = map_defer_error(key.computed_or_local_name(self.0))?;
-                return Ok(Some(self.0.factory().create_dynamic_reference_value(base, qual, &k)));
+                return Ok(Some(self.0.factory().create_dynamic_reference_value(&base, qual, &k)));
             };
 
             // If base data type is one of { *, Object, Object! }, or
@@ -225,7 +233,7 @@ impl<'a> PropertyLookup<'a> {
                 }
 
                 let k = map_defer_error(key.computed_or_local_name(self.0))?;
-                return Ok(Some(self.0.factory().create_dynamic_reference_value(base, qual, &k)));
+                return Ok(Some(self.0.factory().create_dynamic_reference_value(&base, qual, &k)));
             }
 
             if base_esc_type.is_class_or_equivalent() {
@@ -273,7 +281,7 @@ impl<'a> PropertyLookup<'a> {
             let is_proxy = map_defer_error(base_type.is_equals_or_subtype_of(&map_defer_error(self.0.proxy_type().defer())?, self.0))?;
             if is_proxy || base_type.escape_of_non_nullable().is_dynamic() {
                 let k = map_defer_error(key.computed_or_local_name(self.0))?;
-                return Ok(Some(self.0.factory().create_dynamic_reference_value(base, qual, &k)));
+                return Ok(Some(self.0.factory().create_dynamic_reference_value(&base, qual, &k)));
             }
 
             return Ok(None);
@@ -303,7 +311,7 @@ impl<'a> PropertyLookup<'a> {
 
                 r = Some(map_defer_error(prop.wrap_property_reference(self.0))?);
             // Detect Vector
-            } else if base == &self.0.top_level_package && local_name == "Vector" && qual.as_ref().map(|q| q.is_public_ns()).unwrap_or(true) {
+            } else if base == self.0.top_level_package && local_name == "Vector" && qual.as_ref().map(|q| q.is_public_ns()).unwrap_or(true) {
                 r = Some(defer(&self.0.vector_type())?);
             }
 
