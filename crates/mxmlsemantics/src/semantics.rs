@@ -37,11 +37,11 @@
 //!       - `DynamicReferenceValue`
 //!       - `DynamicScopeReferenceValue`
 //!       - `FixtureReferenceValue`
-//!       - `InstanceReferenceValue`
-//!       - `PackageReferenceValue`
-//!       - `ScopeReferenceValue`
+//!         - `InstanceReferenceValue`
+//!         - `PackageReferenceValue`
+//!         - `ScopeReferenceValue`
+//!         - `StaticReferenceValue`
 //!       - `StaticDynamicReferenceValue`
-//!       - `StaticReferenceValue`
 //!       - `TupleReferenceValue`
 //!       - `VectorElementReferenceValue`
 //!       - `XmlReferenceValue`
