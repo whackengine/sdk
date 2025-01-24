@@ -10,7 +10,7 @@ use super::CommandProcessCommons;
 
 pub async fn check_process(matches: &clap::ArgMatches) {
     let builtins = matches.get_one::<String>("builtins").cloned().unwrap_or("../lib/packages/whack.base".to_owned());
-    let builtins = PathBuf::from_str(&FlexPath::from_n_native([std::env::current_dir().unwrap().to_str().unwrap(), &builtins]).to_string_with_flex_separator()).unwrap();
+    let builtins = PathBuf::from_str(&FlexPath::from_n_native([std::env::current_dir().unwrap().to_str().unwrap(), &builtins]).to_string_with_flex_separator()).unwrap().canonicalize().unwrap();
     let package: Option<&String> = matches.get_one::<String>("package");
     let initial_path: Option<&String> = matches.get_one::<String>("path");
     // Command line provided configuration constants
@@ -61,7 +61,7 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     let mut lockfile = lockfile.unwrap();
 
     // Entry point directory
-    let dir = PathBuf::from_str(&dir.to_string_with_flex_separator()).unwrap();
+    let dir = PathBuf::from_str(&dir.to_string_with_flex_separator()).unwrap().canonicalize().unwrap();
 
     // Conflicting dependencies tracker
     let mut conflicting_dependencies_tracker = HashMap::<String, HashMap<String, VersionReq>>::new();

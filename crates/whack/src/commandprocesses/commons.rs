@@ -245,9 +245,9 @@ impl CommandProcessCommons {
                 for diagnostic in cu.nested_diagnostics() {
                     let diagnostic = WhackDiagnostic(&diagnostic);
                     if diagnostic.is_error() {
-                        println!("{} {}", "Error:".red(), diagnostic.format_english());
+                        println!("{} {}", "Error:".red(), diagnostic.format_english_with_base_path(&entry_pckg.absolute_path.to_str().unwrap()));
                     } else {
-                        println!("{} {}", "Warning:".yellow(), diagnostic.format_english());
+                        println!("{} {}", "Warning:".yellow(), diagnostic.format_english_with_base_path(&entry_pckg.absolute_path.to_str().unwrap()));
                     }
 
                     println!("\n{}\n", &diagnostic.location().show_code());

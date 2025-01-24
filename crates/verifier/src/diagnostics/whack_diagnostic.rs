@@ -52,6 +52,14 @@ impl<'a> WhackDiagnostic<'a> {
         self.format_with_message(&self.format_message_english(), Some(self.id()))
     }
 
+    /// Formats the diagnostic in English.
+    pub fn format_english_with_base_path(&self, base_path: &str) -> String {
+        if self.fx_kind().is_none() {
+            return self.0.format_english_with_base_path(base_path);
+        }
+        self.format_with_message_and_base_path(&self.format_message_english(), Some(self.id()), Some(base_path))
+    }
+
     pub fn format_message_english(&self) -> String {
         if self.fx_kind().is_none() {
             return self.0.format_message_english();
