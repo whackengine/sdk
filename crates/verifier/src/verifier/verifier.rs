@@ -209,8 +209,8 @@ impl Verifier {
             let top_m = host.factory().create_method_slot(&host.empty_empty_qname(), &host.factory().create_function_type(vec![], host.void_type()));
             let top_act = host.factory().create_activation(&top_m);
             top_act.set_is_global_initialization(true);
-            top_act.set_public_ns(Some(host.factory().create_public_ns(None)));
-            top_act.set_internal_ns(Some(host.factory().create_internal_ns(None)));
+            top_act.set_public_ns(Some(host.factory().create_public_ns(Some(top_act.clone()))));
+            top_act.set_internal_ns(Some(host.factory().create_internal_ns(Some(top_act.clone()))));
             top_act.open_ns_set().push(host.as3_ns());
             top_act.open_ns_set().push(top_act.public_ns().unwrap());
             top_act.open_ns_set().push(top_act.internal_ns().unwrap());
