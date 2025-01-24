@@ -830,6 +830,7 @@ dependencies = [
 name = "whackengine-verifier"
 version = "1.0.0"
 dependencies = [
+ "colored",
  "late_format",
  "lazy_static",
  "maplit",

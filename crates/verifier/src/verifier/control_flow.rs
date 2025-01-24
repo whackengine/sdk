@@ -1,6 +1,7 @@
 #![allow(unused)]
 
 use crate::ns::*;
+use colored::Colorize;
 
 thread_local! {
     static REPORTED_UNIMPLEMENTED: Cell<bool> = Cell::new(false);
@@ -11,7 +12,7 @@ pub(crate) struct ControlFlowAnalysisIsUnimplemented;
 impl ControlFlowAnalysisIsUnimplemented {
     pub fn unimplemented() {
         if !REPORTED_UNIMPLEMENTED.get() {
-            println!("Warning: Control flow analysis is not currently implemented in the MXML compiler.");
+            println!("{} Control flow analysis is unimplemented.\n", "Warning:".yellow());
             REPORTED_UNIMPLEMENTED.set(true);
         }
     }

@@ -14,3 +14,4 @@ whackengine-mxmlsemantics = { path = "../mxmlsemantics", version = "1" }
 late_format = "1"
 lazy_static = "1.4.0"
 maplit = "1.0.2"
+colored = "3.0.0"
