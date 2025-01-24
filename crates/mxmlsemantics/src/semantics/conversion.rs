@@ -172,11 +172,32 @@ impl<'a> ConversionMethods<'a> {
         }
 
         let object_type = self.0.object_type().defer()?;
+        let jsval_type = self.0.jsval_type().defer()?;
         let target_esc_type = target_type.escape_of_nullable_or_non_nullable();
 
-        // Number constant to *, Object or Object!
-        if value.is::<NumberConstant>() && (target_type.is::<AnyType>() || target_esc_type == object_type) {
+        // Number constant to *, Object or JSVal
+        if value.is::<NumberConstant>() && (target_type.is::<AnyType>() || target_esc_type == object_type || target_esc_type == jsval_type) {
             return Ok(Some(self.0.factory().create_number_constant(value.number_value(), target_type)));
+        }
+
+        // String constant to *, Object or JSVal
+        if value.is::<StringConstant>() && (target_type.is::<AnyType>() || target_esc_type == object_type || target_esc_type == jsval_type) {
+            return Ok(Some(self.0.factory().create_string_constant(value.string_value(), target_type)));
+        }
+
+        // Boolean constant to *, Object or JSVal
+        if value.is::<BooleanConstant>() && (target_type.is::<AnyType>() || target_esc_type == object_type || target_esc_type == jsval_type) {
+            return Ok(Some(self.0.factory().create_boolean_constant(value.boolean_value(), target_type)));
+        }
+
+        // Namespace constant to * or Object
+        if value.is::<NamespaceConstant>() && (target_type.is::<AnyType>() || target_esc_type == object_type) {
+            return Ok(Some(self.0.factory().create_namespace_constant_with_static_type(&value.referenced_ns(), target_type)));
+        }
+
+        // Type constant to * or Object
+        if value.is::<TypeConstant>() && (target_type.is::<AnyType>() || target_esc_type == object_type) {
+            return Ok(Some(self.0.factory().create_type_constant_with_static_type(&value.referenced_type(), target_type)));
         }
 
         if value.is::<NumberConstant>() && self.0.numeric_types()?.contains(&target_esc_type) {
