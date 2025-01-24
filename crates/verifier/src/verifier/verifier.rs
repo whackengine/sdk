@@ -121,6 +121,8 @@ impl Verifier {
             let _ = DirectiveSubverifier::verify_block_for_ns_defn(&mut self.verifier, &pckg.block);
         }
 
+        let mut initialized_undefined_inf_nan = false;
+
         // Verify directives across packages ("rem_pckg_list")
         //
         // Eliminate packages from "rem_pckg_list" that were fully solved from directive verification,
@@ -134,6 +136,40 @@ impl Verifier {
                 if DirectiveSubverifier::verify_block(&mut self.verifier, &pckg.block).is_ok() {
                     done_pckgs.push(pckg.clone());
                 }
+            }
+            // Initialize constant for "undefined", "NaN" and "Infinity"
+            if !initialized_undefined_inf_nan {
+                let toplevelp = self.verifier.host.top_level_package();
+
+                // For the "undefined" property, set an immediate constant.
+                let undefined_slot = toplevelp.properties(&self.verifier.host).get(&self.verifier.host.factory().create_qname(&toplevelp.public_ns().unwrap(), "undefined".to_owned()));
+                if let Some(undefined_slot) = undefined_slot {
+                    if undefined_slot.is::<OriginalVariableSlot>() {
+                        undefined_slot.set_var_constant(Some(self.verifier.host.factory().create_undefined_constant(&self.verifier.host.any_type())));
+                    }
+                }
+
+                let number_type = self.verifier.host.number_type();
+
+                if !number_type.is::<UnresolvedEntity>() {
+                    // For the "Infinity" property, set an immediate constant.
+                    let inf_slot = toplevelp.properties(&self.verifier.host).get(&self.verifier.host.factory().create_qname(&toplevelp.public_ns().unwrap(), "Infinity".to_owned()));
+                    if let Some(inf_slot) = inf_slot {
+                        if inf_slot.is::<OriginalVariableSlot>() {
+                            inf_slot.set_var_constant(Some(self.verifier.host.factory().create_number_constant(Number::Number(f64::INFINITY), &self.verifier.host.number_type())));
+                        }
+                    }
+
+                    // For the "NaN" property, set an immediate constant.
+                    let nan_slot = toplevelp.properties(&self.verifier.host).get(&self.verifier.host.factory().create_qname(&toplevelp.public_ns().unwrap(), "NaN".to_owned()));
+                    if let Some(nan_slot) = nan_slot {
+                        if nan_slot.is::<OriginalVariableSlot>() {
+                            nan_slot.set_var_constant(Some(self.verifier.host.factory().create_number_constant(Number::Number(f64::NAN), &self.verifier.host.number_type())));
+                        }
+                    }
+                }
+
+                initialized_undefined_inf_nan = true;
             }
             for pckg in done_pckgs.iter() {
                 let mut i = 0;

@@ -86,19 +86,6 @@ impl DestructuringDeclarationSubverifier {
                 Err(DeferError(Some(VerifierPhase::Beta)))
             },
             VerifierPhase::Beta => {
-                let name = slot.name().local_name();
-
-                // For the "undefined" property, set an immediate constant.
-                if name == "undefined" && parent == &verifier.host.top_level_package() && ns == &verifier.host.top_level_package().public_ns().unwrap() {
-                    slot.set_var_constant(Some(verifier.host.factory().create_undefined_constant(&verifier.host.any_type())));
-                // For the "Infinity" property, set an immediate constant.
-                } else if name == "Infinity" && parent == &verifier.host.top_level_package() && ns == &verifier.host.top_level_package().public_ns().unwrap() {
-                    slot.set_var_constant(Some(verifier.host.factory().create_number_constant(Number::Number(f64::INFINITY), &verifier.host.number_type().defer()?)));
-                // For the "NaN" property, set an immediate constant.
-                } else if name == "NaN" && parent == &verifier.host.top_level_package() && ns == &verifier.host.top_level_package().public_ns().unwrap() {
-                    slot.set_var_constant(Some(verifier.host.factory().create_number_constant(Number::Number(f64::NAN), &verifier.host.number_type().defer()?)));
-                }
-
                 verifier.phase_of_entity.insert(slot.clone(), VerifierPhase::Delta);
                 Err(DeferError(Some(VerifierPhase::Delta)))
             },
