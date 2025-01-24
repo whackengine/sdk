@@ -11,7 +11,7 @@ pub(crate) struct ControlFlowAnalysisIsUnimplemented;
 impl ControlFlowAnalysisIsUnimplemented {
     pub fn unimplemented() {
         if !REPORTED_UNIMPLEMENTED.get() {
-            println!("Warning: Control flow analysis does not exist in MXMLC currently.");
+            println!("Warning: Control flow analysis is not currently implemented in the MXML compiler.");
             REPORTED_UNIMPLEMENTED.set(true);
         }
     }

@@ -602,7 +602,7 @@ smodel! {
                 return Ok(host.factory().create_value(&host.any_type()));
             }
             let parent = parent.unwrap();
-            if parent.is::<ClassType>() || parent.is::<EnumType>() {
+            if parent.is_class_type_possibly_after_sub() || parent.is::<EnumType>() {
                 return host.factory().create_static_reference_value(&parent, self);
             }
             if parent.is::<Package>() {
@@ -889,7 +889,7 @@ smodel! {
     
         /// Returns direct ascending types of a type, each possibly unresolved.
         pub fn direct_ascending_types(&self, host: &Database) -> Vec<Entity> {
-            if self.is::<ClassType>() {
+            if self.is_class_type_possibly_after_sub() {
                 let mut r: Vec<Entity> = self.implements(host).iter().collect();
                 if let Some(ascending_class) = self.extends_class(host) {
                     r.push(ascending_class);
@@ -897,7 +897,7 @@ smodel! {
                 return r;
             } else if self.is::<EnumType>() {
                 return vec![self.extends_class(host).unwrap()];
-            } else if self.is::<InterfaceType>() {
+            } else if self.is_interface_type_possibly_after_sub() {
                 return self.extends_interfaces(host).iter().collect();
             } else if self.is::<FunctionType>() {
                 return vec![host.function_type()];
