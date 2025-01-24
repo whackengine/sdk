@@ -21,17 +21,17 @@ pub enum ConversionKind {
 
     /// Implicit conversion to covariant type.
     /// 
-    /// Involved types either both include null or both do not include null.
+    /// Either involved types both do not include null, or the target type includes null.
     ToCovariant,
 
     /// Explicit conversion from `Object`, `Object!`, or `Object?`, to interface.
     /// 
-    /// Involved types either both include null or both do not include null.
+    /// Either involved types both do not include null, or the target type includes null.
     ObjectToItrfc,
 
     /// Implicit conversion to `Object`, `Object?` or `Object!`.
     /// 
-    /// Involved types either both include null or both do not include null.
+    /// Either involved types both do not include null, or the target type includes null.
     ItrfcToObject,
 
     /// Implicit conversion.
@@ -49,23 +49,25 @@ pub enum ConversionKind {
 
     /// Explicit conversion.
     /// 
-    /// Involved types either both include null or both do not include null.
+    /// Either involved types both do not include null, or the target type includes null.
     ToContravariant,
 
     /// Explicit conversion.
     /// 
     /// Restrictions:
     /// 
-    /// * Involved types either both include null or both do not include null.
-    /// * Involved element types either both include null or both do not include null.
+    /// * Either involved types both do not include null, or the target type includes null.
+    /// * Either involved element types both do not include null, or the target element type
+    ///   includes null.
     ToCovariantArray,
 
     /// Explicit conversion.
     /// 
     /// Restrictions:
     /// 
-    /// * Involved types either both include null or both do not include null.
-    /// * Involved element types either both include null or both do not include null.
+    /// * Either involved types both do not include null, or the target type includes null.
+    /// * Either involved element types both do not include null, or the target element type
+    ///   includes null.
     ToCovariantVector,
 
     /// Explicit conversion.
@@ -86,7 +88,7 @@ pub enum ConversionKind {
 
     /// Implicit conversion from `Function` to structural function type.
     /// 
-    /// Involved types either both include null or both do not include null.
+    /// Either involved types both do not include null, or the target type includes null.
     FunctionToStructuralFunction,
 
     /// Explicit conversion, where base type is a type parameter type,
@@ -95,9 +97,9 @@ pub enum ConversionKind {
 
     /// Explicit conversion where the type arguments to
     /// a parameterized type are changed. This conversion
-    /// does not apply to `Vector.<T>`.
+    /// does not apply to `Vector.<T>`, `Map.<K, V>` and `Array.<T>`.
     /// 
-    /// Involved types either both include null or both do not include null.
+    /// Either involved types both do not include null, or the target type includes null.
     /// 
     /// Involved types are each either a parameterized type without applied types
     /// or an application of a parameterized type.
@@ -259,11 +261,11 @@ impl<'a> ConversionMethods<'a> {
         }
 
         if from_type_esc.is_subtype_of(&target_type_esc, self.0)? {
-            let both_include_null = from_type.includes_null(self.0)? && target_type.includes_null(self.0)?;
+            let target_includes_null = target_type.includes_null(self.0)?;
             let both_dont_include_null = !from_type.includes_null(self.0)? && !target_type.includes_null(self.0)?;
 
             // ToCovariant
-            if both_include_null || both_dont_include_null {
+            if target_includes_null || both_dont_include_null {
                 return Ok(Some(self.0.factory().create_conversion_value(value, ConversionKind::ToCovariant, optional, target_type)?));
             }
         }
@@ -271,11 +273,11 @@ impl<'a> ConversionMethods<'a> {
         let object_type = self.0.object_type().defer()?;
 
         if target_type_esc == object_type && from_type_esc.is_interface_type_possibly_after_sub() {
-            let both_include_null = from_type.includes_null(self.0)? && target_type.includes_null(self.0)?;
+            let target_includes_null = target_type.includes_null(self.0)?;
             let both_dont_include_null = !from_type.includes_null(self.0)? && !target_type.includes_null(self.0)?;
 
             // ItrfcToObject
-            if both_include_null || both_dont_include_null {
+            if target_includes_null || both_dont_include_null {
                 return Ok(Some(self.0.factory().create_conversion_value(value, ConversionKind::ItrfcToObject, optional, target_type)?));
             }
         }
@@ -307,11 +309,11 @@ impl<'a> ConversionMethods<'a> {
         let function_type = self.0.function_type().defer()?;
 
         if from_type_esc == function_type && target_type_esc.is::<FunctionType>() {
-            let both_include_null = from_type.includes_null(self.0)? && target_type.includes_null(self.0)?;
+            let target_includes_null = target_type.includes_null(self.0)?;
             let both_dont_include_null = !from_type.includes_null(self.0)? && !target_type.includes_null(self.0)?;
 
             // FunctionToStructuralFunction
-            if both_include_null || both_dont_include_null {
+            if target_includes_null || both_dont_include_null {
                 return Ok(Some(self.0.factory().create_conversion_value(value, ConversionKind::FunctionToStructuralFunction, optional, target_type)?));
             }
         }
@@ -335,21 +337,21 @@ impl<'a> ConversionMethods<'a> {
         let object_type = self.0.object_type().defer()?;
 
         if from_type_esc == object_type && target_type_esc.is_interface_type_possibly_after_sub() {
-            let both_include_null = from_type.includes_null(self.0)? && target_type.includes_null(self.0)?;
+            let target_includes_null = target_type.includes_null(self.0)?;
             let both_dont_include_null = !from_type.includes_null(self.0)? && !target_type.includes_null(self.0)?;
 
             // ObjectToItrfc
-            if both_include_null || both_dont_include_null {
+            if target_includes_null || both_dont_include_null {
                 return Ok(Some(self.0.factory().create_conversion_value(value, ConversionKind::ObjectToItrfc, optional, target_type)?));
             }
         }
 
         if from_type_esc.is_ascending_type_of(&target_type_esc, self.0)? {
-            let both_include_null = from_type.includes_null(self.0)? && target_type.includes_null(self.0)?;
+            let target_includes_null = target_type.includes_null(self.0)?;
             let both_dont_include_null = !from_type.includes_null(self.0)? && !target_type.includes_null(self.0)?;
 
             // ToContravariant
-            if both_include_null || both_dont_include_null {
+            if target_includes_null || both_dont_include_null {
                 return Ok(Some(self.0.factory().create_conversion_value(value, ConversionKind::ToContravariant, optional, target_type)?));
             }
         }
@@ -358,15 +360,15 @@ impl<'a> ConversionMethods<'a> {
             if let Some(el_basetype) = target_type_esc.vector_element_type(self.0)? {
                 let asc = el_basetype.escape_of_nullable_or_non_nullable().is_ascending_type_of(&el_subtype.escape_of_nullable_or_non_nullable(), self.0)?;
 
-                let both_el_include_null = el_basetype.includes_null(self.0)? && el_subtype.includes_null(self.0)?;
+                let target_el_includes_null = el_basetype.includes_null(self.0)?;
                 let both_el_dont_include_null = !el_basetype.includes_null(self.0)? && !el_subtype.includes_null(self.0)?;
 
-                if asc && (both_el_include_null || both_el_dont_include_null) {
-                    let both_include_null = from_type.includes_null(self.0)? && target_type.includes_null(self.0)?;
+                if asc && (target_el_includes_null || both_el_dont_include_null) {
+                    let target_includes_null = target_type.includes_null(self.0)?;
                     let both_dont_include_null = !from_type.includes_null(self.0)? && !target_type.includes_null(self.0)?;
 
                     // ToCovariantVector
-                    if both_include_null || both_dont_include_null {
+                    if target_includes_null || both_dont_include_null {
                         return Ok(Some(self.0.factory().create_conversion_value(value, ConversionKind::ToCovariantVector, optional, target_type)?));
                     }
                 }
@@ -377,15 +379,15 @@ impl<'a> ConversionMethods<'a> {
             if let Some(el_basetype) = target_type_esc.array_element_type(self.0)? {
                 let asc = el_basetype.escape_of_nullable_or_non_nullable().is_ascending_type_of(&el_subtype.escape_of_nullable_or_non_nullable(), self.0)?;
 
-                let both_el_include_null = el_basetype.includes_null(self.0)? && el_subtype.includes_null(self.0)?;
+                let target_el_includes_null = el_basetype.includes_null(self.0)?;
                 let both_el_dont_include_null = !el_basetype.includes_null(self.0)? && !el_subtype.includes_null(self.0)?;
 
-                if asc && (both_el_include_null || both_el_dont_include_null) {
-                    let both_include_null = from_type.includes_null(self.0)? && target_type.includes_null(self.0)?;
+                if asc && (target_el_includes_null || both_el_dont_include_null) {
+                    let target_includes_null = target_type.includes_null(self.0)?;
                     let both_dont_include_null = !from_type.includes_null(self.0)? && !target_type.includes_null(self.0)?;
 
                     // ToCovariantArray
-                    if both_include_null || both_dont_include_null {
+                    if target_includes_null || both_dont_include_null {
                         return Ok(Some(self.0.factory().create_conversion_value(value, ConversionKind::ToCovariantArray, optional, target_type)?));
                     }
                 }
@@ -447,13 +449,15 @@ impl<'a> ConversionMethods<'a> {
             let from_origin = from_type_esc.origin_or_parameterized_type_identity().unwrap();
             let target_origin = target_type_esc.origin_or_parameterized_type_identity().unwrap();
             let vector_type = self.0.vector_type().defer()?;
+            let array_type = self.0.array_type().defer()?;
+            let map_type = self.0.map_type().defer()?;
 
-            let both_include_null = from_type.includes_null(self.0)? && target_type.includes_null(self.0)?;
+            let target_includes_null = target_type.includes_null(self.0)?;
             let both_dont_include_null = !from_type.includes_null(self.0)? && !target_type.includes_null(self.0)?;
 
             // ParameterizedTypeAlter
-            if from_origin == target_origin && from_origin != vector_type
-            && (both_include_null || both_dont_include_null)
+            if from_origin == target_origin && ![vector_type, array_type, map_type].contains(&from_origin)
+            && (target_includes_null || both_dont_include_null)
             {
                 return Ok(Some(self.0.factory().create_conversion_value(value, ConversionKind::ParameterizedTypeAlter, optional, target_type)?));
             }
