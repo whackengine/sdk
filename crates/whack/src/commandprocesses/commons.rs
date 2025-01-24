@@ -155,9 +155,14 @@ impl CommandProcessCommons {
             }
 
             let mut compilation_units: Vec<Rc<CompilationUnit>> = vec![];
+            let mut source_path_list: Vec<String> = vec![];
             if let Some(source_path) = pckg.manifest.package.as_ref().unwrap().source_path.as_ref() {
                 for source_path_1 in source_path.iter() {
                     let source_path_1_str = FlexPath::new_native(pckg.absolute_path.to_str().unwrap()).resolve(source_path_1).to_string_with_flex_separator();
+                    if std::fs::exists(&source_path_1_str).unwrap() && std::fs::metadata(&source_path_1_str).unwrap().is_dir() {
+                        let source_path_1_pathbuf = PathBuf::from_str(&source_path_1_str).unwrap();
+                        source_path_list.push(source_path_1_pathbuf.canonicalize().unwrap().to_str().unwrap().to_owned());
+                    }
                     match CommandProcessCommons::recurse_source_files(&PathBuf::from_str(&source_path_1_str).unwrap()) {
                         Ok(files) => {
                             compilation_units.extend(files);
@@ -171,7 +176,10 @@ impl CommandProcessCommons {
             }
 
             // Build the default compiler options
-            let compiler_options = Rc::new(CompilerOptions::default());
+            let compiler_options = Rc::new(CompilerOptions {
+                source_path: source_path_list,
+                ..default()
+            });
 
             // Parse and initialize compiler options across compilation units
             let mut programs: Vec<Rc<Program>> = vec![];

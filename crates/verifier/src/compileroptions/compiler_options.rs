@@ -4,6 +4,7 @@ use crate::ns::*;
 pub struct CompilerOptions {
     pub warnings: CompilerWarningOptions,
     /// Used for identifying the AS3 package in a MXML source tree.
+    /// Consists of absolute, canonicalized directory paths.
     pub source_path: Vec<String>,
 }
 
