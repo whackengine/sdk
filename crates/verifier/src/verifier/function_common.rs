@@ -212,8 +212,5 @@ impl FunctionCommonSubverifier {
         if let Some(_signature) = partials.signature() {
             ControlFlowAnalysisIsUnimplemented::unimplemented();
         }
-
-        // Cleanup the VerifierFunctionPartials cache from Subverifier.
-        verifier.function_definition_partials.remove(&NodeAsKey(common.clone()));
     }
 }

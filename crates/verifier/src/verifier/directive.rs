@@ -2567,29 +2567,6 @@ impl DirectiveSubverifier {
                 Err(DeferError(None))
             },
             VerifierPhase::Omega => {
-                // Retrieve method slot
-                let slot = verifier.host.node_mapping().get(drtv).unwrap();
-
-                // Retrieve activation
-                let activation = slot.activation().unwrap();
-
-                // FunctionCommon
-                let common = defn.common.clone();
-
-                // Save scope
-                let kscope = verifier.scope();
-
-                // Definition partials
-                let partials = verifier.function_definition_partials.get(&NodeAsKey(common.clone())).unwrap();
-
-                // Enter scope
-                verifier.inherit_and_enter_scope(&activation);
-
-                FunctionCommonSubverifier::verify_function_definition_common(verifier, &common, &partials)?;
-
-                // Restore scope
-                verifier.set_scope(&kscope);
-
                 // Finish
                 verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
                 Ok(())
@@ -2907,29 +2884,6 @@ impl DirectiveSubverifier {
                 Err(DeferError(None))
             },
             VerifierPhase::Omega => {
-                // Retrieve method slot
-                let slot = verifier.host.node_mapping().get(drtv).unwrap();
-
-                // Retrieve activation
-                let activation = slot.activation().unwrap();
-
-                // FunctionCommon
-                let common = defn.common.clone();
-
-                // Save scope
-                let kscope = verifier.scope();
-
-                // Definition partials
-                let partials = verifier.function_definition_partials.get(&NodeAsKey(common.clone())).unwrap();
-
-                // Enter scope
-                verifier.inherit_and_enter_scope(&activation);
-
-                FunctionCommonSubverifier::verify_function_definition_common(verifier, &common, &partials)?;
-
-                // Restore scope
-                verifier.set_scope(&kscope);
-
                 // Finish
                 verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
                 Ok(())
@@ -3306,29 +3260,6 @@ impl DirectiveSubverifier {
                 Err(DeferError(None))
             },
             VerifierPhase::Omega => {
-                // Retrieve method slot
-                let slot = verifier.host.node_mapping().get(drtv).unwrap();
-
-                // Retrieve activation
-                let activation = slot.activation().unwrap();
-
-                // FunctionCommon
-                let common = defn.common.clone();
-
-                // Save scope
-                let kscope = verifier.scope();
-
-                // Definition partials
-                let partials = verifier.function_definition_partials.get(&NodeAsKey(common.clone())).unwrap();
-
-                // Enter scope
-                verifier.inherit_and_enter_scope(&activation);
-
-                FunctionCommonSubverifier::verify_function_definition_common(verifier, &common, &partials)?;
-
-                // Restore scope
-                verifier.set_scope(&kscope);
-
                 // Finish
                 verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
                 Ok(())
@@ -3712,29 +3643,6 @@ impl DirectiveSubverifier {
                 Err(DeferError(None))
             },
             VerifierPhase::Omega => {
-                // Retrieve method slot
-                let slot = verifier.host.node_mapping().get(drtv).unwrap();
-
-                // Retrieve activation
-                let activation = slot.activation().unwrap();
-
-                // FunctionCommon
-                let common = defn.common.clone();
-
-                // Save scope
-                let kscope = verifier.scope();
-
-                // Definition partials
-                let partials = verifier.function_definition_partials.get(&NodeAsKey(common.clone())).unwrap();
-
-                // Enter scope
-                verifier.inherit_and_enter_scope(&activation);
-
-                FunctionCommonSubverifier::verify_function_definition_common(verifier, &common, &partials)?;
-
-                // Restore scope
-                verifier.set_scope(&kscope);
-
                 // Finish
                 verifier.set_drtv_phase(drtv, VerifierPhase::Finished);
                 Ok(())
