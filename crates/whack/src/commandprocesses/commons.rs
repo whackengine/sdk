@@ -109,7 +109,7 @@ impl CommandProcessCommons {
         Ok(vec![])
     }
 
-    pub fn verify_sources_from_dag(dag: &Dag, defined_constants: &Vec<(String, String)>) -> (Rc<Database>, Verifier) {
+    pub fn verify_sources_from_dag(dag: &Dag, defined_constants: &Vec<(String, String)>, testing: bool) -> (Rc<Database>, Verifier) {
         let as3host = Rc::new(Database::new(DatabaseOptions {
             project_path: Some(dag.last.absolute_path.canonicalize().unwrap().to_str().unwrap().to_owned()),
             ..default()
@@ -138,6 +138,7 @@ impl CommandProcessCommons {
             // Setup configuration constants
             as3host.config_constants().set("RT::client".to_owned(), rt_client.to_string());
             as3host.config_constants().set("RT::server".to_owned(), rt_server.to_string());
+            as3host.config_constants().set("CONFIG::test".to_owned(), testing.to_string());
             for (k, v) in defined_constants.iter() {
                 as3host.config_constants().set(k.clone(), v.clone());
             }
