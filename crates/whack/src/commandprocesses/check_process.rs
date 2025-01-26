@@ -99,11 +99,17 @@ pub async fn check_process(matches: &clap::ArgMatches) {
     //
     // @todo fixme();
 
-    // Whether testing or not
+    // Whether RT::client is on or off
+    let rt_client = true;
+
+    // Whether RT::server is on or off
+    let rt_server = false;
+
+    // Whether CONFIG::test is on or off
     let testing = true;
 
     // Check each dependency in ascending order for AS3 and MXML errors.
-    let (as3host, verifier) = CommandProcessCommons::verify_sources_from_dag(&dag, &defined_constants, testing);
+    let (as3host, verifier) = CommandProcessCommons::verify_sources_from_dag(&dag, &defined_constants, rt_client, rt_server, testing);
 
     // Write to the run cache file
     std::fs::create_dir_all(&target_path).unwrap();

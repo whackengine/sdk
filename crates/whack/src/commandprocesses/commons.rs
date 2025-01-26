@@ -109,7 +109,7 @@ impl CommandProcessCommons {
         Ok(vec![])
     }
 
-    pub fn verify_sources_from_dag(dag: &Dag, defined_constants: &Vec<(String, String)>, testing: bool) -> (Rc<Database>, Verifier) {
+    pub fn verify_sources_from_dag(dag: &Dag, defined_constants: &Vec<(String, String)>, mut rt_client: bool, mut rt_server: bool, testing: bool) -> (Rc<Database>, Verifier) {
         let as3host = Rc::new(Database::new(DatabaseOptions {
             project_path: Some(dag.last.absolute_path.canonicalize().unwrap().to_str().unwrap().to_owned()),
             ..default()
@@ -118,8 +118,6 @@ impl CommandProcessCommons {
         let mut verifier = Verifier::new(&as3host);
 
         // Define RT::client and RT::server
-        let mut rt_client = true;
-        let mut rt_server: bool = false;
         let entry_pckg = dag.last.clone();
         if entry_pckg.manifest.client_side.is_some() {
             if entry_pckg.manifest.server_side.is_some() {
